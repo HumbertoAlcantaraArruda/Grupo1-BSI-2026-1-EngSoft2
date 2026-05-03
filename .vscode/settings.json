@@ -1,6 +1,0 @@
-{
-  "liveServer.settings.port": 5501,
-  "java.project.referencedLibraries": [
-    "BackEnd/lib/**/*.jar"
-  ]
-}
