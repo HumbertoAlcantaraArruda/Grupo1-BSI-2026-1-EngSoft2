@@ -1,6 +1,7 @@
 # IntelliJ
 .idea/
 *.iml
+.vscode/
 
 # Default ignored files
 /shelf/
