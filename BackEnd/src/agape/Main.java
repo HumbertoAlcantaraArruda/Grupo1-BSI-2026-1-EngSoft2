@@ -1,9 +1,12 @@
 package agape;
 
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpExchange;
 
-import java.io.OutputStream;
+import agape.control.CUsuario;
+
+//import com.sun.net.httpserver.HttpExchange;
+
+//import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 public class Main {
@@ -12,17 +15,14 @@ public class Main {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 
-        // rota de teste
-        server.createContext("/teste", (HttpExchange exchange) -> {
+        // == Rotas ==
 
-            String response = "Backend funcionando!";
+        // Usuários
+        server.createContext("/login", CUsuario.getInstancia());
+        server.createContext("/cadastrar", CUsuario.getInstancia());
 
-            exchange.sendResponseHeaders(200, response.getBytes().length);
-
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-        });
+        //Produtos
+        //...
 
         server.setExecutor(null);
         server.start();

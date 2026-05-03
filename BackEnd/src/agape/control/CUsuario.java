@@ -1,17 +1,69 @@
 package agape.control;
 
+import java.io.IOException;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+
 import agape.dao.UsuarioDAO;
 import agape.model.Usuario;
 import agape.util.Criptografia;
 import agape.util.ResponseObject;
 
-public class CUsuario {
+public class CUsuario implements HttpHandler {
 
     private static CUsuario instancia;
     private UsuarioDAO dao;
 
-    private CUsuario() {
-        dao = new UsuarioDAO();
+    // private CUsuario() {
+    // dao = new UsuarioDAO();
+    // }
+
+    private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
+        String json = response.toJson();
+        byte[] bytes = json.getBytes("UTF-8");
+
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.sendResponseHeaders(response.getCode(), bytes.length);
+        exchange.getResponseBody().write(bytes);
+        exchange.close();
+    }
+
+    private String extrairParam(String body, String chave) {
+        for (String par : body.split("&")) {
+            String[] kv = par.split("=");
+            if (kv[0].equals(chave))
+                return kv.length > 1 ? kv[1] : "";
+        }
+        return "";
+    }
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        String method = exchange.getRequestMethod();
+        String path = exchange.getRequestURI().getPath();
+
+        if (method.equalsIgnoreCase("POST") && path.equals("/login")) {
+            // Lógica de login
+            // Exemplo: parse do corpo da requisição, chamar método de login e retornar
+            // resposta
+        } else if (method.equalsIgnoreCase("POST") && path.equals("/cadastrar")) {
+
+            String body = new String(exchange.getRequestBody().readAllBytes());
+
+            String nome = extrairParam(body, "nome");
+            String cpf = extrairParam(body, "cpf");
+            String email = extrairParam(body, "email");
+            String senha = extrairParam(body, "senha");
+
+            ResponseObject response = cadastrar(nome, cpf, email, senha);
+            enviarResposta(exchange, response);
+
+        } else {
+            String response = "Endpoint não encontrado";
+            exchange.sendResponseHeaders(404, response.length());
+            exchange.getResponseBody().write(response.getBytes());
+            exchange.close();
+        }
     }
 
     public static CUsuario getInstancia() {
@@ -35,15 +87,18 @@ public class CUsuario {
             u.setEmail(email);
             u.setSenha(senhaHash);
             u.setStatus(1);
-            u.setNivel("USER");
+            u.setNivel("ADM");
 
             dao.inserir(u);
 
             response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Usuário cadastrado com sucesso");
+            response.setResult(u);
 
         } catch (Exception e) {
             response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_FAILED);
             response.addMessage("Erro ao cadastrar usuário");
         }
 
