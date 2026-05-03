@@ -49,4 +49,29 @@ public class ResponseObject {
     public void setResult(Object result) {
         this.result = result;
     }
+
+    public String toJson() {
+        StringBuilder json = new StringBuilder();
+        json.append("{");
+        json.append("\"status\":\"").append(status).append("\",");
+
+        // Monta array de messages
+        json.append("\"messages\":[");
+        for (int i = 0; i < messages.size(); i++) {
+            json.append("\"").append(messages.get(i)).append("\"");
+            if (i < messages.size() - 1)
+                json.append(",");
+        }
+        json.append("],");
+
+        // Result pode ser nulo
+        if (result != null) {
+            json.append("\"result\":\"").append(result).append("\"");
+        } else {
+            json.append("\"result\":null");
+        }
+
+        json.append("}");
+        return json.toString();
+    }
 }

@@ -7,13 +7,17 @@ import java.sql.ResultSet;
 
 public class UsuarioDAO {
 
+    private Connection conn;
+
+    public UsuarioDAO() {
+        this.conn = ConexaoBD.getInstance().getConexao();
+    }
+
     public void inserir(Usuario u) {
 
         String sql = "INSERT INTO usuario (nome, cpf, email, senha, status, nivel) VALUES (?, ?, ?, ?, ?, ?)";
 
         try {
-            Connection conn = ConexaoBD.getConexao();
-
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getCpf());
@@ -35,7 +39,7 @@ public class UsuarioDAO {
         String sql = "SELECT * FROM usuario WHERE email = ?";
 
         try {
-            Connection conn = ConexaoBD.getConexao();
+            //Connection conn = ConexaoBD.getInstance().getConexao();
 
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, email);

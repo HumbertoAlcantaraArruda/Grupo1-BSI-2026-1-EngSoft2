@@ -7,26 +7,41 @@ import java.io.FileInputStream;
 
 public class ConexaoBD {
 
-    private static Connection conn;
+    private static ConexaoBD instancia;
+    private Connection conn;
 
-    public static Connection getConexao() {
+    private ConexaoBD() {
         try {
-            if (conn == null || conn.isClosed()) {
+            Properties props = new Properties();
+            props.load(new FileInputStream("BackEnd/config.properties"));
 
-                Properties props = new Properties();
-                props.load(new FileInputStream("BackEnd/config.properties"));
+            String url      = props.getProperty("db.url");
+            String user     = props.getProperty("db.user");
+            String password = props.getProperty("db.password");
 
-                String url = props.getProperty("db.url");
-                String user = props.getProperty("db.user");
-                String password = props.getProperty("db.password");
-
-                conn = DriverManager.getConnection(url, user, password);
-            }
-
-            return conn;
+            conn = DriverManager.getConnection(url, user, password);
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao conectar", e);
+            throw new RuntimeException("Erro ao conectar ao banco", e);
+        }
+    }
+
+    public static ConexaoBD getInstance() {
+        if (instancia == null) {
+            instancia = new ConexaoBD();
+        }
+        return instancia;
+    }
+
+    public Connection getConexao() {
+        try {
+            if (conn == null || conn.isClosed()) {
+                instancia = new ConexaoBD();
+                return instancia.conn;
+            }
+            return conn;
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao verificar conexão", e);
         }
     }
 }
