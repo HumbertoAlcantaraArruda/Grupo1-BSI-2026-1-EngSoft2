@@ -10,10 +10,15 @@ public class InscricaoDAO {
     public InscricaoDAO() {
     }
 
-    // Recebe a conexão 'conn' por parâmetro conforme desenho do Humberto
-    public boolean cancelar(Connection conn, int idInscricao) throws SQLException {
+    /**
+     * RF_F2: Cancelamento de Inscrição.
+     * Além de cancelar, o método agora grava o 'motivo' na coluna 'obs' do banco,
+     * aproveitando a estrutura criada pelo grupo, mesmo que não esteja na ERS.
+     */
+    public boolean cancelar(Connection conn, int idInscricao, String motivo) throws SQLException {
         
-        String sqlUpdateStatus = "UPDATE Inscricao SET status = 0 WHERE idInscricao = ?";
+        // SQL atualizado para incluir a coluna 'obs'
+        String sqlUpdateStatus = "UPDATE Inscricao SET status = 0, obs = ? WHERE idInscricao = ?";
         
         String sqlBuscaLista = "SELECT il.Inscricao_idInscricao FROM InscricaoListaEspera il " +
                                "JOIN Inscricao i ON il.Inscricao_idInscricao = i.idInscricao " +
@@ -23,14 +28,15 @@ public class InscricaoDAO {
         String sqlPromover = "UPDATE Inscricao SET status = 1 WHERE idInscricao = ?";
         String sqlRemoveLista = "DELETE FROM InscricaoListaEspera WHERE Inscricao_idInscricao = ?";
 
-        // 1. Cancela a inscrição atual
+        // 1. Cancela a inscrição atual e grava o motivo (obs)
         try (PreparedStatement stmt = conn.prepareStatement(sqlUpdateStatus)) {
-            stmt.setInt(1, idInscricao);
+            stmt.setString(1, motivo);
+            stmt.setInt(2, idInscricao);
             int rows = stmt.executeUpdate();
             if (rows == 0) return false;
         }
 
-        // 2. Busca o primeiro da lista de espera
+        // 2. Busca o primeiro da lista de espera para o mesmo evento
         int idInscricaoPromover = -1;
         try (PreparedStatement stmt = conn.prepareStatement(sqlBuscaLista)) {
             stmt.setInt(1, idInscricao);
@@ -40,7 +46,7 @@ public class InscricaoDAO {
             }
         }
 
-        // 3. Se achou alguém, promove
+        // 3. Se achou alguém na espera, promove automaticamente
         if (idInscricaoPromover != -1) {
             try (PreparedStatement stmt = conn.prepareStatement(sqlPromover)) {
                 stmt.setInt(1, idInscricaoPromover);
