@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Compra</title>
+    <link rel="stylesheet" href="../assets/css/bootstrap.css">
+</head>
+<body class="p-5 bg-dark text-light">
+
+    <div class="container">
+        <h2>Simulador de Compra de Produtos</h2>
+        <p class="text-muted">Testando a sua rota /comprar</p>
+
+        <div class="card bg-secondary text-light p-4 mt-4">
+            <form id="formCompra">
+                <div class="mb-3">
+                    <label>ID do Fornecedor</label>
+                    <input type="number" id="idFornecedor" class="form-control" value="1">
+                </div>
+                <div class="mb-3">
+                    <label>ID do Usuário (Quem está registrando)</label>
+                    <input type="number" id="idUsuario" class="form-control" value="1">
+                </div>
+                <div class="mb-3">
+                    <label>Valor Total da Compra (R$)</label>
+                    <input type="number" step="0.01" id="valorTotal" class="form-control" value="150.50">
+                </div>
+
+                <hr>
+                <h5>Produtos Comprados</h5>
+                <p class="small text-warning">Vamos simular comprando 2 produtos diferentes.</p>
+
+                <div class="row">
+                    <div class="col-4">
+                        <label>IDs dos Produtos (separados por vírgula)</label>
+                        <input type="text" id="idProdutos" class="form-control" value="10,11">
+                    </div>
+                    <div class="col-4">
+                        <label>Quantidades (separadas por vírgula)</label>
+                        <input type="text" id="quantidades" class="form-control" value="5,2">
+                    </div>
+                    <div class="col-4">
+                        <label>Valores Unitários (separados por vírgula)</label>
+                        <input type="text" id="valoresUnitarios" class="form-control" value="20.00,25.25">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success mt-4">Efetuar Compra</button>
+            </form>
+        </div>
+
+        <div class="mt-4">
+            <h4>Resposta do Servidor:</h4>
+            <pre id="resultado" class="bg-black p-3 text-success border rounded"></pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('formCompra').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Pega os dados dos campos
+            const idFornecedor = document.getElementById('idFornecedor').value;
+            const idUsuario = document.getElementById('idUsuario').value;
+            const valorTotal = document.getElementById('valorTotal').value;
+            const idProdutos = document.getElementById('idProdutos').value;
+            const quantidades = document.getElementById('quantidades').value;
+            const valoresUnitarios = document.getElementById('valoresUnitarios').value;
+
+            // Monta o "body" (corpo) da requisição no formato urlencoded
+            const body = `idFornecedor=${idFornecedor}&idUsuario=${idUsuario}&valorTotal=${valorTotal}&idProdutos=${idProdutos}&quantidades=${quantidades}&valoresUnitarios=${valoresUnitarios}`;
+
+            try {
+                document.getElementById('resultado').innerText = "Enviando requisição para http://localhost:8080/comprar ...";
+
+                const response = await fetch('http://localhost:8080/comprar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: body
+                });
+
+                const data = await response.json();
+
+                // Exibe a resposta na tela
+                document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('resultado').innerText = "Erro ao conectar com o servidor. O Main.java está rodando?\n" + error;
+            }
+        });
+    </script>
+</body>
+</html>

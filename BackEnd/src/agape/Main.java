@@ -2,6 +2,9 @@ package agape;
 
 import com.sun.net.httpserver.HttpServer;
 
+import agape.control.CCompra;
+import agape.control.CInscricao;
+import agape.control.CParametrizacao;
 import agape.control.CUsuario;
 
 //import com.sun.net.httpserver.HttpExchange;
@@ -21,8 +24,14 @@ public class Main {
         server.createContext("/login", CUsuario.getInstancia());
         server.createContext("/cadastrar", CUsuario.getInstancia());
 
-        //Produtos
-        //...
+        // Compras de Produtos
+        server.createContext("/comprar", CCompra.getInstancia());
+
+        // Parametrização
+        server.createContext("/parametrizacao", CParametrizacao.getInstancia());
+
+        // Inscrições
+        server.createContext("/cancelarInscricao", CInscricao.getInstancia());
 
         server.setExecutor(null);
         server.start();

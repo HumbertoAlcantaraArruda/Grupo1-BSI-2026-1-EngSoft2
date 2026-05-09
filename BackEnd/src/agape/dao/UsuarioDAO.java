@@ -1,5 +1,6 @@
 package agape.dao;
 
+import agape.control.ConexaoBD;
 import agape.model.Usuario;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

@@ -1,4 +1,4 @@
-package agape.dao;
+package agape.control;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
