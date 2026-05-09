@@ -1,6 +1,5 @@
 package agape.dao;
 
-import agape.control.ConexaoBD;
 import agape.model.Compra;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,13 +9,12 @@ import java.sql.Timestamp;
 
 public class CompraDAO {
 
-    private Connection conn;
-
     public CompraDAO() {
-        this.conn = ConexaoBD.getInstance().getConexao();
+        // Construtor vazio conforme desenho (a conexão vem por parâmetro)
     }
 
-    public int inserir(Compra compra) throws Exception {
+    // RF_F10: Recebe a conexão 'conn' por parâmetro conforme desenho do Humberto
+    public int inserir(Connection conn, Compra compra) throws Exception {
         String sql = "INSERT INTO Compra (dataHora, valorTotal, idFornec, idUsuario) VALUES (?, ?, ?, ?)";
         
         PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);

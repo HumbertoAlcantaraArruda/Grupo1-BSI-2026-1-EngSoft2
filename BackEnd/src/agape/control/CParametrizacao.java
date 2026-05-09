@@ -52,6 +52,7 @@ public class CParametrizacao implements HttpHandler {
                 Parametrizacao p = dao.buscar();
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);
+                response.setCode(ResponseObject.CODE_OK);
                 response.setResult(p);
                 enviarResposta(exchange, response);
             } catch (Exception e) {

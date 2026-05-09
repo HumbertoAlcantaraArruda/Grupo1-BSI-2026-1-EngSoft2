@@ -1,6 +1,5 @@
 package agape.dao;
 
-import agape.control.ConexaoBD;
 import agape.model.Parametrizacao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,13 +8,10 @@ import java.sql.SQLException;
 
 public class ParametrizacaoDAO {
 
-    private Connection conn;
-
     public ParametrizacaoDAO() {
-        this.conn = ConexaoBD.getInstance().getConexao();
     }
 
-    public Parametrizacao buscar() throws SQLException {
+    public Parametrizacao buscar(Connection conn) throws SQLException {
         String sql = "SELECT * FROM parametrizacao LIMIT 1";
         try (PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
@@ -38,9 +34,8 @@ public class ParametrizacaoDAO {
         return null;
     }
 
-    public void salvar(Parametrizacao p) throws SQLException {
-        // Verifica se já existe um registro
-        Parametrizacao atual = buscar();
+    public void salvar(Connection conn, Parametrizacao p) throws SQLException {
+        Parametrizacao atual = buscar(conn);
         
         if (atual == null) {
             String sql = "INSERT INTO parametrizacao (cnpj, razaoSocial, nomeFantasia, endereco, bairro, cidade, uf, cep, email, telefone1, responsavel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";

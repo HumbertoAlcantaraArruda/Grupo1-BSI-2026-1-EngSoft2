@@ -53,6 +53,7 @@ public class CInscricao implements HttpHandler {
                 int idInscricao = Integer.parseInt(extrairParam(body, "idInscricao"));
 
                 ResponseObject response = cancelarInscricao(idInscricao);
+                response.setCode(ResponseObject.CODE_OK);
                 enviarResposta(exchange, response);
 
             } catch (Exception e) {
