@@ -34,9 +34,19 @@ public class CInscricao implements HttpHandler {
         exchange.close();
     }
 
-    private String extrairParam(String body, String chave) {
+    private String extrairParam(HttpExchange exchange, String chave) {
+        String query = exchange.getRequestURI().getQuery();
+        String body = "";
         try {
-            for (String par : body.split("&")) {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                body = new String(exchange.getRequestBody().readAllBytes());
+            }
+        } catch (Exception e) {}
+
+        String fullStr = (query != null ? query : "") + "&" + body;
+        
+        try {
+            for (String par : fullStr.split("&")) {
                 String[] kv = par.split("=");
                 if (kv[0].equals(chave)) {
                     String valor = kv.length > 1 ? kv[1] : "";
@@ -49,60 +59,50 @@ public class CInscricao implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        if (method.equalsIgnoreCase("POST") && path.equals("/cancelarInscricao")) {
+        if (path.equals("/cancelarInscricao")) {
             try {
-                String body = new String(exchange.getRequestBody().readAllBytes());
-                int idInscricao = Integer.parseInt(extrairParam(body, "idInscricao"));
-                
-                // Pegando o motivo opcional (EXTRA: Aproveitando a coluna 'obs' do banco)
-                String motivo = extrairParam(body, "motivo");
-                if (motivo.isEmpty()) motivo = "Cancelamento efetuado pelo sistema";
+                int idInscricao = Integer.parseInt(extrairParam(exchange, "idInscricao"));
+                String obs = extrairParam(exchange, "obs");
+                if (obs.isEmpty()) obs = "Cancelamento via URL";
 
-                ResponseObject response = cancelarInscricaoFlow(idInscricao, motivo);
+                ResponseObject response = cancelarInscricaoFlow(idInscricao, obs);
                 enviarResposta(exchange, response);
 
             } catch (Exception e) {
                 ResponseObject errorResponse = new ResponseObject();
                 errorResponse.setStatus(ResponseObject.STATUS_FAIL);
                 errorResponse.setCode(ResponseObject.CODE_FAILED);
-                errorResponse.addMessage("Erro: " + e.getMessage());
+                errorResponse.addMessage("Erro: " + e.getMessage() + ". Adicione ?idInscricao=XX na URL.");
                 enviarResposta(exchange, errorResponse);
             }
         }
     }
 
-    /**
-     * Fluxo de cancelamento: Inclui o motivo na coluna 'obs' como diferencial de implementação.
-     */
-    public ResponseObject cancelarInscricaoFlow(int idInscricao, String motivo) {
+    public ResponseObject cancelarInscricaoFlow(int idInscricao, String obs) {
         ResponseObject response = new ResponseObject();
         Connection conn = null;
         try {
             conn = ConexaoBD.getInstance().getConexao();
             conn.setAutoCommit(false);
-
-            // Passando o motivo para o DAO
-            boolean sucesso = inscricaoDAO.cancelar(conn, idInscricao, motivo);
-
+            boolean sucesso = inscricaoDAO.cancelar(conn, idInscricao, obs);
             if (sucesso) {
                 conn.commit();
                 response.setStatus(ResponseObject.STATUS_OK);
                 response.setCode(ResponseObject.CODE_OK);
-                response.addMessage("Inscrição cancelada e fila atualizada! Motivo registrado.");
+                response.addMessage("Cancelado com sucesso!");
             } else {
                 conn.rollback();
                 response.setStatus(ResponseObject.STATUS_FAIL);
                 response.setCode(ResponseObject.CODE_NOT_FOUND);
-                response.addMessage("Inscrição não encontrada.");
+                response.addMessage("ID não encontrado.");
             }
         } catch (Exception e) {
             try { if (conn != null) conn.rollback(); } catch (SQLException se) {}
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_FAILED);
-            response.addMessage("Erro no cancelamento: " + e.getMessage());
+            response.addMessage("Erro: " + e.getMessage());
         } finally {
             try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException se) {}
         }
