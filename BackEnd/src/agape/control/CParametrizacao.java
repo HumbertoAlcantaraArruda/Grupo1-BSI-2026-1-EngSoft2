@@ -3,6 +3,7 @@ package agape.control;
 import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
+import java.sql.Connection;
 
 import agape.dao.ParametrizacaoDAO;
 import agape.model.Parametrizacao;
@@ -37,7 +38,7 @@ public class CParametrizacao implements HttpHandler {
         for (String par : body.split("&")) {
             String[] kv = par.split("=");
             if (kv[0].equals(chave))
-                return kv.length > 1 ? kv[1].replace("+", " ") : ""; // Trata espaços vindos do form
+                return kv.length > 1 ? kv[1].replace("+", " ") : ""; 
         }
         return "";
     }
@@ -45,11 +46,11 @@ public class CParametrizacao implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
+        Connection conn = ConexaoBD.getInstance().getConexao();
 
         if (method.equalsIgnoreCase("GET")) {
             try {
-                Parametrizacao p = dao.buscar();
+                Parametrizacao p = dao.buscar(conn);
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);
                 response.setCode(ResponseObject.CODE_OK);
@@ -71,10 +72,11 @@ public class CParametrizacao implements HttpHandler {
                 p.setTelefone1(extrairParam(body, "telefone1"));
                 p.setResponsavel(extrairParam(body, "responsavel"));
 
-                dao.salvar(p);
+                dao.salvar(conn, p);
 
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);
+                response.setCode(ResponseObject.CODE_OK);
                 response.addMessage("Parâmetros salvos com sucesso!");
                 enviarResposta(exchange, response);
             } catch (Exception e) {
@@ -86,6 +88,7 @@ public class CParametrizacao implements HttpHandler {
     private void enviarErro(HttpExchange exchange, String msg) throws IOException {
         ResponseObject response = new ResponseObject();
         response.setStatus(ResponseObject.STATUS_FAIL);
+        response.setCode(ResponseObject.CODE_FAILED);
         response.addMessage(msg);
         enviarResposta(exchange, response);
     }

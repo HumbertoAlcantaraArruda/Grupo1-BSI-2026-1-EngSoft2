@@ -12,10 +12,10 @@ public class InscricaoDAO {
 
     /**
      * RF_F2: Cancelamento de Inscrição.
-     * Além de cancelar, o método agora grava o 'motivo' na coluna 'obs' do banco,
+     * Além de cancelar, o método agora grava o 'obs' na coluna 'obs' do banco,
      * aproveitando a estrutura criada pelo grupo, mesmo que não esteja na ERS.
      */
-    public boolean cancelar(Connection conn, int idInscricao, String motivo) throws SQLException {
+    public boolean cancelar(Connection conn, int idInscricao, String obs) throws SQLException {
         
         // SQL atualizado para incluir a coluna 'obs'
         String sqlUpdateStatus = "UPDATE Inscricao SET status = 0, obs = ? WHERE idInscricao = ?";
@@ -30,7 +30,7 @@ public class InscricaoDAO {
 
         // 1. Cancela a inscrição atual e grava o motivo (obs)
         try (PreparedStatement stmt = conn.prepareStatement(sqlUpdateStatus)) {
-            stmt.setString(1, motivo);
+            stmt.setString(1, obs);
             stmt.setInt(2, idInscricao);
             int rows = stmt.executeUpdate();
             if (rows == 0) return false;
