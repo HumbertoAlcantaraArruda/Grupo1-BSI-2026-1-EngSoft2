@@ -17,7 +17,7 @@ public class ProdutoDAO {
     // Alinhado com a ERS e Padrões do Grupo: Tabela 'produtos', Coluna 'qtdEstoque'
     public void atualizarEstoque(int idProduto, int quantidade) throws Exception {
         // quantidade positiva para Compra (Entrada), negativa para Venda (Saída)
-        String sql = "UPDATE produtos SET qtdEstoque = qtdEstoque + ? WHERE idProduto = ?";
+        String sql = "UPDATE Produto SET qtdEstoque = qtdEstoque + ? WHERE idProduto = ?";
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, quantidade);

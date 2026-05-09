@@ -17,7 +17,7 @@ public class CompraDAO {
     }
 
     public int inserir(Compra compra) throws Exception {
-        String sql = "INSERT INTO compras (dataHora, valorTotal, idFornecedor, idUsuario) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Compra (dataHora, valorTotal, idFornec, idUsuario) VALUES (?, ?, ?, ?)";
         
         PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         stmt.setTimestamp(1, Timestamp.valueOf(compra.getDataHora()));

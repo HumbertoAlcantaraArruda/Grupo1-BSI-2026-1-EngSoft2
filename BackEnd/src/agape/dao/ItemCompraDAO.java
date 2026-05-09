@@ -17,7 +17,7 @@ public class ItemCompraDAO {
     // Método responsável apenas por inserir um item da compra
     public void inserir(ItemCompra item) throws Exception {
         // A query SQL para inserir na tabela (assumindo que os nomes das colunas são esses)
-        String sql = "INSERT INTO item_compra (idCompra, idProd, quantidade, valorUnitario) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO itemCompra (idCompra, idProd, quantidade, valorUnitario) VALUES (?, ?, ?, ?)";
         
         PreparedStatement stmt = conn.prepareStatement(sql);
         

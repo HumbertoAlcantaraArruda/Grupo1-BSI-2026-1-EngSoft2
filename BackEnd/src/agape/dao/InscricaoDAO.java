@@ -15,15 +15,15 @@ public class InscricaoDAO {
     }
 
     public boolean cancelar(int idInscricao) throws SQLException {
-        // RF_F2: Cancelar Inscrição com promoção automática da lista de espera
+        // Ajustado para os nomes exatos do seu banco (Singular e PascalCase)
         
-        String sqlUpdateStatus = "UPDATE inscricoes SET status = 0 WHERE idInscricao = ?";
-        String sqlBuscaLista = "SELECT idUsuario, idEvento FROM inscricoes_lista_espera WHERE idEvento = (SELECT idEvento FROM inscricoes WHERE idInscricao = ?) ORDER BY dataEntrada ASC LIMIT 1";
-        String sqlPromover = "INSERT INTO inscricoes (idEvento, idUsuario, dataInscricao, status) VALUES (?, ?, NOW(), 1)";
-        String sqlRemoveLista = "DELETE FROM inscricoes_lista_espera WHERE idUsuario = ? AND idEvento = ?";
+        String sqlUpdateStatus = "UPDATE Inscricao SET status = 0 WHERE idInscricao = ?";
+        String sqlBuscaLista = "SELECT idUsuario, idEvento FROM InscricaoListaEspera WHERE idEvento = (SELECT idEvento FROM Inscricao WHERE idInscricao = ?) ORDER BY dataStatus ASC LIMIT 1";
+        String sqlPromover = "INSERT INTO Inscricao (idEvento, idUsuario, dataInscricao, status) VALUES (?, ?, NOW(), 1)";
+        String sqlRemoveLista = "DELETE FROM InscricaoListaEspera WHERE idUsuario = ? AND idEvento = ?";
 
         try {
-            conn.setAutoCommit(false); // Inicia transação para garantir integridade (EngSoft II)
+            conn.setAutoCommit(false); 
 
             // 1. Cancela a inscrição atual
             try (PreparedStatement stmt = conn.prepareStatement(sqlUpdateStatus)) {
@@ -35,7 +35,7 @@ public class InscricaoDAO {
                 }
             }
 
-            // 2. Busca se tem alguém na lista de espera para o MESMO evento
+            // 2. Busca se tem alguém na lista de espera
             int idUsuarioLista = -1;
             int idEvento = -1;
             try (PreparedStatement stmt = conn.prepareStatement(sqlBuscaLista)) {
@@ -47,15 +47,13 @@ public class InscricaoDAO {
                 }
             }
 
-            // 3. Se achou alguém, promove e remove da lista
+            // 3. Se achou alguém, promove
             if (idUsuarioLista != -1) {
-                // Promove para inscrições
                 try (PreparedStatement stmt = conn.prepareStatement(sqlPromover)) {
                     stmt.setInt(1, idEvento);
                     stmt.setInt(2, idUsuarioLista);
                     stmt.executeUpdate();
                 }
-                // Remove da lista de espera
                 try (PreparedStatement stmt = conn.prepareStatement(sqlRemoveLista)) {
                     stmt.setInt(1, idUsuarioLista);
                     stmt.setInt(2, idEvento);
@@ -63,11 +61,11 @@ public class InscricaoDAO {
                 }
             }
 
-            conn.commit(); // Finaliza transação com sucesso
+            conn.commit(); 
             return true;
 
         } catch (SQLException e) {
-            conn.rollback(); // Se der erro em qualquer passo, desfaz tudo
+            conn.rollback();
             throw e;
         } finally {
             conn.setAutoCommit(true);
