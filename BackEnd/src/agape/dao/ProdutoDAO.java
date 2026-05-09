@@ -14,14 +14,13 @@ public class ProdutoDAO {
     }
 
     // RF_F9: Atualizar Estoque (Oculta)
-    // Alinhado com a ERS e Padrões do Grupo: Tabela 'produtos', Coluna 'qtdEstoque'
-    public void atualizarEstoque(int idProduto, int quantidade) throws Exception {
-        // quantidade positiva para Compra (Entrada), negativa para Venda (Saída)
-        String sql = "UPDATE Produto SET qtdEstoque = qtdEstoque + ? WHERE idProduto = ?";
+    // Ajustado para os nomes exatos do seu Model/Banco: idProd e qtdeAtual
+    public void atualizarEstoque(int idProd, int quantidade) throws Exception {
+        String sql = "UPDATE Produto SET qtdeAtual = qtdeAtual + ? WHERE idProd = ?";
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, quantidade);
-            stmt.setInt(2, idProduto);
+            stmt.setInt(2, idProd);
             stmt.executeUpdate();
         }
     }

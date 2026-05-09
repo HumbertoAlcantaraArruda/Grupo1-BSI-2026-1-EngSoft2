@@ -15,12 +15,18 @@ public class InscricaoDAO {
     }
 
     public boolean cancelar(int idInscricao) throws SQLException {
-        // Ajustado para os nomes exatos do seu banco (Singular e PascalCase)
+        // Ajustado para os nomes exatos do seu banco (Inscricao_idInscricao e ordemEntrada)
         
         String sqlUpdateStatus = "UPDATE Inscricao SET status = 0 WHERE idInscricao = ?";
-        String sqlBuscaLista = "SELECT idUsuario, idEvento FROM InscricaoListaEspera WHERE idEvento = (SELECT idEvento FROM Inscricao WHERE idInscricao = ?) ORDER BY dataStatus ASC LIMIT 1";
-        String sqlPromover = "INSERT INTO Inscricao (idEvento, idUsuario, dataInscricao, status) VALUES (?, ?, NOW(), 1)";
-        String sqlRemoveLista = "DELETE FROM InscricaoListaEspera WHERE idUsuario = ? AND idEvento = ?";
+        
+        // Busca o primeiro da fila na lista de espera para o mesmo evento
+        String sqlBuscaLista = "SELECT il.Inscricao_idInscricao FROM InscricaoListaEspera il " +
+                               "JOIN Inscricao i ON il.Inscricao_idInscricao = i.idInscricao " +
+                               "WHERE i.idEvento = (SELECT idEvento FROM Inscricao WHERE idInscricao = ?) " +
+                               "ORDER BY il.ordemEntrada ASC LIMIT 1";
+        
+        String sqlPromover = "UPDATE Inscricao SET status = 1 WHERE idInscricao = ?";
+        String sqlRemoveLista = "DELETE FROM InscricaoListaEspera WHERE Inscricao_idInscricao = ?";
 
         try {
             conn.setAutoCommit(false); 
@@ -35,28 +41,24 @@ public class InscricaoDAO {
                 }
             }
 
-            // 2. Busca se tem alguém na lista de espera
-            int idUsuarioLista = -1;
-            int idEvento = -1;
+            // 2. Busca o primeiro da lista de espera
+            int idInscricaoPromover = -1;
             try (PreparedStatement stmt = conn.prepareStatement(sqlBuscaLista)) {
                 stmt.setInt(1, idInscricao);
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {
-                    idUsuarioLista = rs.getInt("idUsuario");
-                    idEvento = rs.getInt("idEvento");
+                    idInscricaoPromover = rs.getInt("Inscricao_idInscricao");
                 }
             }
 
-            // 3. Se achou alguém, promove
-            if (idUsuarioLista != -1) {
+            // 3. Se achou alguém, promove (muda status) e remove da lista de espera
+            if (idInscricaoPromover != -1) {
                 try (PreparedStatement stmt = conn.prepareStatement(sqlPromover)) {
-                    stmt.setInt(1, idEvento);
-                    stmt.setInt(2, idUsuarioLista);
+                    stmt.setInt(1, idInscricaoPromover);
                     stmt.executeUpdate();
                 }
                 try (PreparedStatement stmt = conn.prepareStatement(sqlRemoveLista)) {
-                    stmt.setInt(1, idUsuarioLista);
-                    stmt.setInt(2, idEvento);
+                    stmt.setInt(1, idInscricaoPromover);
                     stmt.executeUpdate();
                 }
             }
