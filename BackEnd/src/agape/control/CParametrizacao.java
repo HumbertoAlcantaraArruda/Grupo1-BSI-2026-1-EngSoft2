@@ -34,43 +34,53 @@ public class CParametrizacao implements HttpHandler {
         exchange.close();
     }
 
-    private String extrairParam(String body, String chave) {
-        for (String par : body.split("&")) {
-            String[] kv = par.split("=");
-            if (kv[0].equals(chave))
-                return kv.length > 1 ? kv[1].replace("+", " ") : ""; 
-        }
+    private String extrairParam(HttpExchange exchange, String chave) {
+        String query = exchange.getRequestURI().getQuery();
+        String body = "";
+        try {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                body = new String(exchange.getRequestBody().readAllBytes());
+            }
+        } catch (Exception e) {}
+
+        String fullStr = (query != null ? query : "") + "&" + body;
+
+        try {
+            for (String par : fullStr.split("&")) {
+                String[] kv = par.split("=");
+                if (kv[0].equals(chave)) {
+                    String valor = kv.length > 1 ? kv[1] : "";
+                    return java.net.URLDecoder.decode(valor, "UTF-8");
+                }
+            }
+        } catch (Exception e) {}
         return "";
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
-        Connection conn = ConexaoBD.getInstance().getConexao();
 
-        if (method.equalsIgnoreCase("GET")) {
-            try {
+        // CORREÇÃO: Envolvendo tudo em try-catch para evitar ERR_EMPTY_RESPONSE
+        try {
+            Connection conn = ConexaoBD.getInstance().getConexao();
+
+            if (method.equalsIgnoreCase("GET")) {
                 Parametrizacao p = dao.buscar(conn);
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);
                 response.setCode(ResponseObject.CODE_OK);
                 response.setResult(p);
                 enviarResposta(exchange, response);
-            } catch (Exception e) {
-                enviarErro(exchange, e.getMessage());
-            }
-        } else if (method.equalsIgnoreCase("POST")) {
-            try {
-                String body = new String(exchange.getRequestBody().readAllBytes());
-                
+            } else if (method.equalsIgnoreCase("POST")) {
                 Parametrizacao p = new Parametrizacao();
-                p.setCnpj(extrairParam(body, "cnpj"));
-                p.setRazaoSocial(extrairParam(body, "razaoSocial"));
-                p.setNomeFantasia(extrairParam(body, "nomeFantasia"));
-                p.setEndereco(extrairParam(body, "endereco"));
-                p.setEmail(extrairParam(body, "email"));
-                p.setTelefone1(extrairParam(body, "telefone1"));
-                p.setResponsavel(extrairParam(body, "responsavel"));
+                p.setCnpj(extrairParam(exchange, "cnpj"));
+                p.setRazaoSocial(extrairParam(exchange, "razaoSocial"));
+                p.setNomeFantasia(extrairParam(exchange, "nomeFantasia"));
+                p.setEndereco(extrairParam(exchange, "endereco"));
+                p.setEmail(extrairParam(exchange, "email"));
+                p.setTelefone1(extrairParam(exchange, "telefone1"));
+                p.setResponsavel(extrairParam(exchange, "responsavel"));
 
                 dao.salvar(conn, p);
 
@@ -79,16 +89,16 @@ public class CParametrizacao implements HttpHandler {
                 response.setCode(ResponseObject.CODE_OK);
                 response.addMessage("Parâmetros salvos com sucesso!");
                 enviarResposta(exchange, response);
-            } catch (Exception e) {
-                enviarErro(exchange, e.getMessage());
             }
+        } catch (Exception e) {
+            enviarErro(exchange, "Erro de Conexão: " + e.getMessage());
         }
     }
 
     private void enviarErro(HttpExchange exchange, String msg) throws IOException {
         ResponseObject response = new ResponseObject();
         response.setStatus(ResponseObject.STATUS_FAIL);
-        response.setCode(ResponseObject.CODE_FAILED);
+        response.setCode(ResponseObject.CODE_ERROR);
         response.addMessage(msg);
         enviarResposta(exchange, response);
     }

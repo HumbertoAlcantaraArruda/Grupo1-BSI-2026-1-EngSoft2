@@ -68,10 +68,11 @@ public class CCompra implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String path = exchange.getRequestURI().getPath();
+        // CORREÇÃO: Envolvendo tudo em try-catch para evitar ERR_EMPTY_RESPONSE
+        try {
+            String path = exchange.getRequestURI().getPath();
 
-        if (path.equals("/comprar")) {
-            try {
+            if (path.equals("/comprar")) {
                 int idFornecedor = Integer.parseInt(extrairParam(exchange, "idFornecedor"));
                 int idUsuario = Integer.parseInt(extrairParam(exchange, "idUsuario"));
                 float valorTotal = Float.parseFloat(extrairParam(exchange, "valorTotal"));
@@ -92,14 +93,15 @@ public class CCompra implements HttpHandler {
 
                 ResponseObject response = efetuarCompraDeProdutos(idFornecedor, idUsuario, valorTotal, idsProdutos, quantidades, valoresUnitarios);
                 enviarResposta(exchange, response);
-
-            } catch (Exception e) {
-                ResponseObject errorResponse = new ResponseObject();
-                errorResponse.setStatus(ResponseObject.STATUS_FAIL);
-                errorResponse.setCode(ResponseObject.CODE_FAILED);
-                errorResponse.addMessage("Erro: " + e.getMessage());
-                enviarResposta(exchange, errorResponse);
             }
+        } catch (Exception e) {
+            ResponseObject errorResponse = new ResponseObject();
+            errorResponse.setStatus(ResponseObject.STATUS_FAIL);
+            errorResponse.setCode(ResponseObject.CODE_ERROR);
+            errorResponse.addMessage("Erro: " + e.getMessage());
+            try {
+                enviarResposta(exchange, errorResponse);
+            } catch (IOException ioe) {}
         }
     }
 
@@ -132,7 +134,7 @@ public class CCompra implements HttpHandler {
         } catch (Exception e) {
             try { if (conn != null) conn.rollback(); } catch (SQLException se) {}
             response.setStatus(ResponseObject.STATUS_FAIL);
-            response.setCode(ResponseObject.CODE_FAILED);
+            response.setCode(ResponseObject.CODE_ERROR);
             response.addMessage("Erro: " + e.getMessage());
         } finally {
             try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException se) {}
