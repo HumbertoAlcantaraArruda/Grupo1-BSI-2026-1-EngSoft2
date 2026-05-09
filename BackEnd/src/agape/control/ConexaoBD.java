@@ -12,6 +12,9 @@ public class ConexaoBD {
 
     private ConexaoBD() {
         try {
+            // Força o carregamento do Driver do MySQL
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
             Properties props = new Properties();
             props.load(new FileInputStream("BackEnd/config.properties"));
 
@@ -22,7 +25,7 @@ public class ConexaoBD {
             conn = DriverManager.getConnection(url, user, password);
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao conectar ao banco", e);
+            throw new RuntimeException("Erro de Conexão: " + e.getMessage() + " (Verifique se o arquivo BackEnd/config.properties existe)", e);
         }
     }
 
