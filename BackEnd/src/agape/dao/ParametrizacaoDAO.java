@@ -12,7 +12,6 @@ public class ParametrizacaoDAO {
     }
 
     public Parametrizacao buscar(Connection conn) throws SQLException {
-        // CORREÇÃO: P Maiúsculo
         String sql = "SELECT * FROM Parametrizacao LIMIT 1";
         try (PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
@@ -21,7 +20,6 @@ public class ParametrizacaoDAO {
                 p.setCnpj(rs.getString("cnpj"));
                 p.setRazaoSocial(rs.getString("razaoSocial"));
                 p.setNomeFantasia(rs.getString("nomeFantasia"));
-                // CORREÇÃO: logradouro em vez de endereco
                 p.setEndereco(rs.getString("logradouro"));
                 p.setBairro(rs.getString("bairro"));
                 p.setCidade(rs.getString("cidade"));
@@ -40,7 +38,6 @@ public class ParametrizacaoDAO {
         Parametrizacao atual = buscar(conn);
         
         if (atual == null) {
-            // CORREÇÃO: Parametrizacao (P) e logradouro
             String sql = "INSERT INTO Parametrizacao (cnpj, razaoSocial, nomeFantasia, logradouro, bairro, cidade, uf, cep, email, telefone1, responsavel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, p.getCnpj());
@@ -57,20 +54,17 @@ public class ParametrizacaoDAO {
                 stmt.executeUpdate();
             }
         } else {
-            // CORREÇÃO: Parametrizacao (P) e logradouro
-            String sql = "UPDATE Parametrizacao SET cnpj=?, razaoSocial=?, nomeFantasia=?, logradouro=?, bairro=?, cidade=?, uf=?, cep=?, email=?, telefone1=?, responsavel=?";
+            // ADICIONADO WHERE PARA GARANTIR O UPDATE NA LINHA CERTA
+            String sql = "UPDATE Parametrizacao SET cnpj=?, razaoSocial=?, nomeFantasia=?, logradouro=?, email=?, telefone1=?, responsavel=? WHERE cnpj=?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, p.getCnpj());
                 stmt.setString(2, p.getRazaoSocial());
                 stmt.setString(3, p.getNomeFantasia());
                 stmt.setString(4, p.getEndereco());
-                stmt.setString(5, p.getBairro());
-                stmt.setString(6, p.getCidade());
-                stmt.setString(7, p.getUf());
-                stmt.setString(8, p.getCep());
-                stmt.setString(9, p.getEmail());
-                stmt.setString(10, p.getTelefone1());
-                stmt.setString(11, p.getResponsavel());
+                stmt.setString(5, p.getEmail());
+                stmt.setString(6, p.getTelefone1());
+                stmt.setString(7, p.getResponsavel());
+                stmt.setString(8, atual.getCnpj()); // Onde era o CNPJ antigo
                 stmt.executeUpdate();
             }
         }

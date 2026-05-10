@@ -4,6 +4,8 @@ import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import java.sql.Connection;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import agape.dao.ParametrizacaoDAO;
 import agape.model.Parametrizacao;
@@ -27,9 +29,8 @@ public class CParametrizacao implements HttpHandler {
 
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json = response.toJson();
-        byte[] bytes = json.getBytes("UTF-8");
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         
-        // CORS
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -40,32 +41,30 @@ public class CParametrizacao implements HttpHandler {
         exchange.close();
     }
 
-    private String extrairParam(HttpExchange exchange, String chave) {
+    private String extrairParam(HttpExchange exchange, String body, String chave) {
         String query = exchange.getRequestURI().getQuery();
-        String body = "";
-        try {
-            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
-                body = new String(exchange.getRequestBody().readAllBytes());
-            }
-        } catch (Exception e) {}
+        String fullStr = (query != null ? query : "") + "&" + (body != null ? body : "");
 
-        String fullStr = (query != null ? query : "") + "&" + body;
-
-        try {
-            for (String par : fullStr.split("&")) {
-                String[] kv = par.split("=");
-                if (kv[0].equals(chave)) {
+        for (String par : fullStr.split("&")) {
+            String[] kv = par.split("=");
+            if (kv.length > 0 && kv[0].equals(chave)) {
+                try {
                     String valor = kv.length > 1 ? kv[1] : "";
-                    return java.net.URLDecoder.decode(valor, "UTF-8");
-                }
+                    return URLDecoder.decode(valor, StandardCharsets.UTF_8.toString());
+                } catch (Exception e) { return ""; }
             }
-        } catch (Exception e) {}
+        }
         return "";
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
+
+        if (method.equalsIgnoreCase("OPTIONS")) {
+            enviarResposta(exchange, new ResponseObject());
+            return;
+        }
 
         try {
             Connection conn = ConexaoBD.getInstance().getConexao();
@@ -78,14 +77,16 @@ public class CParametrizacao implements HttpHandler {
                 response.setResult(p);
                 enviarResposta(exchange, response);
             } else if (method.equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                
                 Parametrizacao p = new Parametrizacao();
-                p.setCnpj(extrairParam(exchange, "cnpj"));
-                p.setRazaoSocial(extrairParam(exchange, "razaoSocial"));
-                p.setNomeFantasia(extrairParam(exchange, "nomeFantasia"));
-                p.setEndereco(extrairParam(exchange, "endereco"));
-                p.setEmail(extrairParam(exchange, "email"));
-                p.setTelefone1(extrairParam(exchange, "telefone1"));
-                p.setResponsavel(extrairParam(exchange, "responsavel"));
+                p.setCnpj(extrairParam(exchange, body, "cnpj"));
+                p.setRazaoSocial(extrairParam(exchange, body, "razaoSocial"));
+                p.setNomeFantasia(extrairParam(exchange, body, "nomeFantasia"));
+                p.setEndereco(extrairParam(exchange, body, "endereco"));
+                p.setEmail(extrairParam(exchange, body, "email"));
+                p.setTelefone1(extrairParam(exchange, body, "telefone1"));
+                p.setResponsavel(extrairParam(exchange, body, "responsavel"));
 
                 dao.salvar(conn, p);
 
@@ -96,15 +97,11 @@ public class CParametrizacao implements HttpHandler {
                 enviarResposta(exchange, response);
             }
         } catch (Exception e) {
-            enviarErro(exchange, "Erro de Conexão: " + e.getMessage());
+            ResponseObject error = new ResponseObject();
+            error.setStatus(ResponseObject.STATUS_FAIL);
+            error.setCode(ResponseObject.CODE_ERROR);
+            error.addMessage("Erro: " + e.getMessage());
+            enviarResposta(exchange, error);
         }
-    }
-
-    private void enviarErro(HttpExchange exchange, String msg) throws IOException {
-        ResponseObject response = new ResponseObject();
-        response.setStatus(ResponseObject.STATUS_FAIL);
-        response.setCode(ResponseObject.CODE_ERROR);
-        response.addMessage(msg);
-        enviarResposta(exchange, response);
     }
 }

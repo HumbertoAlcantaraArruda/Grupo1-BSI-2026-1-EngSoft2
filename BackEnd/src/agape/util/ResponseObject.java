@@ -91,6 +91,7 @@ public class ResponseObject {
             } catch (Exception e) {
                 // Se não tiver toJson, envia o toString mas escapando caracteres problemáticos
                 String str = String.valueOf(result)
+                    .replace("\\", "\\\\")
                     .replace("\"", "\\\"")
                     .replace("\n", "\\n")
                     .replace("\r", "\\r");
