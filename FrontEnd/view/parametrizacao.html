@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agape 2026 - Parametrização</title>
+    <title>Agape 2026 - Parametrização Profissional</title>
     <style>
         :root {
             --bg-color: #1e293b;
@@ -13,6 +13,7 @@
             --primary-hover: #2563eb;
             --input-bg: #ffffff;
             --input-text: #1e293b;
+            --error: #ef4444;
         }
 
         body {
@@ -64,10 +65,20 @@
             width: 100%;
             padding: 0.7rem;
             border-radius: 6px;
-            border: none;
+            border: 2px solid transparent;
             background-color: var(--input-bg);
             color: var(--input-text);
             box-sizing: border-box;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .invalid {
+            border-color: var(--error) !important;
         }
 
         button {
@@ -103,48 +114,75 @@
     <div class="container">
         <h1>⚙️ Configurações da Paróquia</h1>
         
-        <div class="grid">
-            <div class="form-group">
-                <label>CNPJ</label>
-                <input type="text" id="cnpj" value="12.345.678/0001-90">
+        <form id="formParam">
+            <div class="grid">
+                <div class="form-group">
+                    <label>CNPJ</label>
+                    <input type="text" id="cnpj" placeholder="00.000.000/0000-00" maxlength="18">
+                </div>
+                <div class="form-group">
+                    <label>Razão Social</label>
+                    <input type="text" id="razaoSocial" required>
+                </div>
+                <div class="form-group">
+                    <label>Nome Fantasia</label>
+                    <input type="text" id="nomeFantasia" required>
+                </div>
+                <div class="form-group">
+                    <label>Responsável</label>
+                    <input type="text" id="responsavel" required>
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" id="telefone1" placeholder="(00) 00000-0000" maxlength="15">
+                </div>
             </div>
-            <div class="form-group">
-                <label>Razão Social</label>
-                <input type="text" id="razaoSocial" value="Paróquia Agape 2026">
-            </div>
-            <div class="form-group">
-                <label>Nome Fantasia</label>
-                <input type="text" id="nomeFantasia" value="Agape Comunidade">
-            </div>
-            <div class="form-group">
-                <label>Responsável</label>
-                <input type="text" id="responsavel" value="Padre João Silva">
-            </div>
-            <div class="form-group">
-                <label>E-mail</label>
-                <input type="email" id="email" value="contato@agape2026.com.br">
-            </div>
-            <div class="form-group">
-                <label>Telefone</label>
-                <input type="text" id="telefone1" value="(11) 98888-7777">
-            </div>
-        </div>
 
-        <div class="form-group">
-            <label>Endereço Completo</label>
-            <input type="text" id="endereco" value="Rua das Flores, 123 - Centro, São Paulo/SP">
-        </div>
+            <div class="form-group">
+                <label>Endereço Completo</label>
+                <input type="text" id="endereco" required>
+            </div>
 
-        <button onclick="salvarConfig()">Salvar Configurações</button>
+            <button type="submit">Salvar Configurações</button>
+        </form>
 
         <div id="resultado"></div>
     </div>
 
     <script>
-        async function salvarConfig() {
+        // MÁSCARA CNPJ
+        document.getElementById('cnpj').addEventListener('input', function (e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})/);
+            e.target.value = !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '/' + x[4] + (x[5] ? '-' + x[5] : '');
+        });
+
+        // MÁSCARA TELEFONE
+        document.getElementById('telefone1').addEventListener('input', function (e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+
+        // SUBMIT COM VALIDAÇÃO
+        document.getElementById('formParam').addEventListener('submit', async function(e) {
+            e.preventDefault();
             const resDiv = document.getElementById('resultado');
+            
+            // Validação simples de email
+            const email = document.getElementById('email');
+            if (!email.value.includes('@')) {
+                email.classList.add('invalid');
+                alert("E-mail inválido!");
+                return;
+            } else {
+                email.classList.remove('invalid');
+            }
+
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "Salvando...";
+            resDiv.innerHTML = "Processando...";
 
             const params = new URLSearchParams();
             params.append('cnpj', document.getElementById('cnpj').value);
@@ -161,11 +199,11 @@
                     body: params
                 });
                 const data = await response.json();
-                resDiv.innerHTML = "<strong>Sucesso!</strong><br>" + JSON.stringify(data, null, 2);
+                resDiv.innerHTML = "<strong>✅ Sucesso!</strong><br>" + JSON.stringify(data, null, 2);
             } catch (err) {
-                resDiv.innerHTML = "Erro ao conectar: " + err;
+                resDiv.innerHTML = "❌ Erro ao conectar: " + err;
             }
-        }
+        });
     </script>
 </body>
 </html>

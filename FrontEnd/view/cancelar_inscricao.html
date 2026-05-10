@@ -134,6 +134,10 @@
                 return;
             }
 
+            if (!confirm(`Tem certeza que deseja cancelar a inscrição #${id}?\nEsta ação promoverá o próximo da lista de espera.`)) {
+                return;
+            }
+
             resDiv.style.display = 'block';
             resDiv.innerHTML = "Processando...";
             resDiv.className = "";
