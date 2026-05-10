@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agape 2026 - Parametrização Profissional</title>
+    <title>Agape 2026 - Parametrização Completa</title>
     <style>
         :root {
             --bg-color: #1e293b;
@@ -13,7 +13,6 @@
             --primary-hover: #2563eb;
             --input-bg: #ffffff;
             --input-text: #1e293b;
-            --error: #ef4444;
         }
 
         body {
@@ -25,6 +24,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
 
         .container {
@@ -33,7 +33,7 @@
             border-radius: 12px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
         }
 
         h1 {
@@ -46,7 +46,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 1rem;
         }
 
@@ -58,28 +58,21 @@
             display: block;
             margin-bottom: 0.4rem;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        input {
+        input, textarea {
             width: 100%;
-            padding: 0.7rem;
+            padding: 0.6rem;
             border-radius: 6px;
             border: 2px solid transparent;
             background-color: var(--input-bg);
             color: var(--input-text);
             box-sizing: border-box;
             outline: none;
-            transition: border 0.3s;
         }
 
-        input:focus {
-            border-color: var(--primary);
-        }
-
-        .invalid {
-            border-color: var(--error) !important;
-        }
+        input:focus { border-color: var(--primary); }
 
         button {
             width: 100%;
@@ -95,9 +88,7 @@
             margin-top: 1rem;
         }
 
-        button:hover {
-            background-color: var(--primary-hover);
-        }
+        button:hover { background-color: var(--primary-hover); }
 
         #resultado {
             margin-top: 1.5rem;
@@ -106,25 +97,27 @@
             display: none;
             font-family: monospace;
             background: #0f172a;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>⚙️ Configurações da Paróquia</h1>
+        <h1>⚙️ Configurações da Paróquia (Completo)</h1>
         
         <form id="formParam">
             <div class="grid">
                 <div class="form-group">
                     <label>CNPJ</label>
-                    <input type="text" id="cnpj" placeholder="00.000.000/0000-00" maxlength="18">
+                    <input type="text" id="cnpj" placeholder="00.000.000/0000-00">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="grid-column: span 2;">
                     <label>Razão Social</label>
                     <input type="text" id="razaoSocial" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="grid-column: span 2;">
                     <label>Nome Fantasia</label>
                     <input type="text" id="nomeFantasia" required>
                 </div>
@@ -132,66 +125,78 @@
                     <label>Responsável</label>
                     <input type="text" id="responsavel" required>
                 </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Logradouro (Endereço)</label>
+                    <input type="text" id="endereco" required>
+                </div>
+                <div class="form-group">
+                    <label>Bairro</label>
+                    <input type="text" id="bairro">
+                </div>
+                <div class="form-group">
+                    <label>Cidade</label>
+                    <input type="text" id="cidade">
+                </div>
+                <div class="form-group">
+                    <label>UF</label>
+                    <input type="text" id="uf" maxlength="2">
+                </div>
+                <div class="form-group">
+                    <label>CEP</label>
+                    <input type="text" id="cep">
+                </div>
+            </div>
+
+            <div class="grid">
                 <div class="form-group">
                     <label>E-mail</label>
                     <input type="email" id="email" required>
                 </div>
                 <div class="form-group">
-                    <label>Telefone</label>
-                    <input type="text" id="telefone1" placeholder="(00) 00000-0000" maxlength="15">
+                    <label>Telefone 1</label>
+                    <input type="text" id="telefone1" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone 2</label>
+                    <input type="text" id="telefone2">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Site Oficial</label>
+                    <input type="text" id="site">
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Endereço Completo</label>
-                <input type="text" id="endereco" required>
+                <label>Observações Gerais</label>
+                <textarea id="obs" placeholder="Notas sobre a paróquia..."></textarea>
             </div>
 
-            <button type="submit">Salvar Configurações</button>
+            <button type="submit">Salvar Parametrização Completa</button>
         </form>
 
         <div id="resultado"></div>
     </div>
 
     <script>
-        // MÁSCARA CNPJ
-        document.getElementById('cnpj').addEventListener('input', function (e) {
+        // MÁSCARAS
+        document.getElementById('cnpj').addEventListener('input', e => {
             let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})/);
             e.target.value = !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '/' + x[4] + (x[5] ? '-' + x[5] : '');
         });
 
-        // MÁSCARA TELEFONE
-        document.getElementById('telefone1').addEventListener('input', function (e) {
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
-            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
-        });
-
-        // SUBMIT COM VALIDAÇÃO
         document.getElementById('formParam').addEventListener('submit', async function(e) {
             e.preventDefault();
             const resDiv = document.getElementById('resultado');
-            
-            // Validação simples de email
-            const email = document.getElementById('email');
-            if (!email.value.includes('@')) {
-                email.classList.add('invalid');
-                alert("E-mail inválido!");
-                return;
-            } else {
-                email.classList.remove('invalid');
-            }
-
             resDiv.style.display = 'block';
             resDiv.innerHTML = "Processando...";
 
             const params = new URLSearchParams();
-            params.append('cnpj', document.getElementById('cnpj').value);
-            params.append('razaoSocial', document.getElementById('razaoSocial').value);
-            params.append('nomeFantasia', document.getElementById('nomeFantasia').value);
-            params.append('responsavel', document.getElementById('responsavel').value);
-            params.append('email', document.getElementById('email').value);
-            params.append('telefone1', document.getElementById('telefone1').value);
-            params.append('endereco', document.getElementById('endereco').value);
+            const fields = ['cnpj', 'razaoSocial', 'nomeFantasia', 'responsavel', 'email', 'telefone1', 'telefone2', 'endereco', 'bairro', 'cidade', 'uf', 'cep', 'site', 'obs'];
+            
+            fields.forEach(f => params.append(f, document.getElementById(f).value));
 
             try {
                 const response = await fetch('http://localhost:8080/parametrizacao', {
@@ -203,7 +208,7 @@
                     resDiv.innerHTML = "<strong>✅ Sucesso!</strong><br>" + JSON.stringify(data, null, 2);
                     resDiv.style.color = "#4ade80";
                 } else {
-                    resDiv.innerHTML = "<strong>❌ Erro no Servidor:</strong><br>" + data.messages.join("<br>");
+                    resDiv.innerHTML = "<strong>❌ Erro:</strong><br>" + data.messages.join("<br>");
                     resDiv.style.color = "#f87171";
                 }
             } catch (err) {

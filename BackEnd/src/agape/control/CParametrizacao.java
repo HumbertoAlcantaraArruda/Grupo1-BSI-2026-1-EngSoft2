@@ -84,9 +84,16 @@ public class CParametrizacao implements HttpHandler {
                 p.setRazaoSocial(extrairParam(exchange, body, "razaoSocial"));
                 p.setNomeFantasia(extrairParam(exchange, body, "nomeFantasia"));
                 p.setEndereco(extrairParam(exchange, body, "endereco"));
+                p.setBairro(extrairParam(exchange, body, "bairro"));
+                p.setCidade(extrairParam(exchange, body, "cidade"));
+                p.setUf(extrairParam(exchange, body, "uf"));
+                p.setCep(extrairParam(exchange, body, "cep"));
                 p.setEmail(extrairParam(exchange, body, "email"));
                 p.setTelefone1(extrairParam(exchange, body, "telefone1"));
+                p.setTelefone2(extrairParam(exchange, body, "telefone2"));
+                p.setSite(extrairParam(exchange, body, "site"));
                 p.setResponsavel(extrairParam(exchange, body, "responsavel"));
+                p.setObs(extrairParam(exchange, body, "obs"));
 
                 dao.salvar(conn, p);
 
