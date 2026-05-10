@@ -9,7 +9,7 @@
             --bg-color: #1e293b;
             --card-bg: #334155;
             --text-color: #f1f5f9;
-            --primary: #ef4444; /* Vermelho para cancelamento */
+            --primary: #ef4444;
             --primary-hover: #dc2626;
             --input-bg: #ffffff;
             --input-text: #1e293b;
@@ -126,7 +126,7 @@
     <script>
         async function cancelarInscricao() {
             const id = document.getElementById('idInscricao').value;
-            const obs = document.getElementById('obs').value;
+            const obsValue = document.getElementById('obs').value;
             const resDiv = document.getElementById('resultado');
 
             if (!id) {
@@ -143,10 +143,14 @@
             resDiv.className = "";
 
             try {
-                // Usando POST com os parâmetros
+                // Usando URLSearchParams para garantir que o OBS chegue corretamente
+                const params = new URLSearchParams();
+                params.append('idInscricao', id);
+                params.append('obs', obsValue);
+
                 const response = await fetch('http://localhost:8080/cancelarInscricao', {
                     method: 'POST',
-                    body: `idInscricao=${id}&obs=${encodeURIComponent(obs)}`
+                    body: params
                 });
 
                 const data = await response.json();
