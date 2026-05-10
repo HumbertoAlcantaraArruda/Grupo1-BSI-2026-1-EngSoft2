@@ -6,8 +6,10 @@ import java.util.List;
 public class ResponseObject {
     public static final String STATUS_OK = "ok";
     public static final String STATUS_FAIL = "fail";
+    public static final String STATUS_FAILED = "fail";
     public static final int CODE_OK = 200;
     public static final int CODE_ERROR = 500;
+    public static final int CODE_FAILED = 500;
     public static final int CODE_NOT_FOUND = 404;
 
     private String status;
