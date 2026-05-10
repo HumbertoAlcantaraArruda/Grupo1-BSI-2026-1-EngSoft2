@@ -6,6 +6,8 @@ import com.sun.net.httpserver.HttpExchange;
 import java.time.LocalDateTime;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import agape.dao.CompraDAO;
 import agape.dao.ItemCompraDAO;
@@ -36,9 +38,8 @@ public class CCompra implements HttpHandler {
 
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json = response.toJson();
-        byte[] bytes = json.getBytes("UTF-8");
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         
-        // CORS
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -49,64 +50,77 @@ public class CCompra implements HttpHandler {
         exchange.close();
     }
 
-    private String extrairParam(HttpExchange exchange, String chave) {
+    private String extrairParam(HttpExchange exchange, String body, String chave) {
         String query = exchange.getRequestURI().getQuery();
-        String body = "";
-        try {
-            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
-                body = new String(exchange.getRequestBody().readAllBytes());
-            }
-        } catch (Exception e) {}
+        String fullStr = (query != null ? query : "") + "&" + (body != null ? body : "");
 
-        String fullStr = (query != null ? query : "") + "&" + body;
-
-        try {
-            for (String par : fullStr.split("&")) {
-                String[] kv = par.split("=");
-                if (kv[0].equals(chave)) {
+        for (String par : fullStr.split("&")) {
+            String[] kv = par.split("=");
+            if (kv.length > 0 && kv[0].equals(chave)) {
+                try {
                     String valor = kv.length > 1 ? kv[1] : "";
-                    return java.net.URLDecoder.decode(valor, "UTF-8");
-                }
+                    return URLDecoder.decode(valor, StandardCharsets.UTF_8.toString());
+                } catch (Exception e) { return ""; }
             }
-        } catch (Exception e) {}
+        }
         return "";
+    }
+
+    private float parseSafeFloat(String val) {
+        if (val == null || val.trim().isEmpty()) return 0;
+        try {
+            return Float.parseFloat(val.trim().replace(",", "."));
+        } catch (Exception e) { return 0; }
+    }
+
+    private int parseSafeInt(String val) {
+        if (val == null || val.trim().isEmpty()) return 0;
+        try {
+            return Integer.parseInt(val.trim());
+        } catch (Exception e) { return 0; }
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        String method = exchange.getRequestMethod();
+
+        if (method.equalsIgnoreCase("OPTIONS")) {
+            enviarResposta(exchange, new ResponseObject());
+            return;
+        }
+
         try {
-            String path = exchange.getRequestURI().getPath();
-
-            if (path.equals("/comprar")) {
-                int idFornecedor = Integer.parseInt(extrairParam(exchange, "idFornecedor"));
-                int idUsuario = Integer.parseInt(extrairParam(exchange, "idUsuario"));
-                float valorTotal = Float.parseFloat(extrairParam(exchange, "valorTotal"));
+            if (method.equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 
-                String[] idsProdutosStr = extrairParam(exchange, "idProdutos").split(",");
-                String[] quantidadesStr = extrairParam(exchange, "quantidades").split(",");
-                String[] valoresUnitariosStr = extrairParam(exchange, "valoresUnitarios").split(",");
+                int idFornecedor = parseSafeInt(extrairParam(exchange, body, "idFornecedor"));
+                int idUsuario = parseSafeInt(extrairParam(exchange, body, "idUsuario"));
+                float valorTotal = parseSafeFloat(extrairParam(exchange, body, "valorTotal"));
+                
+                String[] idsProdutosStr = extrairParam(exchange, body, "idProdutos").split(",");
+                String[] quantidadesStr = extrairParam(exchange, body, "quantidades").split(",");
+                String[] valoresUnitariosStr = extrairParam(exchange, body, "valoresUnitarios").split(",");
 
-                int[] idsProdutos = new int[idsProdutosStr.length];
-                int[] quantidades = new int[quantidadesStr.length];
-                float[] valoresUnitarios = new float[valoresUnitariosStr.length];
+                int n = idsProdutosStr.length;
+                int[] idsProdutos = new int[n];
+                int[] quantidades = new int[n];
+                float[] valoresUnitarios = new float[n];
 
-                for (int i = 0; i < idsProdutosStr.length; i++) {
-                    idsProdutos[i] = Integer.parseInt(idsProdutosStr[i]);
-                    quantidades[i] = Integer.parseInt(quantidadesStr[i]);
-                    valoresUnitarios[i] = Float.parseFloat(valoresUnitariosStr[i]);
+                for (int i = 0; i < n; i++) {
+                    idsProdutos[i] = parseSafeInt(idsProdutosStr[i]);
+                    quantidades[i] = parseSafeInt(quantidadesStr[i]);
+                    valoresUnitarios[i] = parseSafeFloat(valoresUnitariosStr[i]);
                 }
 
                 ResponseObject response = efetuarCompraDeProdutos(idFornecedor, idUsuario, valorTotal, idsProdutos, quantidades, valoresUnitarios);
                 enviarResposta(exchange, response);
             }
         } catch (Exception e) {
-            ResponseObject errorResponse = new ResponseObject();
-            errorResponse.setStatus(ResponseObject.STATUS_FAIL);
-            errorResponse.setCode(ResponseObject.CODE_ERROR);
-            errorResponse.addMessage("Erro: " + e.getMessage());
-            try {
-                enviarResposta(exchange, errorResponse);
-            } catch (IOException ioe) {}
+            ResponseObject error = new ResponseObject();
+            error.setStatus(ResponseObject.STATUS_FAIL);
+            error.setCode(ResponseObject.CODE_ERROR);
+            error.addMessage("Erro: " + e.getMessage());
+            enviarResposta(exchange, error);
         }
     }
 
@@ -116,22 +130,29 @@ public class CCompra implements HttpHandler {
         try {
             conn = ConexaoBD.getInstance().getConexao();
             conn.setAutoCommit(false);
+
             Compra compra = new Compra();
             compra.setDataHora(LocalDateTime.now());
             compra.setValorTotal(valorTotal);
             compra.setIdFornecedor(idFornecedor);
             compra.setIdUsuario(idUsuario);
 
-            int idDaCompraGerada = compraDAO.inserir(conn, compra);
+            int idCompra = compraDAO.inserir(conn, compra);
+
             for (int i = 0; i < idsProdutos.length; i++) {
-                ItemCompra item = new ItemCompra();
-                item.setIdCompra(idDaCompraGerada);
-                item.setIdProd(idsProdutos[i]);
-                item.setQuantidade(quantidades[i]);
-                item.setValorUnitario(valoresUnitarios[i]);
-                itemCompraDAO.inserir(conn, item);
-                produtoDAO.atualizarEstoque(conn, idsProdutos[i], quantidades[i]);
+                if (idsProdutos[i] > 0) {
+                    ItemCompra item = new ItemCompra();
+                    item.setIdCompra(idCompra);
+                    item.setIdProd(idsProdutos[i]);
+                    item.setQuantidade(quantidades[i]);
+                    item.setValorUnitario(valoresUnitarios[i]);
+                    itemCompraDAO.inserir(conn, item);
+                    
+                    // Atualiza estoque (quantidade comprada aumenta o estoque)
+                    produtoDAO.atualizarEstoque(conn, idsProdutos[i], quantidades[i]);
+                }
             }
+
             conn.commit();
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
@@ -140,7 +161,7 @@ public class CCompra implements HttpHandler {
             try { if (conn != null) conn.rollback(); } catch (SQLException se) {}
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_ERROR);
-            response.addMessage("Erro: " + e.getMessage());
+            response.addMessage("Erro ao processar compra: " + e.getMessage());
         } finally {
             try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException se) {}
         }
