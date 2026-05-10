@@ -28,7 +28,13 @@ public class CParametrizacao implements HttpHandler {
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json = response.toJson();
         byte[] bytes = json.getBytes("UTF-8");
+        
+        // CORS
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
         exchange.getResponseBody().write(bytes);
         exchange.close();
@@ -61,7 +67,6 @@ public class CParametrizacao implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
 
-        // CORREÇÃO: Envolvendo tudo em try-catch para evitar ERR_EMPTY_RESPONSE
         try {
             Connection conn = ConexaoBD.getInstance().getConexao();
 
