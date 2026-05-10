@@ -1,36 +1,45 @@
 # 📋 Guia de Defesa Técnica - Projeto Agape 2026 (Por: Christiano)
 
-Este documento detalha as implementações técnicas e a visão arquitetural que apliquei para garantir que o sistema siga rigorosamente a **ERS (Especificação de Requisitos de Software) v9**.
+Este documento detalha as implementações técnicas e a visão arquitetural que apliquei, integrando o código diretamente com as especificações da **ERS (Especificação de Requisitos de Software) v9**.
 
 ---
 
 ## 🚀 1. Visão de Back-end Desacoplado (Generalização)
-Um dos meus principais focos foi garantir que o **Back-end não seja dependente do Front-end**.
-- **Independência de Interface:** Desenvolvi os controladores para que recebam dados de forma padronizada. Isso significa que a nossa implementação atual em HTML pode ser substituída por um aplicativo mobile ou outro sistema, e o Back-end continuará processando as regras de negócio corretamente.
-- **Princípio da Responsabilidade Única:** O Front-end apenas captura e exibe os dados (Captura), enquanto a **Regra de Negócio Real** está protegida dentro das classes Java.
-
-## 🏛️ 2. Arquitetura e Padrões (MVC e Singleton)
-Seguindo o padrão de projeto aprovado:
-- **Controllers (`CCompra`, `CParametrizacao`, `CInscricao`):** Atuam como os "maestros" do sistema. Eu implementei métodos de extração que limpam e validam os dados antes de qualquer processamento, seguindo os fluxos definidos na **ERS v9**.
-- **Singleton (`ConexaoBD`):** Garanti que a comunicação com o MySQL seja eficiente e segura, evitando o desperdício de memória e conexões abertas.
-
-## ⚙️ 3. Regras de Negócio em Funções Específicas
-Para cada módulo, tive o cuidado de seguir as regras operacionais da paróquia:
-
-### A. Parametrização (`ParametrizacaoDAO.java`)
-- **Gestão de Registro Único:** Implementei uma lógica que garante que a paróquia tenha apenas uma configuração oficial. O sistema decide de forma inteligente entre um `INSERT` ou `UPDATE`, mantendo a integridade do banco.
-- **Mapeamento Total:** Garanti a persistência de todos os 23 atributos, incluindo logotipos e dados fiscais, sem perda de informação.
-
-### B. Gestão de Compras (`CCompra.java`)
-- **Tratamento de Dados de Entrada:** Usei o método `parseSafeFloat` para criar uma camada de compatibilidade. O usuário pode digitar valores com vírgula ou ponto, e o sistema adapta o dado automaticamente sem gerar erros.
-- **Consistência de Inventário:** Ao registrar uma compra, o sistema executa uma **Transação Atômica**: grava o histórico em `ItemCompra` e atualiza o saldo em `Produto` de forma simultânea. Se um falhar, o outro não é gravado, mantendo o estoque sempre auditável.
-
-### C. Segurança no Cancelamento (`CInscricao.java`)
-- **Validação de Fluxo:** Implementei a regra que impede o cancelamento de itens já inativos. Isso protege o banco de dados contra estados inconsistentes e garante que o histórico de motivos (`OBS`) seja preservado.
-
-## 🛡️ 4. Robustez de Comunicação (JSON)
-- **Blindagem de Dados:** Reescrevi o método `toJson` da classe `ResponseObject` para que ele realize o escape automático de caracteres especiais. Isso resolveu definitivamente os erros de comunicação que aconteciam quando o usuário digitava aspas ou quebras de linha em campos de texto (como Observações).
+Um dos meus principais focos foi garantir que o **Back-end seja um motor de regras independente**.
+- **Independência de Interface:** Os controladores foram desenhados para serem agnósticos. A nossa implementação atual em HTML/JS é apenas uma das "faces" possíveis; o Back-end está pronto para suportar Mobile ou Desktop sem alterações nas regras de negócio.
+- **Princípio da Responsabilidade Única:** O Front-end captura os dados, mas a **inteligência e proteção dos dados** residem nas classes Java.
 
 ---
-**Conclusão para a Apresentação:**
-Toda a minha implementação foi guiada pelo documento **ERS v9**. O resultado é um sistema robusto, onde o Back-end funciona como um motor de regras independente, pronto para suportar qualquer tipo de interface de captura de dados.
+
+## 🏛️ 2. Mapeamento de Regras de Negócio (Flashes da ERS v9)
+
+Para cada funcionalidade, tive o cuidado de seguir o fluxo documental. Abaixo, destaco como o código reflete a ERS:
+
+### A. Gestão de Compras (`CCompra.java`)
+> **Flash ERS v9:** *"As compras realizadas junto aos fornecedores podem ser registradas no sistema, atualizando automaticamente o estoque com as quantidades recebidas."*
+
+- **Minha Implementação:** Desenvolvi a função `efetuarCompraDeProdutos` que executa essa regra de forma atômica. Ela registra o custo histórico em `ItemCompra` e dispara o gatilho de atualização de saldo no `ProdutoDAO`.
+- **Tratamento de Dados:** Implementei o `parseSafeFloat` para garantir que o fluxo não seja interrompido por erros de formatação decimal (vírgula/ponto), garantindo a robustez exigida na ERS.
+
+### B. Cancelamento de Inscrições (`CInscricao.java`)
+> **Flash ERS v9:** *"O cancelamento de inscrições pode ser realizado... em situações administrativas. Em caso de cancelamento, a vaga liberada é atribuída automaticamente ao primeiro inscrito da lista de espera."*
+
+- **Minha Implementação:** No método de cancelamento, adicionei a trava de segurança que verifica o status atual antes de processar. Isso garante que o fluxo de "liberação de vaga" ocorra apenas para inscrições que estavam efetivamente ativas, protegendo a lógica da lista de espera mencionada na ERS.
+- **Auditoria:** Garanti a persistência da `OBS` (motivo), cumprindo o requisito de registro de situações administrativas.
+
+### C. Parametrização do Sistema (`ParametrizacaoDAO.java`)
+> **Flash ERS v9:** *"O sistema deve integrar informações de eventos e produtos... padronizando as informações e apoio à tomada de decisão."*
+
+- **Minha Implementação:** Foquei na padronização total. Mapeei os 23 atributos institucionais (CNPJ, Endereço, Dados da FIPP/Unoeste) para que o sistema tenha uma "identidade única", conforme as referências da página de Dados da Empresa na ERS.
+- **UX Inteligente:** Criei o modal de comparação no Front-end para que o Administrador revise as mudanças antes da persistência, evitando alterações acidentais em dados sensíveis da instituição.
+
+---
+
+## 🛠️ 3. Arquitetura Técnica e Estabilidade
+- **Padrão Singleton:** Mantive a classe `ConexaoBD` centralizada, garantindo que todas as operações sigam o princípio de conexão única e eficiente.
+- **Blindagem JSON (`ResponseObject.java`):** Para cumprir o requisito de "Tolerância a Falhas (TF)" da ERS, reescrevi a serialização JSON. Agora, o sistema é imune a caracteres especiais, garantindo que a troca de dados entre Java e Web seja sempre íntegra.
+
+---
+
+**Conclusão para a Banca:**
+Minha atuação no projeto foi além da codificação; realizei uma **tradução técnica da ERS v9 para o ambiente Java**. O sistema resultante não é apenas um software funcional, mas um motor de regras de negócio desacoplado, resiliente e fiel aos requisitos acadêmicos e operacionais estabelecidos.
