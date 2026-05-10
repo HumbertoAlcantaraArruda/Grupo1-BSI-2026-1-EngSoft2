@@ -19,8 +19,13 @@ public class Parametrizacao {
     private String logotipoGrande;
     private String inscricaoEstadual;
     private String inscricaoMunicipal;
+    private String numEndereco;
+    private String pais;
+    private String moedaPadrao;
+    private String fusoHorario;
     private String obs;
 
+    // Getters e Setters
     public String getCnpj() { return cnpj; }
     public void setCnpj(String cnpj) { this.cnpj = cnpj; }
     public String getRazaoSocial() { return razaoSocial; }
@@ -57,6 +62,14 @@ public class Parametrizacao {
     public void setInscricaoEstadual(String inscricaoEstadual) { this.inscricaoEstadual = inscricaoEstadual; }
     public String getInscricaoMunicipal() { return inscricaoMunicipal; }
     public void setInscricaoMunicipal(String inscricaoMunicipal) { this.inscricaoMunicipal = inscricaoMunicipal; }
+    public String getNumEndereco() { return numEndereco; }
+    public void setNumEndereco(String numEndereco) { this.numEndereco = numEndereco; }
+    public String getPais() { return pais; }
+    public void setPais(String pais) { this.pais = pais; }
+    public String getMoedaPadrao() { return moedaPadrao; }
+    public void setMoedaPadrao(String moedaPadrao) { this.moedaPadrao = moedaPadrao; }
+    public String getFusoHorario() { return fusoHorario; }
+    public void setFusoHorario(String fusoHorario) { this.fusoHorario = fusoHorario; }
     public String getObs() { return obs; }
     public void setObs(String obs) { this.obs = obs; }
 
@@ -75,6 +88,14 @@ public class Parametrizacao {
             "\"telefone2\":\"" + (telefone2 != null ? telefone2 : "") + "\"," +
             "\"site\":\"" + (site != null ? site : "") + "\"," +
             "\"responsavel\":\"" + (responsavel != null ? responsavel : "") + "\"," +
+            "\"logotipoPequeno\":\"" + (logotipoPequeno != null ? logotipoPequeno : "") + "\"," +
+            "\"logotipoGrande\":\"" + (logotipoGrande != null ? logotipoGrande : "") + "\"," +
+            "\"inscricaoEstadual\":\"" + (inscricaoEstadual != null ? inscricaoEstadual : "") + "\"," +
+            "\"inscricaoMunicipal\":\"" + (inscricaoMunicipal != null ? inscricaoMunicipal : "") + "\"," +
+            "\"numEndereco\":\"" + (numEndereco != null ? numEndereco : "") + "\"," +
+            "\"pais\":\"" + (pais != null ? pais : "") + "\"," +
+            "\"moedaPadrao\":\"" + (moedaPadrao != null ? moedaPadrao : "") + "\"," +
+            "\"fusoHorario\":\"" + (fusoHorario != null ? fusoHorario : "") + "\"," +
             "\"obs\":\"" + (obs != null ? obs.replace("\n", " ").replace("\"", "'") : "") + "\"" +
             "}";
     }

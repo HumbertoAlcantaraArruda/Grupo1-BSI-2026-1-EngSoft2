@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agape 2026 - Parametrização Completa</title>
+    <title>Agape 2026 - Parametrização Total</title>
     <style>
         :root {
             --bg-color: #1e293b;
@@ -33,7 +33,7 @@
             border-radius: 12px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
         }
 
         h1 {
@@ -44,32 +44,41 @@
             margin-bottom: 1.5rem;
         }
 
+        .section-title {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin: 1.5rem 0 0.8rem 0;
+            border-left: 4px solid var(--primary);
+            padding-left: 10px;
+        }
+
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
         }
 
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
         }
 
         label {
             display: block;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.3rem;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         input, textarea {
             width: 100%;
-            padding: 0.6rem;
-            border-radius: 6px;
+            padding: 0.5rem;
+            border-radius: 4px;
             border: 2px solid transparent;
             background-color: var(--input-bg);
             color: var(--input-text);
             box-sizing: border-box;
             outline: none;
+            font-size: 0.9rem;
         }
 
         input:focus { border-color: var(--primary); }
@@ -85,7 +94,7 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.3s;
-            margin-top: 1rem;
+            margin-top: 2rem;
         }
 
         button:hover { background-color: var(--primary-hover); }
@@ -99,38 +108,46 @@
             background: #0f172a;
             white-space: pre-wrap;
             word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>⚙️ Configurações da Paróquia (Completo)</h1>
+        <h1>⚙️ Configurações da Paróquia (Mapeamento 100%)</h1>
         
         <form id="formParam">
+            <div class="section-title">Identificação</div>
             <div class="grid">
-                <div class="form-group">
+                <div class="form-group" style="grid-column: span 1;">
                     <label>CNPJ</label>
                     <input type="text" id="cnpj" placeholder="00.000.000/0000-00">
                 </div>
-                <div class="form-group" style="grid-column: span 2;">
+                <div class="form-group" style="grid-column: span 3;">
                     <label>Razão Social</label>
-                    <input type="text" id="razaoSocial" required>
+                    <input type="text" id="razaoSocial">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
                     <label>Nome Fantasia</label>
-                    <input type="text" id="nomeFantasia" required>
+                    <input type="text" id="nomeFantasia">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="grid-column: span 2;">
                     <label>Responsável</label>
-                    <input type="text" id="responsavel" required>
+                    <input type="text" id="responsavel">
                 </div>
             </div>
 
+            <div class="section-title">Endereço e Localização</div>
             <div class="grid">
                 <div class="form-group" style="grid-column: span 2;">
-                    <label>Logradouro (Endereço)</label>
-                    <input type="text" id="endereco" required>
+                    <label>Logradouro</label>
+                    <input type="text" id="endereco">
+                </div>
+                <div class="form-group">
+                    <label>Número</label>
+                    <input type="text" id="numEndereco">
                 </div>
                 <div class="form-group">
                     <label>Bairro</label>
@@ -148,16 +165,21 @@
                     <label>CEP</label>
                     <input type="text" id="cep">
                 </div>
+                <div class="form-group">
+                    <label>País</label>
+                    <input type="text" id="pais" value="Brasil">
+                </div>
             </div>
 
+            <div class="section-title">Contato e Web</div>
             <div class="grid">
-                <div class="form-group">
+                <div class="form-group" style="grid-column: span 2;">
                     <label>E-mail</label>
-                    <input type="email" id="email" required>
+                    <input type="email" id="email">
                 </div>
                 <div class="form-group">
                     <label>Telefone 1</label>
-                    <input type="text" id="telefone1" required>
+                    <input type="text" id="telefone1">
                 </div>
                 <div class="form-group">
                     <label>Telefone 2</label>
@@ -167,36 +189,59 @@
                     <label>Site Oficial</label>
                     <input type="text" id="site">
                 </div>
+                <div class="form-group">
+                    <label>Moeda Padrão</label>
+                    <input type="text" id="moedaPadrao" value="Real (R$)">
+                </div>
+                <div class="form-group">
+                    <label>Fuso Horário</label>
+                    <input type="text" id="fusoHorario" value="GMT-3">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Observações Gerais</label>
-                <textarea id="obs" placeholder="Notas sobre a paróquia..."></textarea>
+            <div class="section-title">Documentação e Logos</div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Insc. Estadual</label>
+                    <input type="text" id="inscricaoEstadual">
+                </div>
+                <div class="form-group">
+                    <label>Insc. Municipal</label>
+                    <input type="text" id="inscricaoMunicipal">
+                </div>
+                <div class="form-group">
+                    <label>URL Logo Pequeno</label>
+                    <input type="text" id="logotipoPequeno">
+                </div>
+                <div class="form-group">
+                    <label>URL Logo Grande</label>
+                    <input type="text" id="logotipoGrande">
+                </div>
             </div>
 
-            <button type="submit">Salvar Parametrização Completa</button>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label>Observações Gerais (OBS)</label>
+                <textarea id="obs" style="height: 60px;"></textarea>
+            </div>
+
+            <button type="submit">Salvar Tudo no Banco de Dados</button>
         </form>
 
         <div id="resultado"></div>
     </div>
 
     <script>
-        // MÁSCARAS
-        document.getElementById('cnpj').addEventListener('input', e => {
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})/);
-            e.target.value = !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '/' + x[4] + (x[5] ? '-' + x[5] : '');
-        });
-
         document.getElementById('formParam').addEventListener('submit', async function(e) {
             e.preventDefault();
             const resDiv = document.getElementById('resultado');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "Processando...";
+            resDiv.innerHTML = "Salvando...";
 
             const params = new URLSearchParams();
-            const fields = ['cnpj', 'razaoSocial', 'nomeFantasia', 'responsavel', 'email', 'telefone1', 'telefone2', 'endereco', 'bairro', 'cidade', 'uf', 'cep', 'site', 'obs'];
-            
-            fields.forEach(f => params.append(f, document.getElementById(f).value));
+            const inputs = document.querySelectorAll('input, textarea');
+            inputs.forEach(input => {
+                params.append(input.id, input.value);
+            });
 
             try {
                 const response = await fetch('http://localhost:8080/parametrizacao', {
@@ -204,15 +249,10 @@
                     body: params
                 });
                 const data = await response.json();
-                if (data.status === 'ok') {
-                    resDiv.innerHTML = "<strong>✅ Sucesso!</strong><br>" + JSON.stringify(data, null, 2);
-                    resDiv.style.color = "#4ade80";
-                } else {
-                    resDiv.innerHTML = "<strong>❌ Erro:</strong><br>" + data.messages.join("<br>");
-                    resDiv.style.color = "#f87171";
-                }
+                resDiv.innerHTML = "<strong>✅ Resposta do Servidor:</strong><br>" + JSON.stringify(data, null, 2);
+                resDiv.style.color = data.status === 'ok' ? "#4ade80" : "#f87171";
             } catch (err) {
-                resDiv.innerHTML = "❌ Erro ao conectar: " + err;
+                resDiv.innerHTML = "❌ Erro: " + err;
             }
         });
     </script>

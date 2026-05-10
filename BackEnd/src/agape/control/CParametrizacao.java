@@ -93,6 +93,14 @@ public class CParametrizacao implements HttpHandler {
                 p.setTelefone2(extrairParam(exchange, body, "telefone2"));
                 p.setSite(extrairParam(exchange, body, "site"));
                 p.setResponsavel(extrairParam(exchange, body, "responsavel"));
+                p.setLogotipoPequeno(extrairParam(exchange, body, "logotipoPequeno"));
+                p.setLogotipoGrande(extrairParam(exchange, body, "logotipoGrande"));
+                p.setInscricaoEstadual(extrairParam(exchange, body, "inscricaoEstadual"));
+                p.setInscricaoMunicipal(extrairParam(exchange, body, "inscricaoMunicipal"));
+                p.setNumEndereco(extrairParam(exchange, body, "numEndereco"));
+                p.setPais(extrairParam(exchange, body, "pais"));
+                p.setMoedaPadrao(extrairParam(exchange, body, "moedaPadrao"));
+                p.setFusoHorario(extrairParam(exchange, body, "fusoHorario"));
                 p.setObs(extrairParam(exchange, body, "obs"));
 
                 dao.salvar(conn, p);
@@ -100,7 +108,7 @@ public class CParametrizacao implements HttpHandler {
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);
                 response.setCode(ResponseObject.CODE_OK);
-                response.addMessage("Parâmetros salvos com sucesso!");
+                response.addMessage("Parametrização TOTAL salva com sucesso!");
                 enviarResposta(exchange, response);
             }
         } catch (Exception e) {
