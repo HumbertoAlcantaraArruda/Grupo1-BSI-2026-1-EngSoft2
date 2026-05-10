@@ -89,7 +89,9 @@ public class ResponseObject {
                 var metodo = result.getClass().getMethod("toJson");
                 json.append("\"result\":").append(metodo.invoke(result));
             } catch (Exception e) {
-                json.append("\"result\":\"").append(result).append("\"");
+                // Se não tiver toJson, envia o toString mas escapando aspas
+                String str = String.valueOf(result).replace("\"", "\\\"");
+                json.append("\"result\":\"").append(str).append("\"");
             }
         }
 
