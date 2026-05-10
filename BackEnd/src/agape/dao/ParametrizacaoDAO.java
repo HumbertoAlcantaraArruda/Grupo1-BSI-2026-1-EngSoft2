@@ -12,7 +12,8 @@ public class ParametrizacaoDAO {
     }
 
     public Parametrizacao buscar(Connection conn) throws SQLException {
-        String sql = "SELECT * FROM parametrizacao LIMIT 1";
+        // CORREÇÃO: P Maiúsculo
+        String sql = "SELECT * FROM Parametrizacao LIMIT 1";
         try (PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             if (rs.next()) {
@@ -20,7 +21,8 @@ public class ParametrizacaoDAO {
                 p.setCnpj(rs.getString("cnpj"));
                 p.setRazaoSocial(rs.getString("razaoSocial"));
                 p.setNomeFantasia(rs.getString("nomeFantasia"));
-                p.setEndereco(rs.getString("endereco"));
+                // CORREÇÃO: logradouro em vez de endereco
+                p.setEndereco(rs.getString("logradouro"));
                 p.setBairro(rs.getString("bairro"));
                 p.setCidade(rs.getString("cidade"));
                 p.setUf(rs.getString("uf"));
@@ -38,7 +40,8 @@ public class ParametrizacaoDAO {
         Parametrizacao atual = buscar(conn);
         
         if (atual == null) {
-            String sql = "INSERT INTO parametrizacao (cnpj, razaoSocial, nomeFantasia, endereco, bairro, cidade, uf, cep, email, telefone1, responsavel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // CORREÇÃO: Parametrizacao (P) e logradouro
+            String sql = "INSERT INTO Parametrizacao (cnpj, razaoSocial, nomeFantasia, logradouro, bairro, cidade, uf, cep, email, telefone1, responsavel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, p.getCnpj());
                 stmt.setString(2, p.getRazaoSocial());
@@ -54,7 +57,8 @@ public class ParametrizacaoDAO {
                 stmt.executeUpdate();
             }
         } else {
-            String sql = "UPDATE parametrizacao SET cnpj=?, razaoSocial=?, nomeFantasia=?, endereco=?, bairro=?, cidade=?, uf=?, cep=?, email=?, telefone1=?, responsavel=?";
+            // CORREÇÃO: Parametrizacao (P) e logradouro
+            String sql = "UPDATE Parametrizacao SET cnpj=?, razaoSocial=?, nomeFantasia=?, logradouro=?, bairro=?, cidade=?, uf=?, cep=?, email=?, telefone1=?, responsavel=?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, p.getCnpj());
                 stmt.setString(2, p.getRazaoSocial());
