@@ -3,20 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agape 2026 - Parametrização Total</title>
+    <title>Agape 2026 - Parametrização Inteligente</title>
     <style>
         :root {
-            --bg-color: #1e293b;
-            --card-bg: #334155;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
             --text-color: #f1f5f9;
             --primary: #3b82f6;
             --primary-hover: #2563eb;
-            --input-bg: #ffffff;
-            --input-text: #1e293b;
+            --secondary: #64748b;
+            --input-bg: #f8fafc;
+            --input-text: #0f172a;
+            --accent: #fbbf24;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
@@ -29,219 +31,240 @@
 
         .container {
             background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             width: 100%;
             max-width: 900px;
+            border: 1px solid #334155;
         }
 
         h1 {
             margin-top: 0;
-            font-size: 1.5rem;
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            text-align: center;
         }
 
         .section-title {
-            font-size: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             color: #94a3b8;
-            margin: 1.5rem 0 0.8rem 0;
-            border-left: 4px solid var(--primary);
-            padding-left: 10px;
+            margin: 1.5rem 0 1rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #334155;
+            margin-left: 15px;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
+            gap: 1.2rem;
         }
 
-        .form-group {
-            margin-bottom: 0.8rem;
-        }
+        .form-group { margin-bottom: 1rem; }
 
         label {
             display: block;
-            margin-bottom: 0.3rem;
-            font-weight: 600;
-            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #cbd5e1;
         }
 
         input, textarea {
             width: 100%;
-            padding: 0.5rem;
-            border-radius: 4px;
-            border: 2px solid transparent;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #334155;
             background-color: var(--input-bg);
             color: var(--input-text);
             box-sizing: border-box;
             outline: none;
-            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-size: 0.95rem;
         }
 
-        input:focus { border-color: var(--primary); }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
 
-        button {
+        .btn-save {
             width: 100%;
-            padding: 1rem;
-            background-color: var(--primary);
+            padding: 1.2rem;
+            background: linear-gradient(to right, #3b82f6, #2563eb);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 1.1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: transform 0.2s, box-shadow 0.2s;
             margin-top: 2rem;
         }
 
-        button:hover { background-color: var(--primary-hover); }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4); }
+
+        /* MODAL DE COMPARAÇÃO */
+        #modalCompare {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid #3b82f6;
+        }
+
+        .change-item {
+            background: #0f172a;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .change-old { color: #f87171; text-decoration: line-through; margin-right: 10px; }
+        .change-new { color: #4ade80; font-weight: bold; }
 
         #resultado {
             margin-top: 1.5rem;
             padding: 1rem;
-            border-radius: 6px;
+            border-radius: 8px;
             display: none;
-            font-family: monospace;
-            background: #0f172a;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 200px;
-            overflow-y: auto;
+            font-family: 'Fira Code', monospace;
+            background: #020617;
+            border: 1px solid #1e293b;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>⚙️ Configurações da Paróquia (Mapeamento 100%)</h1>
+        <h1>⚙️ Configurações da Paróquia</h1>
         
         <form id="formParam">
             <div class="section-title">Identificação</div>
             <div class="grid">
-                <div class="form-group" style="grid-column: span 1;">
-                    <label>CNPJ</label>
-                    <input type="text" id="cnpj" placeholder="00.000.000/0000-00">
-                </div>
-                <div class="form-group" style="grid-column: span 3;">
-                    <label>Razão Social</label>
-                    <input type="text" id="razaoSocial">
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>Nome Fantasia</label>
-                    <input type="text" id="nomeFantasia">
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>Responsável</label>
-                    <input type="text" id="responsavel">
-                </div>
+                <div class="form-group"><label>CNPJ</label><input type="text" id="cnpj"></div>
+                <div class="form-group" style="grid-column: span 3;"><label>Razão Social</label><input type="text" id="razaoSocial"></div>
+                <div class="form-group" style="grid-column: span 2;"><label>Nome Fantasia</label><input type="text" id="nomeFantasia"></div>
+                <div class="form-group" style="grid-column: span 2;"><label>Responsável</label><input type="text" id="responsavel"></div>
             </div>
 
-            <div class="section-title">Endereço e Localização</div>
+            <div class="section-title">Endereço</div>
             <div class="grid">
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>Logradouro</label>
-                    <input type="text" id="endereco">
-                </div>
-                <div class="form-group">
-                    <label>Número</label>
-                    <input type="text" id="numEndereco">
-                </div>
-                <div class="form-group">
-                    <label>Bairro</label>
-                    <input type="text" id="bairro">
-                </div>
-                <div class="form-group">
-                    <label>Cidade</label>
-                    <input type="text" id="cidade">
-                </div>
-                <div class="form-group">
-                    <label>UF</label>
-                    <input type="text" id="uf" maxlength="2">
-                </div>
-                <div class="form-group">
-                    <label>CEP</label>
-                    <input type="text" id="cep">
-                </div>
-                <div class="form-group">
-                    <label>País</label>
-                    <input type="text" id="pais" value="Brasil">
-                </div>
+                <div class="form-group" style="grid-column: span 2;"><label>Logradouro</label><input type="text" id="endereco"></div>
+                <div class="form-group"><label>Bairro</label><input type="text" id="bairro"></div>
+                <div class="form-group"><label>Cidade</label><input type="text" id="cidade"></div>
             </div>
 
-            <div class="section-title">Contato e Web</div>
+            <div class="section-title">Contato</div>
             <div class="grid">
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>E-mail</label>
-                    <input type="email" id="email">
-                </div>
-                <div class="form-group">
-                    <label>Telefone 1</label>
-                    <input type="text" id="telefone1">
-                </div>
-                <div class="form-group">
-                    <label>Telefone 2</label>
-                    <input type="text" id="telefone2">
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>Site Oficial</label>
-                    <input type="text" id="site">
-                </div>
-                <div class="form-group">
-                    <label>Moeda Padrão</label>
-                    <input type="text" id="moedaPadrao" value="Real (R$)">
-                </div>
-                <div class="form-group">
-                    <label>Fuso Horário</label>
-                    <input type="text" id="fusoHorario" value="GMT-3">
-                </div>
+                <div class="form-group" style="grid-column: span 2;"><label>E-mail</label><input type="email" id="email"></div>
+                <div class="form-group"><label>Telefone 1</label><input type="text" id="telefone1"></div>
+                <div class="form-group"><label>Site</label><input type="text" id="site"></div>
             </div>
 
-            <div class="section-title">Documentação e Logos</div>
-            <div class="grid">
-                <div class="form-group">
-                    <label>Insc. Estadual</label>
-                    <input type="text" id="inscricaoEstadual">
-                </div>
-                <div class="form-group">
-                    <label>Insc. Municipal</label>
-                    <input type="text" id="inscricaoMunicipal">
-                </div>
-                <div class="form-group">
-                    <label>URL Logo Pequeno</label>
-                    <input type="text" id="logotipoPequeno">
-                </div>
-                <div class="form-group">
-                    <label>URL Logo Grande</label>
-                    <input type="text" id="logotipoGrande">
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 1rem;">
-                <label>Observações Gerais (OBS)</label>
-                <textarea id="obs" style="height: 60px;"></textarea>
-            </div>
-
-            <button type="submit">Salvar Tudo no Banco de Dados</button>
+            <button type="button" class="btn-save" onclick="analisarMudancas()">Validar e Salvar Configurações</button>
         </form>
 
         <div id="resultado"></div>
     </div>
 
+    <!-- MODAL DE CONFIRMAÇÃO -->
+    <div id="modalCompare">
+        <div class="modal-content">
+            <h2 style="margin-top:0; color:var(--accent)">🔍 Revisão de Alterações</h2>
+            <p>Os seguintes campos foram modificados:</p>
+            <div id="listaMudancas" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+            <div style="display:flex; gap:10px">
+                <button onclick="confirmarSalvar()" style="flex:1; padding:10px; background:#22c55e; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold">SIM, SALVAR TUDO</button>
+                <button onclick="fecharModal()" style="flex:1; padding:10px; background:#64748b; color:white; border:none; border-radius:6px; cursor:pointer">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.getElementById('formParam').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        let dadosOriginais = {};
+
+        // Ao carregar a página, busca o que já existe no banco
+        window.onload = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/parametrizacao');
+                const data = await response.json();
+                if (data.result) {
+                    dadosOriginais = data.result;
+                    // Preenche o formulário
+                    Object.keys(data.result).forEach(key => {
+                        const input = document.getElementById(key);
+                        if (input) input.value = data.result[key];
+                    });
+                }
+            } catch (e) { console.log("Sem dados iniciais"); }
+        };
+
+        function analisarMudancas() {
+            const mudancas = [];
+            const fields = ['cnpj', 'razaoSocial', 'nomeFantasia', 'responsavel', 'endereco', 'bairro', 'cidade', 'email', 'telefone1', 'site'];
+            
+            fields.forEach(f => {
+                const valorNovo = document.getElementById(f).value;
+                const valorAntigo = dadosOriginais[f] || "";
+                
+                if (valorNovo !== valorAntigo) {
+                    mudancas.push({
+                        campo: f.toUpperCase(),
+                        de: valorAntigo || "(Vazio)",
+                        para: valorNovo || "(Vazio)"
+                    });
+                }
+            });
+
+            if (mudancas.length === 0) {
+                alert("Nenhuma alteração detectada.");
+                return;
+            }
+
+            // Mostra o modal com as diferenças
+            const lista = document.getElementById('listaMudancas');
+            lista.innerHTML = mudancas.map(m => `
+                <div class="change-item">
+                    <strong>${m.campo}:</strong><br>
+                    <span class="change-old">${m.de}</span> ➔ <span class="change-new">${m.para}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('modalCompare').style.display = 'flex';
+        }
+
+        async function confirmarSalvar() {
+            fecharModal();
             const resDiv = document.getElementById('resultado');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "Salvando...";
+            resDiv.innerHTML = "Salvando alterações...";
 
             const params = new URLSearchParams();
-            const inputs = document.querySelectorAll('input, textarea');
-            inputs.forEach(input => {
-                params.append(input.id, input.value);
-            });
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(i => params.append(i.id, i.value));
 
             try {
                 const response = await fetch('http://localhost:8080/parametrizacao', {
@@ -249,12 +272,17 @@
                     body: params
                 });
                 const data = await response.json();
-                resDiv.innerHTML = "<strong>✅ Resposta do Servidor:</strong><br>" + JSON.stringify(data, null, 2);
-                resDiv.style.color = data.status === 'ok' ? "#4ade80" : "#f87171";
+                resDiv.innerHTML = "<strong>✅ Alterações aplicadas com sucesso!</strong>";
+                resDiv.style.color = "#4ade80";
+                // Atualiza os originais para a próxima comparação
+                inputs.forEach(i => dadosOriginais[i.id] = i.value);
             } catch (err) {
-                resDiv.innerHTML = "❌ Erro: " + err;
+                resDiv.innerHTML = "❌ Erro ao salvar: " + err;
+                resDiv.style.color = "#f87171";
             }
-        });
+        }
+
+        function fecharModal() { document.getElementById('modalCompare').style.display = 'none'; }
     </script>
 </body>
 </html>
