@@ -22,6 +22,7 @@ public class ParametrizacaoDAO {
                 p.setCidade(rs.getString("cidade"));
                 p.setUf(rs.getString("uf"));
                 p.setCep(rs.getString("cep"));
+                p.setComplemento(rs.getString("complemento"));
                 p.setEmail(rs.getString("email"));
                 p.setTelefone1(rs.getString("telefone1"));
                 p.setTelefone2(rs.getString("telefone2"));
@@ -46,13 +47,13 @@ public class ParametrizacaoDAO {
         Parametrizacao atual = buscar(conn);
         
         if (atual == null) {
-            String sql = "INSERT INTO Parametrizacao (cnpj, razaoSocial, nomeFantasia, logradouro, bairro, cidade, uf, cep, email, telefone1, telefone2, site, responsavel, logotipoPequeno, logotipoGrande, inscricaoEstadual, inscricaoMunicipal, numEndereco, pais, moedaPadrao, fusoHorario, obs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO Parametrizacao (cnpj, razaoSocial, nomeFantasia, logradouro, bairro, cidade, uf, cep, complemento, email, telefone1, telefone2, site, responsavel, logotipoPequeno, logotipoGrande, inscricaoEstadual, inscricaoMunicipal, numEndereco, pais, moedaPadrao, fusoHorario, obs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 preencherStmt(stmt, p);
                 stmt.executeUpdate();
             }
         } else {
-            String sql = "UPDATE Parametrizacao SET cnpj=?, razaoSocial=?, nomeFantasia=?, logradouro=?, bairro=?, cidade=?, uf=?, cep=?, email=?, telefone1=?, telefone2=?, site=?, responsavel=?, logotipoPequeno=?, logotipoGrande=?, inscricaoEstadual=?, inscricaoMunicipal=?, numEndereco=?, pais=?, moedaPadrao=?, fusoHorario=?, obs=? WHERE cnpj=?";
+            String sql = "UPDATE Parametrizacao SET cnpj=?, razaoSocial=?, nomeFantasia=?, logradouro=?, bairro=?, cidade=?, uf=?, cep=?, complemento=?, email=?, telefone1=?, telefone2=?, site=?, responsavel=?, logotipoPequeno=?, logotipoGrande=?, inscricaoEstadual=?, inscricaoMunicipal=?, numEndereco=?, pais=?, moedaPadrao=?, fusoHorario=?, obs=? WHERE cnpj=?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 preencherStmt(stmt, p);
                 stmt.setString(23, atual.getCnpj());
@@ -70,19 +71,20 @@ public class ParametrizacaoDAO {
         stmt.setString(6, p.getCidade());
         stmt.setString(7, p.getUf());
         stmt.setString(8, p.getCep());
-        stmt.setString(9, p.getEmail());
-        stmt.setString(10, p.getTelefone1());
-        stmt.setString(11, p.getTelefone2());
-        stmt.setString(12, p.getSite());
-        stmt.setString(13, p.getResponsavel());
-        stmt.setString(14, p.getLogotipoPequeno());
-        stmt.setString(15, p.getLogotipoGrande());
-        stmt.setString(16, p.getInscricaoEstadual());
-        stmt.setString(17, p.getInscricaoMunicipal());
-        stmt.setString(18, p.getNumEndereco());
-        stmt.setString(19, p.getPais());
-        stmt.setString(20, p.getMoedaPadrao());
-        stmt.setString(21, p.getFusoHorario());
-        stmt.setString(22, p.getObs());
+        stmt.setString(9, p.getComplemento());
+        stmt.setString(10, p.getEmail());
+        stmt.setString(11, p.getTelefone1());
+        stmt.setString(12, p.getTelefone2());
+        stmt.setString(13, p.getSite());
+        stmt.setString(14, p.getResponsavel());
+        stmt.setString(15, p.getLogotipoPequeno());
+        stmt.setString(16, p.getLogotipoGrande());
+        stmt.setString(17, p.getInscricaoEstadual());
+        stmt.setString(18, p.getInscricaoMunicipal());
+        stmt.setString(19, p.getNumEndereco());
+        stmt.setString(20, p.getPais());
+        stmt.setString(21, p.getMoedaPadrao());
+        stmt.setString(22, p.getFusoHorario());
+        stmt.setObject(23, p.getObs()); // Pode ser null
     }
 }
