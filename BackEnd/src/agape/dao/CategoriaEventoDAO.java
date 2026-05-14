@@ -17,15 +17,17 @@ public class CategoriaEventoDAO {
         CategoriaEvento c = new CategoriaEvento();
         c.setIdCatEvento(rs.getInt("idCatEvento"));
         c.setNome(rs.getString("nome"));
+        c.setAtivo(rs.getBoolean("ativo"));
         return c;
     }
 
     // ── escrita ───────────────────────────────────────────────────────────────
 
     public void inserir(CategoriaEvento c) throws Exception {
-        String sql = "INSERT INTO CategoriaEvento (nome) VALUES (?)";
+        String sql = "INSERT INTO CategoriaEvento (nome, ativo) VALUES (?, ?)";
         try (PreparedStatement stmt = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, c.getNome());
+            stmt.setBoolean(2, c.isAtivo());
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) c.setIdCatEvento(rs.getInt(1));
@@ -34,10 +36,11 @@ public class CategoriaEventoDAO {
     }
 
     public void atualizar(CategoriaEvento c) throws Exception {
-        String sql = "UPDATE CategoriaEvento SET nome=? WHERE idCatEvento=?";
+        String sql = "UPDATE CategoriaEvento SET nome=?, ativo=? WHERE idCatEvento=?";
         try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
             stmt.setString(1, c.getNome());
-            stmt.setInt(2, c.getIdCatEvento());
+            stmt.setBoolean(2, c.isAtivo());
+            stmt.setInt(3, c.getIdCatEvento());
             stmt.executeUpdate();
         }
     }
@@ -53,11 +56,23 @@ public class CategoriaEventoDAO {
     // ── leitura ───────────────────────────────────────────────────────────────
 
     public List<CategoriaEvento> listar() throws Exception {
-        String sql = "SELECT * FROM CategoriaEvento ORDER BY nome";
+        return buscar(null, null);
+    }
+
+    public List<CategoriaEvento> buscar(String nome, Boolean ativo) throws Exception {
+        StringBuilder sql = new StringBuilder("SELECT * FROM CategoriaEvento WHERE 1=1");
+        if (nome  != null && !nome.isEmpty()) sql.append(" AND nome LIKE ?");
+        if (ativo != null)                    sql.append(" AND ativo=?");
+        sql.append(" ORDER BY nome");
+
         List<CategoriaEvento> lista = new ArrayList<>();
-        try (PreparedStatement stmt = getConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) lista.add(mapear(rs));
+        try (PreparedStatement stmt = getConn().prepareStatement(sql.toString())) {
+            int i = 1;
+            if (nome  != null && !nome.isEmpty()) stmt.setString(i++, "%" + nome + "%");
+            if (ativo != null)                    stmt.setBoolean(i++, ativo);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) lista.add(mapear(rs));
+            }
         }
         return lista;
     }

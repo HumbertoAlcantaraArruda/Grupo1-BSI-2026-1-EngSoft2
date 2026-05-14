@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGAPE — Caixa</title>
+  <link rel="stylesheet" href="../../assets/css/bootstrap.css">
+  <link rel="stylesheet" href="../../assets/css/theme.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    .caixa-status-banner {
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 24px;
+    }
+    .caixa-status-banner.aberto {
+      background: var(--color-success-light);
+      border: 1.5px solid var(--color-success);
+    }
+    .caixa-status-banner.fechado {
+      background: var(--color-danger-light);
+      border: 1.5px solid var(--color-danger);
+    }
+    .caixa-status-icon {
+      font-size: 36px;
+    }
+    .caixa-status-banner.aberto .caixa-status-icon { color: var(--color-success); }
+    .caixa-status-banner.fechado .caixa-status-icon { color: var(--color-danger); }
+
+    .mov-btn {
+      padding: 14px 20px;
+      border-radius: var(--radius-lg);
+      border: 2px solid transparent;
+      background: var(--color-surface);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+    }
+    .mov-btn:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .mov-btn.entrada {
+      border-color: var(--color-success);
+      color: var(--color-success);
+    }
+    .mov-btn.entrada:hover { background: var(--color-success-light); }
+    .mov-btn.saida {
+      border-color: var(--color-danger);
+      color: var(--color-danger);
+    }
+    .mov-btn.saida:hover { background: var(--color-danger-light); }
+    .mov-btn i { font-size: 28px; display: block; margin-bottom: 4px; }
+    .mov-btn span { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <div id="sidebar-root"></div>
+
+    <div class="main-content" id="main-content">
+
+      <header class="topbar" role="banner">
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-link p-0 d-lg-none" id="mobile-menu-toggle"
+            aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+            <i class="bi bi-list fs-4" style="color:var(--color-text);"></i>
+          </button>
+          <div>
+            <div class="page-title">Caixa</div>
+            <div class="page-breadcrumb">Início / Operacional / Caixa</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span id="topbar-status-badge" class="badge d-none" style="font-size:11px;"></span>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-logout">
+            <i class="bi bi-box-arrow-right me-1"></i> Sair
+          </button>
+        </div>
+      </header>
+
+      <main class="page-content" role="main">
+
+        <!-- ─── LOADING ─── -->
+        <div id="caixa-loading" class="text-center py-5 text-muted">
+          <div class="spinner-border me-2"></div> Verificando estado do caixa...
+        </div>
+
+        <!-- ─── CAIXA FECHADO ─── -->
+        <div id="caixa-fechado" class="d-none">
+          <div class="caixa-status-banner fechado">
+            <i class="bi bi-lock-fill caixa-status-icon"></i>
+            <div>
+              <div class="fw-bold" style="font-size:16px;">Caixa Fechado</div>
+              <div class="text-muted" style="font-size:13px;">
+                Abra o caixa para registrar movimentos e vendas.
+              </div>
+            </div>
+          </div>
+
+          <div class="row justify-content-center">
+            <div class="col-md-5">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">
+                    <i class="bi bi-unlock me-2"></i>Abrir Caixa
+                  </span>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label" for="abertura-valor">
+                      Valor inicial (troco) <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">R$</span>
+                      <input type="text" class="form-control form-control-lg" id="abertura-valor"
+                        placeholder="0,00" inputmode="numeric">
+                    </div>
+                    <div class="form-text">Dinheiro disponível para troco no início do expediente.</div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="abertura-obs">Observações</label>
+                    <textarea class="form-control" id="abertura-obs" rows="2"
+                      maxlength="200" placeholder="Opcional..."></textarea>
+                  </div>
+                  <button class="btn btn-primary w-100 btn-lg" id="btn-abrir-caixa">
+                    <i class="bi bi-unlock me-2"></i>Abrir Caixa
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── CAIXA ABERTO ─── -->
+        <div id="caixa-aberto" class="d-none">
+
+          <!-- Banner de status -->
+          <div class="caixa-status-banner aberto">
+            <i class="bi bi-unlock-fill caixa-status-icon"></i>
+            <div class="flex-fill">
+              <div class="fw-bold" style="font-size:16px;">Caixa Aberto</div>
+              <div class="text-muted" style="font-size:13px;" id="caixa-aberto-info">
+                Aberto em — por —
+              </div>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" id="btn-fechar-caixa">
+              <i class="bi bi-lock me-1"></i> Fechar Caixa
+            </button>
+          </div>
+
+          <!-- Cards de resumo -->
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon success"><i class="bi bi-cash-stack"></i></div>
+                <div>
+                  <div class="stat-value" id="caixa-saldo">R$ 0,00</div>
+                  <div class="stat-label">Saldo Atual</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon success"><i class="bi bi-arrow-down-circle"></i></div>
+                <div>
+                  <div class="stat-value" id="caixa-entradas">R$ 0,00</div>
+                  <div class="stat-label">Total Entradas</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon" style="background:var(--color-danger-light);color:var(--color-danger)">
+                  <i class="bi bi-arrow-up-circle"></i>
+                </div>
+                <div>
+                  <div class="stat-value" id="caixa-saidas">R$ 0,00</div>
+                  <div class="stat-label">Total Saídas</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon primary"><i class="bi bi-cart3"></i></div>
+                <div>
+                  <div class="stat-value" id="caixa-vendas">0</div>
+                  <div class="stat-label">Vendas no período</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botões de movimento -->
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <button class="mov-btn entrada w-100" id="btn-suprimento">
+                <i class="bi bi-plus-circle"></i>
+                <span>Suprimento</span>
+              </button>
+            </div>
+            <div class="col-6 col-md-3">
+              <button class="mov-btn saida w-100" id="btn-sangria">
+                <i class="bi bi-dash-circle"></i>
+                <span>Sangria</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Histórico de movimentos -->
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span class="card-title">
+                <i class="bi bi-clock-history me-2"></i>Movimentos do Caixa
+              </span>
+              <div class="d-flex gap-2 align-items-center">
+                <select class="form-select form-select-sm" id="filtro-tipo-mov" style="width:160px;">
+                  <option value="">Todos os tipos</option>
+                  <option value="ABERTURA">Abertura</option>
+                  <option value="ENTRADA">Entrada</option>
+                  <option value="SAIDA">Saída</option>
+                  <option value="FECHAMENTO">Fechamento</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Data / Hora</th>
+                      <th>Tipo</th>
+                      <th>Descrição</th>
+                      <th class="text-center">Operador</th>
+                      <th class="text-end">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-movimentos">
+                    <tr><td colspan="5" class="text-center py-4 text-muted">
+                      <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+                    </td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between py-2">
+              <small class="text-muted" id="info-movimentos">—</small>
+              <nav><ul class="pagination pagination-sm mb-0" id="paginacao-mov"></ul></nav>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal: Suprimento / Sangria -->
+  <div class="modal fade" id="modal-movimento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" id="modal-movimento-header">
+          <h5 class="modal-title" id="modal-movimento-title">Suprimento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-movimento" novalidate>
+            <input type="hidden" id="movimento-tipo">
+            <div class="mb-3">
+              <label class="form-label" for="movimento-valor">
+                Valor <span class="text-danger">*</span>
+              </label>
+              <div class="input-group input-group-lg">
+                <span class="input-group-text">R$</span>
+                <input type="text" class="form-control" id="movimento-valor"
+                  required placeholder="0,00" inputmode="numeric">
+              </div>
+              <div class="invalid-feedback">Informe o valor.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="movimento-descricao">
+                Descrição <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="movimento-descricao"
+                required maxlength="150" placeholder="Motivo do movimento...">
+              <div class="invalid-feedback">Descrição é obrigatória.</div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btn-confirmar-movimento">
+            <i class="bi bi-check-lg me-1"></i> Registrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Fechar Caixa -->
+  <div class="modal fade" id="modal-fechar-caixa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" style="background:var(--color-primary); color:#fff;">
+          <h5 class="modal-title">
+            <i class="bi bi-lock me-2"></i>Fechar Caixa
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Resumo -->
+          <div class="mb-3" id="fechar-resumo"></div>
+          <div class="mb-3">
+            <label class="form-label" for="fechar-valor-contado">
+              Valor contado em caixa <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text">R$</span>
+              <input type="text" class="form-control" id="fechar-valor-contado"
+                required placeholder="0,00" inputmode="numeric">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="fechar-obs">Observações</label>
+            <textarea class="form-control" id="fechar-obs" rows="2"
+              maxlength="200" placeholder="Opcional..."></textarea>
+          </div>
+          <div class="alert alert-warning py-2 mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Esta ação encerra o caixa do dia. Confirme os valores antes de prosseguir.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" id="btn-confirmar-fechar">
+            <i class="bi bi-lock me-1"></i> Fechar Caixa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../assets/js/bootstrap.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="../../scripts/utils/SessionManager.js"></script>
+  <script src="../../scripts/utils/Toast.js"></script>
+  <script src="../../scripts/utils/Mask.js"></script>
+  <script src="../../scripts/utils/Router.js"></script>
+  <script src="../../scripts/utils/SidebarLoader.js"></script>
+  <script src="../../scripts/services/ApiService.js"></script>
+  <script src="../../scripts/services/AuthService.js"></script>
+  <script src="../../scripts/services/CaixaService.js"></script>
+  <script src="../../scripts/controllers/DashboardController.js"></script>
+  <script src="../../scripts/controllers/CaixaController.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      Router.protect();
+      await SidebarLoader.load();
+      new DashboardController().init();
+      new CaixaController().init();
+    });
+  </script>
+</body>
+</html>

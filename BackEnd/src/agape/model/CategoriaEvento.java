@@ -3,6 +3,7 @@ package agape.model;
 public class CategoriaEvento {
     private int idCatEvento;
     private String nome;
+    private boolean ativo = true;
 
     // GETTERS E SETTERS
     public int getIdCatEvento() {
@@ -21,10 +22,19 @@ public class CategoriaEvento {
         this.nome = nome;
     }
 
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
+    }
+
     public String toJson() {
         return "{" +
             "\"idCatEvento\":" + idCatEvento + "," +
-            "\"nome\":\""      + esc(nome)   + "\"" +
+            "\"nome\":\""      + esc(nome)   + "\"," +
+            "\"ativo\":"       + ativo        +
         "}";
     }
 

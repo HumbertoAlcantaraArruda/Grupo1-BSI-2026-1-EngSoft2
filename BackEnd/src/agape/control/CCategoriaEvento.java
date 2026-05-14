@@ -61,23 +61,28 @@ public class CCategoriaEvento implements HttpHandler {
     // ── GET ───────────────────────────────────────────────────────────────────
 
     private ResponseObject handleGet(String path, String query) {
-        String nome = param(query, "nome");
+        String nomeParam  = param(query, "nome");
+        String ativoParam = param(query, "ativo");
 
-        if (!nome.isEmpty()) return buscarPorNome(nome);
-        return listar();
+        String  nome  = nomeParam.isEmpty()  ? null : nomeParam.trim();
+        Boolean ativo = ativoParam.isEmpty() ? null : parseSafeBool(ativoParam);
+
+        return buscar(nome, ativo);
     }
 
     // ── POST ──────────────────────────────────────────────────────────────────
 
     private ResponseObject handlePost(String body) {
-        return inserir(param(body, "nome"));
+        String ativoStr = param(body, "ativo");
+        boolean ativo   = ativoStr.isEmpty() || parseSafeBool(ativoStr);
+        return inserir(param(body, "nome"), ativo);
     }
 
     // ── PUT ───────────────────────────────────────────────────────────────────
 
     private ResponseObject handlePut(String path, String body) {
         if (path.equals("/categoriaEvento"))
-            return atualizar(parseSafeInt(param(body, "id")), param(body, "nome"));
+            return atualizar(parseSafeInt(param(body, "id")), param(body, "nome"), parseSafeBool(param(body, "ativo")));
         return naoEncontrado();
     }
 
@@ -89,36 +94,19 @@ public class CCategoriaEvento implements HttpHandler {
 
     // ── operações ─────────────────────────────────────────────────────────────
 
-    public ResponseObject listar() {
+    public ResponseObject buscar(String nome, Boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            response.setResult(dao.listar());
+            response.setResult(dao.buscar(nome, ativo));
         } catch (Exception e) {
             erroInterno(response, e);
         }
         return response;
     }
 
-    public ResponseObject buscarPorNome(String nome) {
-        ResponseObject response = new ResponseObject();
-        try {
-            if (vazio(nome))
-                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nome é obrigatório.");
-            CategoriaEvento c = dao.buscarPorNome(nome.trim());
-            if (c == null)
-                return falha(response, ResponseObject.CODE_NOT_FOUND, "Categoria não encontrada.");
-            response.setStatus(ResponseObject.STATUS_OK);
-            response.setCode(ResponseObject.CODE_OK);
-            response.setResult(c);
-        } catch (Exception e) {
-            erroInterno(response, e);
-        }
-        return response;
-    }
-
-    public ResponseObject inserir(String nome) {
+    public ResponseObject inserir(String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
@@ -128,6 +116,7 @@ public class CCategoriaEvento implements HttpHandler {
 
             CategoriaEvento c = new CategoriaEvento();
             c.setNome(nome.trim());
+            c.setAtivo(ativo);
             dao.inserir(c);
 
             response.setStatus(ResponseObject.STATUS_OK);
@@ -140,7 +129,7 @@ public class CCategoriaEvento implements HttpHandler {
         return response;
     }
 
-    public ResponseObject atualizar(int id, String nome) {
+    public ResponseObject atualizar(int id, String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
@@ -153,6 +142,7 @@ public class CCategoriaEvento implements HttpHandler {
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outra categoria com esse nome.");
 
             c.setNome(nome.trim());
+            c.setAtivo(ativo);
             dao.atualizar(c);
 
             response.setStatus(ResponseObject.STATUS_OK);
@@ -211,6 +201,10 @@ public class CCategoriaEvento implements HttpHandler {
 
     private int parseSafeInt(String val) {
         try { return Integer.parseInt(val.trim()); } catch (Exception e) { return 0; }
+    }
+
+    private boolean parseSafeBool(String val) {
+        return "true".equalsIgnoreCase(val) || "1".equals(val);
     }
 
     private boolean vazio(String s) {
