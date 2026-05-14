@@ -2,6 +2,7 @@ package agape;
 
 import com.sun.net.httpserver.HttpServer;
 
+import agape.control.CCategoriaEvento;
 import agape.control.CCompra;
 import agape.control.CInscricao;
 import agape.control.CParametrizacao;
@@ -21,8 +22,10 @@ public class Main {
         // == Rotas ==
 
         // Usuários
-        server.createContext("/login", CUsuario.getInstancia());
+        server.createContext("/login",    CUsuario.getInstancia());
         server.createContext("/cadastrar", CUsuario.getInstancia());
+        server.createContext("/usuarios",  CUsuario.getInstancia()); // GET listar / POST cadastrar
+        server.createContext("/usuario",   CUsuario.getInstancia()); // GET buscar / PUT atualizar / POST ativar|desativar
 
         // Compras de Produtos
         server.createContext("/comprar", CCompra.getInstancia());
@@ -32,6 +35,9 @@ public class Main {
 
         // Inscrições
         server.createContext("/cancelarInscricao", CInscricao.getInstancia());
+
+        // Categorias de Evento
+        server.createContext("/categoriaEvento", CCategoriaEvento.getInstancia());
 
         server.setExecutor(null);
         server.start();

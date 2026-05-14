@@ -3,7 +3,7 @@ package agape.control;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Properties;
-import java.io.FileInputStream;
+import java.io.InputStream;
 
 public class ConexaoBD {
 
@@ -12,11 +12,12 @@ public class ConexaoBD {
 
     private ConexaoBD() {
         try {
-            // Força o carregamento do Driver do MySQL
-            Class.forName("com.mysql.cj.jdbc.Driver");
-
             Properties props = new Properties();
-            props.load(new FileInputStream("BackEnd/config.properties"));
+            InputStream is = ConexaoBD.class.getClassLoader().getResourceAsStream("config.properties");
+            if (is == null) {
+                throw new RuntimeException("config.properties não encontrado no classpath");
+            }
+            props.load(is);
 
             String url      = props.getProperty("db.url");
             String user     = props.getProperty("db.user");
@@ -24,8 +25,10 @@ public class ConexaoBD {
 
             conn = DriverManager.getConnection(url, user, password);
 
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Erro de Conexão: " + e.getMessage() + " (Verifique se o arquivo BackEnd/config.properties existe)", e);
+            throw new RuntimeException("Erro de Conexão: " + e.getMessage(), e);
         }
     }
 

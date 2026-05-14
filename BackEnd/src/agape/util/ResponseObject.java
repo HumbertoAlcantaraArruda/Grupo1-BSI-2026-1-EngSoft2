@@ -4,13 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ResponseObject {
-    public static final String STATUS_OK = "ok";
+    public static final String STATUS_OK   = "ok";
     public static final String STATUS_FAIL = "fail";
     public static final String STATUS_FAILED = "fail";
-    public static final int CODE_OK = 200;
-    public static final int CODE_ERROR = 500;
-    public static final int CODE_FAILED = 500;
-    public static final int CODE_NOT_FOUND = 404;
+    public static final int CODE_OK           = 200;
+    public static final int CODE_CREATED      = 201;
+    public static final int CODE_BAD_REQUEST  = 400;
+    public static final int CODE_UNAUTHORIZED = 401;
+    public static final int CODE_FORBIDDEN    = 403;
+    public static final int CODE_NOT_FOUND    = 404;
+    public static final int CODE_CONFLICT     = 409;
+    public static final int CODE_ERROR        = 500;
+    public static final int CODE_FAILED       = 500;
 
     private String status;
     private int code;
@@ -46,8 +51,20 @@ public class ResponseObject {
 
         if (result == null) {
             json.append("\"result\":null");
+        } else if (result instanceof java.util.List<?> lista) {
+            json.append("\"result\":[");
+            for (int i = 0; i < lista.size(); i++) {
+                Object item = lista.get(i);
+                try {
+                    var m = item.getClass().getMethod("toJson");
+                    json.append(m.invoke(item));
+                } catch (Exception e) {
+                    json.append("\"").append(String.valueOf(item).replace("\"", "\\\"")).append("\"");
+                }
+                if (i < lista.size() - 1) json.append(",");
+            }
+            json.append("]");
         } else {
-            // Tenta usar o toJson do objeto, se falhar ou não tiver, limpa a string
             try {
                 var metodo = result.getClass().getMethod("toJson");
                 json.append("\"result\":").append(metodo.invoke(result));

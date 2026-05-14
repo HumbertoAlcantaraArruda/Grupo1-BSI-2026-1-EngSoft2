@@ -87,4 +87,22 @@ public class Usuario {
     public void setDataDesativacao(LocalDateTime dataDesativacao) {
         this.dataDesativacao = dataDesativacao;
     }
+
+    public String toJson() {
+        return "{" +
+            "\"idUsuario\":"   + idUsuario + "," +
+            "\"nome\":\""      + esc(nome)  + "\"," +
+            "\"cpf\":\""       + esc(cpf)   + "\"," +
+            "\"email\":\""     + esc(email) + "\"," +
+            "\"status\":"      + status     + "," +
+            "\"nivel\":\""     + esc(nivel) + "\"," +
+            "\"dataAtivacao\":"    + (dataAtivacao    != null ? "\"" + dataAtivacao    + "\"" : "null") + "," +
+            "\"dataDesativacao\":" + (dataDesativacao != null ? "\"" + dataDesativacao + "\"" : "null") +
+        "}";
+    }
+
+    private String esc(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 }

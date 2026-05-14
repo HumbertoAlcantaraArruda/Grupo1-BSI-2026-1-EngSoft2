@@ -20,4 +20,16 @@ public class CategoriaEvento {
     public void setNome(String nome) {
         this.nome = nome;
     }
+
+    public String toJson() {
+        return "{" +
+            "\"idCatEvento\":" + idCatEvento + "," +
+            "\"nome\":\""      + esc(nome)   + "\"" +
+        "}";
+    }
+
+    private String esc(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 }
