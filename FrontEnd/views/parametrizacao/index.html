@@ -174,7 +174,7 @@
                           <div class="spinner-border spinner-border-sm text-muted"></div>
                         </div>
                       </div>
-                      <div class="form-text">Preenchimento automático via ViaCEP.</div>
+                      <div class="form-text"></div>
                     </div>
 
                     <div class="col-md-9">
@@ -206,33 +206,33 @@
                       <label class="form-label" for="param-estado">UF</label>
                       <select class="form-select" id="param-estado">
                         <option value="">—</option>
-                        <option>AC</option>
-                        <option>AL</option>
-                        <option>AM</option>
-                        <option>AP</option>
-                        <option>BA</option>
-                        <option>CE</option>
-                        <option>DF</option>
-                        <option>ES</option>
-                        <option>GO</option>
-                        <option>MA</option>
-                        <option>MG</option>
-                        <option>MS</option>
-                        <option>MT</option>
-                        <option>PA</option>
-                        <option>PB</option>
-                        <option>PE</option>
-                        <option>PI</option>
-                        <option>PR</option>
-                        <option>RJ</option>
-                        <option>RN</option>
-                        <option>RO</option>
-                        <option>RR</option>
-                        <option>RS</option>
-                        <option>SC</option>
-                        <option selected>SP</option>
-                        <option>SE</option>
-                        <option>TO</option>
+                        <option value="AC">AC</option>
+                        <option value="AL">AL</option>
+                        <option value="AM">AM</option>
+                        <option value="AP">AP</option>
+                        <option value="BA">BA</option>
+                        <option value="CE">CE</option>
+                        <option value="DF">DF</option>
+                        <option value="ES">ES</option>
+                        <option value="GO">GO</option>
+                        <option value="MA">MA</option>
+                        <option value="MG">MG</option>
+                        <option value="MS">MS</option>
+                        <option value="MT">MT</option>
+                        <option value="PA">PA</option>
+                        <option value="PB">PB</option>
+                        <option value="PE">PE</option>
+                        <option value="PI">PI</option>
+                        <option value="PR">PR</option>
+                        <option value="RJ">RJ</option>
+                        <option value="RN">RN</option>
+                        <option value="RO">RO</option>
+                        <option value="RR">RR</option>
+                        <option value="RS">RS</option>
+                        <option value="SC">SC</option>
+                        <option value="SP" selected>SP</option>
+                        <option value="SE">SE</option>
+                        <option value="TO">TO</option>
                       </select>
                     </div>
 
@@ -294,19 +294,12 @@
 
                     <div class="col-md-6">
                       <label class="form-label" for="param-moeda">Moeda Padrão</label>
-                      <select class="form-select" id="param-moeda">
-                        <option value="BRL" selected>BRL — Real Brasileiro</option>
-                        <option value="USD">USD — Dólar Americano</option>
-                      </select>
+                      <input class="form-control" id="param-moeda" value=""/>
                     </div>
 
                     <div class="col-md-6">
                       <label class="form-label" for="param-fuso">Fuso Horário</label>
-                      <select class="form-select" id="param-fuso">
-                        <option value="America/Sao_Paulo" selected>America/Sao_Paulo (UTC-3)</option>
-                        <option value="America/Manaus">America/Manaus (UTC-4)</option>
-                        <option value="America/Belem">America/Belem (UTC-3)</option>
-                      </select>
+                      <input class="form-control" id="param-fuso" value=""/>
                     </div>
 
                     <div class="col-12">
@@ -328,9 +321,9 @@
                     <i class="bi bi-image me-2"></i>Logotipos
                   </div>
 
-                  <!-- Logo Principal -->
+
                   <div class="mb-4">
-                    <label class="form-label">Logo Principal</label>
+                    <label class="form-label">Logo Grande</label>
                     <div class="logo-dropzone" id="dropzone-logo" ondrop="window.__param_dropLogo(event,'logo')"
                       ondragover="event.preventDefault(); this.classList.add('dragover')"
                       ondragleave="this.classList.remove('dragover')"
@@ -345,9 +338,8 @@
                     </div>
                   </div>
 
-                  <!-- Logo Horizontal -->
                   <div>
-                    <label class="form-label">Logo Horizontal</label>
+                    <label class="form-label">Logo Pequeno</label>
                     <div class="logo-dropzone" id="dropzone-logo-h" ondrop="window.__param_dropLogo(event,'logoh')"
                       ondragover="event.preventDefault(); this.classList.add('dragover')"
                       ondragleave="this.classList.remove('dragover')"

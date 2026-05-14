@@ -6,6 +6,10 @@ import com.sun.net.httpserver.HttpExchange;
 import java.sql.Connection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
 
 import agape.dao.ParametrizacaoDAO;
 import agape.model.Parametrizacao;
@@ -41,6 +45,31 @@ public class CParametrizacao implements HttpHandler {
         exchange.close();
     }
 
+    private static class LogoResultado {
+        String logotipoGrande;
+        String logotipoPequeno;
+
+        LogoResultado(String grande, String pequeno) {
+            this.logotipoGrande  = grande  != null ? grande  : "";
+            this.logotipoPequeno = pequeno != null ? pequeno : "";
+        }
+
+        public String toJson() {
+            return "{\"logotipoGrande\":\"" + logotipoGrande + "\"," +
+                    "\"logotipoPequeno\":\"" + logotipoPequeno + "\"}";
+        }
+    }
+
+    // Extrai valor de string em JSON simples (sem escape interno — seguro para base64 e nomes de arquivo)
+    private String extrairCampoJson(String json, String campo) {
+        String chave = "\"" + campo + "\":\"";
+        int inicio = json.indexOf(chave);
+        if (inicio < 0) return "";
+        inicio += chave.length();
+        int fim = json.indexOf('"', inicio);
+        return fim < 0 ? "" : json.substring(inicio, fim);
+    }
+
     private String extrairParam(HttpExchange exchange, String body, String chave) {
         String query = exchange.getRequestURI().getQuery();
         String fullStr = (query != null ? query : "") + "&" + (body != null ? body : "");
@@ -66,8 +95,48 @@ public class CParametrizacao implements HttpHandler {
             return;
         }
 
+        String path = exchange.getRequestURI().getPath();
+
         try {
             Connection conn = ConexaoBD.getInstance().getConexao();
+
+            if (method.equalsIgnoreCase("POST") && path.endsWith("/logo")) {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+
+                String logoBase64  = extrairCampoJson(body, "logoBase64");
+                String logoHBase64 = extrairCampoJson(body, "logoHBase64");
+
+                // Diretório: sobe da pasta BackEnd até a raiz do projeto e desce para FrontEnd/assets/img
+                Path assetsDir = Paths.get(System.getProperty("user.dir"))
+                        .resolve("../FrontEnd/assets/img").normalize();
+                Files.createDirectories(assetsDir);
+
+                String nomeGrande  = null;
+                String nomePequeno = null;
+
+                if (!logoBase64.isEmpty()) {
+                    String dadosB64 = logoBase64.contains(",") ? logoBase64.split(",")[1] : logoBase64;
+                    nomeGrande = extrairCampoJson(body, "nomeLogoGrande");
+                    if (nomeGrande.isEmpty()) nomeGrande = "logo_grande.png";
+                    Files.write(assetsDir.resolve(nomeGrande), Base64.getDecoder().decode(dadosB64));
+                }
+
+                if (!logoHBase64.isEmpty()) {
+                    String dadosB64 = logoHBase64.contains(",") ? logoHBase64.split(",")[1] : logoHBase64;
+                    nomePequeno = extrairCampoJson(body, "nomeLogoPequeno");
+                    if (nomePequeno.isEmpty()) nomePequeno = "logo_pequeno.png";
+                    Files.write(assetsDir.resolve(nomePequeno), Base64.getDecoder().decode(dadosB64));
+                }
+
+                dao.atualizarLogos(conn, nomeGrande, nomePequeno);
+
+                ResponseObject response = new ResponseObject();
+                response.setStatus(ResponseObject.STATUS_OK);
+                response.setCode(ResponseObject.CODE_OK);
+                response.setResult(new LogoResultado(nomeGrande, nomePequeno));
+                enviarResposta(exchange, response);
+                return;
+            }
 
             if (method.equalsIgnoreCase("GET")) {
                 Parametrizacao p = dao.buscar(conn);

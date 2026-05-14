@@ -65,6 +65,31 @@ public class ParametrizacaoDAO {
         }
     }
 
+    public void atualizarLogos(Connection conn, String nomeGrande, String nomePequeno) throws SQLException {
+        if (nomeGrande == null && nomePequeno == null) return;
+
+        if (nomeGrande != null && nomePequeno != null) {
+            String sql = "UPDATE Parametrizacao SET logotipoGrande=?, logotipoPequeno=?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, nomeGrande);
+                stmt.setString(2, nomePequeno);
+                stmt.executeUpdate();
+            }
+        } else if (nomeGrande != null) {
+            String sql = "UPDATE Parametrizacao SET logotipoGrande=?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, nomeGrande);
+                stmt.executeUpdate();
+            }
+        } else {
+            String sql = "UPDATE Parametrizacao SET logotipoPequeno=?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, nomePequeno);
+                stmt.executeUpdate();
+            }
+        }
+    }
+
     private void preencherStmt(PreparedStatement stmt, Parametrizacao p) throws SQLException {
         stmt.setString(1, p.getCnpj());
         stmt.setString(2, p.getRazaoSocial());

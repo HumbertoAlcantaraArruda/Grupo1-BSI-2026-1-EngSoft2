@@ -11,8 +11,11 @@
 class ParametrizacaoController {
   #api;
   #session;
+  #toast;
   #logoBase64  = null;
   #logoHBase64 = null;
+  #logoNome    = null;
+  #logoHNome   = null;
 
   // Máscaras inline para CNPJ e CEP (não presentes em Mask.js)
   static #maskCnpj = v =>
@@ -29,18 +32,21 @@ class ParametrizacaoController {
   constructor() {
     this.#api     = ApiService.getInstance();
     this.#session = SessionManager.getInstance();
+    this.#toast   = Toast.getInstance();
   }
 
   async init() {
     if (!this.#session.hasRole('ADM')) {
-      Toast.show('Acesso restrito a Administradores.', 'error');
+      this.#toast.error('Acesso restrito a Administradores.');
       setTimeout(() => window.location.replace('../dashboard.html'), 1500);
       return;
     }
+
     this.#applyMasks();
     this.#bindEvents();
     this.#setupDropzones();
     await this.#load();
+
   }
 
   // ── Máscaras ──────────────────────────────────────────────
@@ -74,6 +80,7 @@ class ParametrizacaoController {
     });
 
     $('#btn-salvar-param').on('click', () => this.#save());
+    $('#btn-confirm-logo').on('click', () => this.#saveLogos());
 
     // Inputs de arquivo para logos
     document.getElementById('input-logo').addEventListener('change', e => {
@@ -95,7 +102,7 @@ class ParametrizacaoController {
       const data = await resp.json();
 
       if (data.erro) {
-        Toast.show('CEP não encontrado. Preencha o endereço manualmente.', 'warning');
+        this.#toast.warning('CEP não encontrado. Preencha o endereço manualmente.');
         return;
       }
 
@@ -105,11 +112,11 @@ class ParametrizacaoController {
       $('#param-cidade').val(data.localidade        ?? '');
       $('#param-estado').val(data.uf                ?? '');
 
-      Toast.show('Endereço preenchido via CEP!', 'success');
+      this.#toast.success('Endereço preenchido via CEP!');
       document.getElementById('param-numero').focus();
 
     } catch {
-      Toast.show('Erro ao consultar ViaCEP. Preencha o endereço manualmente.', 'warning');
+      this.#toast.warning('Erro ao consultar ViaCEP. Preencha o endereço manualmente.');
     } finally {
       wrap.classList.remove('loading');
     }
@@ -129,11 +136,11 @@ class ParametrizacaoController {
   #lerArquivoImagem(file, tipo) {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      Toast.show('Selecione um arquivo de imagem (PNG, JPG).', 'warning');
+      this.#toast.warning('Selecione um arquivo de imagem (PNG, JPG).');
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      Toast.show('Imagem muito grande. Máximo: 2 MB.', 'warning');
+      this.#toast.warning('Imagem muito grande. Máximo: 2 MB.');
       return;
     }
 
@@ -142,10 +149,12 @@ class ParametrizacaoController {
       const base64 = e.target.result;
       if (tipo === 'logo') {
         this.#logoBase64 = base64;
+        this.#logoNome   = file.name;
         $('#preview-logo').attr('src', base64).removeClass('d-none');
         $('#icon-logo, #label-logo').addClass('d-none');
       } else {
         this.#logoHBase64 = base64;
+        this.#logoHNome   = file.name;
         $('#preview-logoh').attr('src', base64).removeClass('d-none');
         $('#icon-logoh, #label-logoh').addClass('d-none');
       }
@@ -160,13 +169,23 @@ class ParametrizacaoController {
 
     try {
       const d = await this.#api.get('/parametrizacao');
-      this.#fillForm(d);
+
+      if(d.status === "ok" || d.code === 200) {
+        const result = d.result;
+
+        console.log(result);
+
+        this.#fillForm(result);
+      }
+
+
     } catch (err) {
       if (err.status === 404) {
         // Primeiro cadastro: form vazio, campos com defaults
         this.#fillForm({});
       } else {
-        Toast.show(err.message || 'Erro ao carregar configurações.', 'error');
+        console.log(err);
+        // Toast.show(err.message || 'Erro ao carregar configurações.', 'error');
       }
     } finally {
       $('#param-loading').addClass('d-none');
@@ -182,31 +201,87 @@ class ParametrizacaoController {
     $('#param-inscricaoEstadual').val(s('inscricaoEstadual'));
     $('#param-inscricaoMunicipal').val(s('inscricaoMunicipal'));
     $('#param-cep').val(d.cep ? ParametrizacaoController.#maskCep(d.cep) : '');
-    $('#param-logradouro').val(s('logradouro'));
-    $('#param-numero').val(s('numero'));
+    $('#param-logradouro').val(s('endereco'));
+    $('#param-numero').val(s('numEndereco'));
     $('#param-complemento').val(s('complemento'));
     $('#param-bairro').val(s('bairro'));
     $('#param-cidade').val(s('cidade'));
-    $('#param-estado').val(s('estado'));
-    $('#param-pais').val(d.pais ?? 'Brasil');
+    $('#param-estado').val(s('uf'));
+    $('#param-pais').val(s('pais'));
     $('#param-telefone1').val(d.telefone1 ? Mask.phone(d.telefone1) : '');
     $('#param-telefone2').val(d.telefone2 ? Mask.phone(d.telefone2) : '');
-    $('#param-whatsapp').val(d.whatsapp ? Mask.phone(d.whatsapp) : '');
+    // $('#param-whatsapp').val(d.whatsapp ? Mask.phone(d.whatsapp) : '');
     $('#param-email').val(s('email'));
     $('#param-site').val(s('site'));
     $('#param-responsavel').val(s('responsavel'));
-    $('#param-moeda').val(d.moeda ?? 'BRL');
-    $('#param-fuso').val(d.fuso ?? 'America/Sao_Paulo');
-    $('#param-obs').val(s('observacoes'));
+    $('#param-moeda').val(s('moedaPadrao'));
+    $('#param-fuso').val(s('fusoHorario'));
+    $('#param-obs').val(s('obs'));
 
     // Logos
-    if (d.logoUrl) {
-      $('#preview-logo').attr('src', d.logoUrl).removeClass('d-none');
+    const logoGrande = s('logotipoGrande');
+    if (logoGrande) {
+      $('#preview-logo')
+        .off('error')
+        .on('error', function () {
+          $(this).addClass('d-none');
+          $('#icon-logo').removeClass('d-none');
+          $('#label-logo').removeClass('d-none').html('Erro ao carregar imagem.<br><small class="text-danger">' + logoGrande + '</small>');
+        })
+        .attr('src', '../../assets/img/' + logoGrande)
+        .removeClass('d-none');
       $('#icon-logo, #label-logo').addClass('d-none');
     }
-    if (d.logoHUrl) {
-      $('#preview-logoh').attr('src', d.logoHUrl).removeClass('d-none');
+
+    const logoPequeno = s('logotipoPequeno');
+    if (logoPequeno) {
+      $('#preview-logoh')
+        .off('error')
+        .on('error', function () {
+          $(this).addClass('d-none');
+          $('#icon-logoh').removeClass('d-none');
+          $('#label-logoh').removeClass('d-none').html('Erro ao carregar imagem.<br><small class="text-danger">' + logoPequeno + '</small>');
+        })
+        .attr('src', '../../assets/img/' + logoPequeno)
+        .removeClass('d-none');
       $('#icon-logoh, #label-logoh').addClass('d-none');
+    }
+  }
+
+  // ── Salvar Logos ──────────────────────────────────────────
+  async #saveLogos() {
+    if (!this.#logoBase64 && !this.#logoHBase64) {
+      this.#toast.warning('Selecione ao menos uma imagem antes de confirmar.');
+      return;
+    }
+
+    const btn = $('#btn-confirm-logo');
+    btn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm"></div>');
+
+    try {
+      const payload = {};
+      if (this.#logoBase64)  { payload.logoBase64  = this.#logoBase64;  payload.nomeLogoGrande  = this.#logoNome;  }
+      if (this.#logoHBase64) { payload.logoHBase64 = this.#logoHBase64; payload.nomeLogoPequeno = this.#logoHNome; }
+
+      const res = await this.#api.post('/parametrizacao/logo', payload);
+
+      this.#toast.success('Logotipos salvos com sucesso!');
+      this.#logoBase64 = this.#logoHBase64 = this.#logoNome = this.#logoHNome = null;
+
+      // Atualiza previews com o nome gravado pelo servidor
+      const r = res.result ?? {};
+      if (r.logotipoGrande) {
+        $('#preview-logo').off('error').attr('src', '../../assets/img/' + r.logotipoGrande).removeClass('d-none');
+        $('#icon-logo, #label-logo').addClass('d-none');
+      }
+      if (r.logotipoPequeno) {
+        $('#preview-logoh').off('error').attr('src', '../../assets/img/' + r.logotipoPequeno).removeClass('d-none');
+        $('#icon-logoh, #label-logoh').addClass('d-none');
+      }
+    } catch (err) {
+      this.#toast.error(err.message || 'Erro ao salvar logotipos.');
+    } finally {
+      btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Confirmar');
     }
   }
 
@@ -215,7 +290,7 @@ class ParametrizacaoController {
     const form = document.getElementById('form-param');
     form.classList.add('was-validated');
     if (!form.checkValidity()) {
-      Toast.show('Preencha os campos obrigatórios.', 'warning');
+      this.#toast.warning('Preencha os campos obrigatórios.');
       return;
     }
 
@@ -251,10 +326,10 @@ class ParametrizacaoController {
 
     try {
       await this.#api.post('/parametrizacao', payload);
-      Toast.show('Configurações salvas com sucesso!', 'success');
+      this.#toast.success('Configurações salvas com sucesso!');
       this.#logoBase64 = this.#logoHBase64 = null;
     } catch (err) {
-      Toast.show(err.message || 'Erro ao salvar configurações.', 'error');
+      this.#toast.error(err.message || 'Erro ao salvar configurações.');
     } finally {
       btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Salvar Configurações');
       form.classList.remove('was-validated');

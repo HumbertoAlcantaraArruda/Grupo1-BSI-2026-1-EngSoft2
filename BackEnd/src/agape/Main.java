@@ -39,6 +39,9 @@ public class Main {
         // Categorias de Evento
         server.createContext("/categoriaEvento", CCategoriaEvento.getInstancia());
 
+        // Produtos
+        //server.createContext("/produto", CProduto.getInstancia());
+
         server.setExecutor(null);
         server.start();
 
