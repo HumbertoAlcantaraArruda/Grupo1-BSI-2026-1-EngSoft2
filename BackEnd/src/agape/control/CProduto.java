@@ -37,14 +37,15 @@ public static CProduto getInstancia() {
         return;
       }
       try{
-        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-        ReponseObject response =  switch(method.toUpperCase()){
+        //String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        ResponseObject response =  switch(method.toUpperCase()){
           case "GET" -> handleGet(path, query);
-          case "POST" -> handlePost(path, body);
-          case "PUT" -> handlePut(path, body);
-          case "DELETE" -> handleDelete(path);
-          default -> naoEncontrado();
+        //   case "POST" -> handlePost(path, body);
+        //   case "PUT" -> handlePut(path, body);
+        //   case "DELETE" -> handleDelete(path);
+           default -> naoEncontrado();
         };
+        enviarResposta(exchange, response);
       }
       catch (Exception e){
         ResponseObject erro = new ResponseObject();
@@ -54,13 +55,6 @@ public static CProduto getInstancia() {
         enviarResposta(exchange, erro);
       }
     }
-
-
-
-
-
-
-
 
 // AUXILIAR PARA ENVIAR RESPOSTA
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
@@ -105,17 +99,18 @@ public static CProduto getInstancia() {
             response.setCode(ResponseObject.CODE_ERROR);
             response.addMessage("Erro inesperado: " + e.getMessage());
         }
+        return response;
     }
 
     private ResponseObject handleGet(String path, String query) {
-        String catProdParam = param(query, "catProd");
+        String catProdParam = param(query, "idCatProd");
         String nomeParam = param(query, "nome");
         String operadorParam = param(query, "operador");
         String quantidadeParam = param(query, "quantidade");
         String catProd = catProdParam.isEmpty() ? null : catProdParam.trim();
         String nome = nomeParam.isEmpty() ? null : nomeParam.trim();
         String qtdeStr = quantidadeParam.isEmpty() ? null : quantidadeParam.trim();
-        String op = operadorParam != null && operadorParam.trim().matches("ˆ(>=|<=|>|<|=)$") ? operadorParam.trim() : null;
+        String op = operadorParam != null  ? operadorParam.trim() : null;
 
         int qtd = -1;
 
@@ -123,6 +118,14 @@ public static CProduto getInstancia() {
             qtd=Integer.parseInt(qtdeStr);
         }
         return buscar(qtd, catProd,nome,op);
+    }
+
+    private ResponseObject naoEncontrado() {
+        ResponseObject response = new ResponseObject();
+        response.setStatus(ResponseObject.STATUS_FAIL);
+        response.setCode(ResponseObject.CODE_NOT_FOUND);
+        response.addMessage("Endpoint não encontrado.");
+        return response;
     }
 
 }

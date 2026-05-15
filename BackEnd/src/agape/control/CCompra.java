@@ -149,7 +149,7 @@ public class CCompra implements HttpHandler {
                     itemCompraDAO.inserir(conn, item);
                     
                     // Atualiza estoque (quantidade comprada aumenta o estoque)
-                    produtoDAO.atualizarEstoque(conn, idsProdutos[i], quantidades[i]);
+                    //produtoDAO.atualizarEstoque(conn, idsProdutos[i], quantidades[i]);
                 }
             }
 

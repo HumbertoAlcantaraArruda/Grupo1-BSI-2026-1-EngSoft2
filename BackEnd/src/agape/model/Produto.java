@@ -48,4 +48,14 @@ public class Produto {
     public void setQtdeAtual(int qtdeAtual) {
         this.qtdeAtual = qtdeAtual;
     }
+
+    public String toJson() {
+        return "{" +
+                "\"idProd\":" + idProd + "," +
+                "\"idCatProd\":" + idCatProd + "," +
+                "\"nome\":\"" + nome + "\"," +
+                "\"valorUni\":" + valorUni + "," +
+                "\"qtdeAtual\":" + qtdeAtual +
+                "}";
+    }
 }

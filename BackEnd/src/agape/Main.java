@@ -7,6 +7,7 @@ import agape.control.CCompra;
 import agape.control.CInscricao;
 import agape.control.CParametrizacao;
 import agape.control.CUsuario;
+import agape.control.CProduto;
 
 //import com.sun.net.httpserver.HttpExchange;
 
@@ -39,8 +40,8 @@ public class Main {
         // Categorias de Evento
         server.createContext("/categoriaEvento", CCategoriaEvento.getInstancia());
 
-        // Produtos - UP!
-        //server.createContext("/produto", CProduto.getInstancia());
+        // Produtos
+        server.createContext("/produto", CProduto.getInstancia());
 
         server.setExecutor(null);
         server.start();
