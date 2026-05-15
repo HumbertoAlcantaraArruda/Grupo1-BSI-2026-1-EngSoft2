@@ -8,6 +8,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import agape.dao.ProdutoDAO;
+import agape.model.Produto;
 import agape.util.ResponseObject;
 
 public class CProduto implements HttpHandler {
@@ -37,12 +38,12 @@ public static CProduto getInstancia() {
         return;
       }
       try{
-        //String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+          String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         ResponseObject response =  switch(method.toUpperCase()){
           case "GET" -> handleGet(path, query);
-        //   case "POST" -> handlePost(path, body);
-        //   case "PUT" -> handlePut(path, body);
-        //   case "DELETE" -> handleDelete(path);
+          case "POST" -> handlePost(path, query, body);
+          case "PUT" -> handlePut(path, body);
+          case "DELETE" -> handleDelete(query);
            default -> naoEncontrado();
         };
         enviarResposta(exchange, response);
@@ -74,7 +75,7 @@ public static CProduto getInstancia() {
         exchange.close();
     }
 
-        private String param(String source, String key) {
+    private String param(String source, String key) {
         if (source == null || source.isEmpty()) return "";
         for (String par : source.split("&")) {
             String[] kv = par.split("=", 2);
@@ -118,6 +119,151 @@ public static CProduto getInstancia() {
             qtd=Integer.parseInt(qtdeStr);
         }
         return buscar(qtd, catProd,nome,op);
+    }
+
+    private ResponseObject handlePost(String path, String query, String body) {
+        String src = (query != null ? query : "") + "&" + body;
+        return inserir(
+            parseSafeInt(param(src, "idCatProd")),
+            param(src, "nome"),
+            parseSafeFloat(param(src, "valorUni")),
+            parseSafeInt(param(src, "qtdeAtual"))
+        );
+    }
+
+    private ResponseObject handlePut(String path, String body) {
+        if (path.equals("/produto"))
+            return atualizar(
+                parseSafeInt(param(body, "idProd")),
+                parseSafeInt(param(body, "idCatProd")),
+                param(body, "nome"),
+                parseSafeFloat(param(body, "valorUni")),
+                parseSafeInt(param(body, "qtdeAtual"))
+            );
+        return naoEncontrado();
+    }
+
+    private ResponseObject handleDelete(String query) {
+        return excluir(parseSafeInt(param(query, "idProd")));
+    }
+
+    public ResponseObject inserir(int idCatProd, String nome, float valorUni, int qtdeAtual) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (vazio(nome)) {
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nome é obrigatório.");
+            }
+            if (idCatProd <= 0){
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Categoria do produto é obrigatória.");
+            }
+            if (produtoDAO.existeNome(nome.trim(), 0)){
+                return falha(response, ResponseObject.CODE_CONFLICT, "Já existe um produto com esse nome.");
+            }
+
+            Produto p = new Produto();
+            p.setIdCatProd(idCatProd);
+            p.setNome(nome.trim());
+            p.setValorUni(valorUni);
+            p.setQtdeAtual(qtdeAtual);
+            produtoDAO.inserir(p);
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_CREATED);
+            response.addMessage("Produto cadastrado com sucesso.");
+            response.setResult(p);
+        }
+        catch (Exception e) {
+            erroInterno(response, e);
+        }
+        return response;
+    }
+
+    public ResponseObject atualizar(int idProd, int idCatProd, String nome, float valorUni, int qtdeAtual) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (vazio(nome)){
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nome é obrigatório.");
+            }
+            if (idCatProd <= 0) {
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Categoria do produto é obrigatória.");
+            }
+
+            Produto p = produtoDAO.buscarPorId(idProd);
+            if (p == null) {
+                return falha(response, ResponseObject.CODE_NOT_FOUND, "Produto não encontrado.");
+            }
+            if (produtoDAO.existeNome(nome.trim(), idProd)){
+                return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outro produto com esse nome.");
+            }
+
+            p.setIdCatProd(idCatProd);
+            p.setNome(nome.trim());
+            p.setValorUni(valorUni);
+            p.setQtdeAtual(qtdeAtual);
+            produtoDAO.atualizar(p);
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.addMessage("Produto atualizado com sucesso.");
+            response.setResult(p);
+        }
+        catch (Exception e) {
+            erroInterno(response, e);
+        }
+        return response;
+    }
+
+    public ResponseObject excluir(int id) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (produtoDAO.buscarPorId(id) == null) {
+                return falha(response, ResponseObject.CODE_NOT_FOUND, "Produto não encontrado.");
+            }
+            produtoDAO.excluir(id);
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.addMessage("Produto excluído com sucesso.");
+        }
+        catch (Exception e) {
+            erroInterno(response, e);
+        }
+        return response;
+    }
+
+
+    private int parseSafeInt(String val) {
+        try {
+            return Integer.parseInt(val.trim());
+        }
+        catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private float parseSafeFloat(String val) {
+        try {
+            return Float.parseFloat(val.trim());
+        }
+        catch (Exception e) {
+            return 0f;
+        }
+    }
+
+    private boolean vazio(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
+    private ResponseObject falha(ResponseObject r, int code, String msg) {
+        r.setStatus(ResponseObject.STATUS_FAIL);
+        r.setCode(code);
+        r.addMessage(msg);
+        return r;
+    }
+
+    private void erroInterno(ResponseObject r, Exception e) {
+        r.setStatus(ResponseObject.STATUS_FAIL);
+        r.setCode(ResponseObject.CODE_ERROR);
+        r.addMessage("Erro interno do servidor: " + (e != null ? e.getMessage() : ""));
     }
 
     private ResponseObject naoEncontrado() {

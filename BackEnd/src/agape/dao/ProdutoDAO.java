@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,5 +59,62 @@ public class ProdutoDAO {
             }
         }
         return produto;
+    }
+
+    public Produto buscarPorId(int id) throws SQLException {
+        String sql = "SELECT * FROM Produto WHERE idProd = ?";
+        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
+        }
+        return null;
+    }
+
+    public boolean existeNome(String nome, int idIgnorar) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Produto WHERE nome = ? AND idProd != ?";
+        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+            stmt.setString(1, nome);
+            stmt.setInt(2, idIgnorar);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        }
+        return false;
+    }
+
+    public void inserir(Produto p) throws SQLException {
+        String sql = "INSERT INTO Produto (idCatProd, nome, valorUni, qtdAtual) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setInt(1, p.getIdCatProd());
+            stmt.setString(2, p.getNome());
+            stmt.setFloat(3, p.getValorUni());
+            stmt.setInt(4, p.getQtdeAtual());
+            stmt.executeUpdate();
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) p.setIdProd(rs.getInt(1));
+            }
+        }
+    }
+
+    public void atualizar(Produto p) throws SQLException {
+        String sql = "UPDATE Produto SET idCatProd = ?, nome = ?, valorUni = ?, qtdAtual = ? WHERE idProd = ?";
+        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+            stmt.setInt(1, p.getIdCatProd());
+            stmt.setString(2, p.getNome());
+            stmt.setFloat(3, p.getValorUni());
+            stmt.setInt(4, p.getQtdeAtual());
+            stmt.setInt(5, p.getIdProd());
+            stmt.executeUpdate();
+        }
+    }
+
+    public void excluir(int id) throws SQLException {
+        String sql = "DELETE FROM Produto WHERE idProd = ?";
+        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
     }
 }
