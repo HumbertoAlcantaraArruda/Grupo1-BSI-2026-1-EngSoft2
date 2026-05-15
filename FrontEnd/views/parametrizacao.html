@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Parametrização</title>
+
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../assets/css/agape.css">
+
+    <style>
+        .secao-titulo {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--cor-estrutural);
+            border-bottom: 2px solid var(--cor-estrutural);
+            padding-bottom: 0.35rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-preview-wrapper {
+            border: 2px dashed #dee2e6;
+            border-radius: 0.5rem;
+            min-height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .logo-preview-wrapper img {
+            max-height: 100px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .logo-sem-imagem {
+            color: #adb5bd;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .card-secao {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            background: #ffffff;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <div id="sidebar-wrapper"></div>
+
+    <div id="content-wrapper">
+
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Parametrização</span>
+        </header>
+
+        <div class="area-conteudo">
+
+            <!-- Título + Salvar -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="titulo-pagina">
+                    <i class="bi bi-gear me-2"></i>Parametrização
+                </h1>
+                <button class="btn btn-primary" id="btn-salvar">
+                    <i class="bi bi-check-circle me-1"></i> Salvar
+                </button>
+            </div>
+
+            <form id="form-parametrizacao" novalidate>
+
+                <!-- ================================================ -->
+                <!-- Seção: Identificação                             -->
+                <!-- ================================================ -->
+                <div class="card-secao">
+                    <p class="secao-titulo">
+                        <i class="bi bi-building me-1"></i>Identificação
+                    </p>
+                    <div class="row g-3">
+
+                        <div class="col-md-3">
+                            <label for="cnpj" class="form-label campo-obrigatorio">CNPJ</label>
+                            <input type="text" class="form-control" id="cnpj"
+                                   placeholder="00.000.000/0000-00" required inputmode="numeric">
+                            <div class="invalid-feedback">CNPJ obrigatório (14 dígitos).</div>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label for="razaoSocial" class="form-label campo-obrigatorio">Razão Social</label>
+                            <input type="text" class="form-control" id="razaoSocial"
+                                   placeholder="Razão social da entidade" required minlength="2">
+                            <div class="invalid-feedback">Razão Social obrigatória.</div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="nomeFantasia" class="form-label campo-obrigatorio">Nome Fantasia</label>
+                            <input type="text" class="form-control" id="nomeFantasia"
+                                   placeholder="Nome fantasia" required minlength="2">
+                            <div class="invalid-feedback">Nome Fantasia obrigatório.</div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="responsavel" class="form-label">Responsável</label>
+                            <input type="text" class="form-control" id="responsavel"
+                                   placeholder="Nome do responsável">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="inscricaoEstadual" class="form-label">Inscrição Estadual</label>
+                            <input type="text" class="form-control" id="inscricaoEstadual"
+                                   placeholder="Inscrição Estadual">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="inscricaoMunicipal" class="form-label">Inscrição Municipal</label>
+                            <input type="text" class="form-control" id="inscricaoMunicipal"
+                                   placeholder="Inscrição Municipal">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ================================================ -->
+                <!-- Seção: Endereço                                  -->
+                <!-- ================================================ -->
+                <div class="card-secao">
+                    <p class="secao-titulo">
+                        <i class="bi bi-geo-alt me-1"></i>Endereço
+                    </p>
+                    <div class="row g-3">
+
+                        <div class="col-md-2">
+                            <label for="cep" class="form-label">CEP</label>
+                            <input type="text" class="form-control" id="cep"
+                                   placeholder="00000-000" inputmode="numeric">
+                        </div>
+
+                        <div class="col-md-5">
+                            <label for="logradouro" class="form-label">Logradouro</label>
+                            <input type="text" class="form-control" id="logradouro"
+                                   placeholder="Rua, Avenida...">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="numEndereco" class="form-label">Número</label>
+                            <input type="text" class="form-control" id="numEndereco"
+                                   placeholder="Nº">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="complemento" class="form-label">Complemento</label>
+                            <input type="text" class="form-control" id="complemento"
+                                   placeholder="Sala, Bloco...">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="bairro" class="form-label">Bairro</label>
+                            <input type="text" class="form-control" id="bairro"
+                                   placeholder="Bairro">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="cidade" class="form-label">Cidade</label>
+                            <input type="text" class="form-control" id="cidade"
+                                   placeholder="Cidade">
+                        </div>
+
+                        <div class="col-md-1">
+                            <label for="uf" class="form-label">UF</label>
+                            <input type="text" class="form-control text-uppercase" id="uf"
+                                   placeholder="UF" maxlength="2">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="pais" class="form-label">País</label>
+                            <input type="text" class="form-control" id="pais"
+                                   placeholder="País" value="Brasil">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ================================================ -->
+                <!-- Seção: Contato                                   -->
+                <!-- ================================================ -->
+                <div class="card-secao">
+                    <p class="secao-titulo">
+                        <i class="bi bi-envelope me-1"></i>Contato
+                    </p>
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label for="email" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="email"
+                                   placeholder="email@exemplo.com">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="telefone1" class="form-label">Telefone 1</label>
+                            <input type="text" class="form-control" id="telefone1"
+                                   placeholder="(00) 00000-0000" inputmode="numeric">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="telefone2" class="form-label">Telefone 2</label>
+                            <input type="text" class="form-control" id="telefone2"
+                                   placeholder="(00) 00000-0000" inputmode="numeric">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="site" class="form-label">Site</label>
+                            <input type="text" class="form-control" id="site"
+                                   placeholder="https://www.exemplo.com.br">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ================================================ -->
+                <!-- Seção: Configurações do Sistema                  -->
+                <!-- ================================================ -->
+                <div class="card-secao">
+                    <p class="secao-titulo">
+                        <i class="bi bi-sliders me-1"></i>Configurações do Sistema
+                    </p>
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label for="moedaPadrao" class="form-label">Moeda Padrão</label>
+                            <select class="form-select" id="moedaPadrao">
+                                <option value="BRL">Real Brasileiro (R$)</option>
+                                <option value="USD">Dólar Americano (US$)</option>
+                                <option value="EUR">Euro (€)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="fusoHorario" class="form-label">Fuso Horário</label>
+                            <select class="form-select" id="fusoHorario">
+                                <option value="America/Sao_Paulo">Brasília (GMT-3)</option>
+                                <option value="America/Manaus">Manaus (GMT-4)</option>
+                                <option value="America/Belem">Belém (GMT-3)</option>
+                                <option value="America/Fortaleza">Fortaleza (GMT-3)</option>
+                                <option value="America/Noronha">Fernando de Noronha (GMT-2)</option>
+                                <option value="America/Rio_Branco">Rio Branco (GMT-5)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="obs" class="form-label">Observações</label>
+                            <textarea class="form-control" id="obs" rows="3"
+                                      placeholder="Observações gerais sobre a entidade..."
+                                      maxlength="400"></textarea>
+                            <div class="form-text text-end" id="obs-contador">0 / 400</div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </form>
+
+            <!-- ================================================ -->
+            <!-- Seção: Logotipos (fora do form principal)        -->
+            <!-- ================================================ -->
+            <div class="card-secao">
+                <p class="secao-titulo">
+                    <i class="bi bi-image me-1"></i>Logotipos
+                </p>
+                <div class="row g-4">
+
+                    <!-- Logo grande -->
+                    <div class="col-md-6">
+                        <label class="form-label">Logo Grande
+                            <span class="text-muted small ms-1">(exibida na tela de login e relatórios)</span>
+                        </label>
+                        <div class="logo-preview-wrapper mb-2" id="wrapper-logo-grande">
+                            <img id="preview-logo-grande" src="" alt="Logo Grande" class="d-none">
+                            <div class="logo-sem-imagem" id="texto-logo-grande">
+                                <i class="bi bi-image fs-3 d-block mb-1"></i>
+                                Nenhum logotipo definido
+                            </div>
+                        </div>
+                        <input type="file" class="form-control form-control-sm"
+                               id="input-logo-grande" accept="image/png,image/jpeg,image/svg+xml">
+                    </div>
+
+                    <!-- Logo pequena -->
+                    <div class="col-md-6">
+                        <label class="form-label">Logo Pequena
+                            <span class="text-muted small ms-1">(exibida na sidebar e cabeçalhos)</span>
+                        </label>
+                        <div class="logo-preview-wrapper mb-2" id="wrapper-logo-pequeno">
+                            <img id="preview-logo-pequeno" src="" alt="Logo Pequena" class="d-none">
+                            <div class="logo-sem-imagem" id="texto-logo-pequeno">
+                                <i class="bi bi-image fs-3 d-block mb-1"></i>
+                                Nenhum logotipo definido
+                            </div>
+                        </div>
+                        <input type="file" class="form-control form-control-sm"
+                               id="input-logo-pequeno" accept="image/png,image/jpeg,image/svg+xml">
+                    </div>
+
+                </div>
+
+                <div class="mt-3">
+                    <button class="btn btn-primary btn-sm" id="btn-salvar-logos">
+                        <i class="bi bi-upload me-1"></i> Enviar Logotipos
+                    </button>
+                    <span class="text-muted small ms-2">Selecione os arquivos e clique em "Enviar".</span>
+                </div>
+            </div>
+
+        </div><!-- /area-conteudo -->
+    </div><!-- /content-wrapper -->
+</div><!-- /wrapper -->
+
+
+<!-- Scripts -->
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../utils/HttpClient.js"></script>
+<script src="../utils/Mascaras.js"></script>
+<script src="../utils/Validador.js"></script>
+<script src="../utils/Sidebar.js"></script>
+
+<script src="../models/Parametrizacao.js"></script>
+
+<script src="../services/ParametrizacaoService.js"></script>
+
+<script src="../controllers/ParametrizacaoController.js"></script>
+
+<script src="./parametrizacao.js"></script>
+
+<script>
+    /* Contador de caracteres do campo observações */
+    document.addEventListener('DOMContentLoaded', function () {
+        var obs      = document.getElementById('obs');
+        var contador = document.getElementById('obs-contador');
+        if (obs && contador) {
+            obs.addEventListener('input', function () {
+                contador.textContent = obs.value.length + ' / 400';
+            });
+        }
+
+        /* Ocultar placeholder de texto do logo quando imagem carregar */
+        ['grande', 'pequeno'].forEach(function (tipo) {
+            var img   = document.getElementById('preview-logo-' + tipo);
+            var texto = document.getElementById('texto-logo-' + tipo);
+            if (img) {
+                img.addEventListener('load', function () {
+                    if (img.src && img.src !== window.location.href) {
+                        if (texto) texto.classList.add('d-none');
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

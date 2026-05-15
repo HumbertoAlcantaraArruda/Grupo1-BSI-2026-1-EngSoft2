@@ -4,7 +4,7 @@ public class Parametrizacao {
     private String cnpj;
     private String razaoSocial;
     private String nomeFantasia;
-    private String endereco;
+    private String logradouro;
     private String bairro;
     private String cidade;
     private String uf;
@@ -31,8 +31,8 @@ public class Parametrizacao {
     public void setRazaoSocial(String razaoSocial) { this.razaoSocial = razaoSocial; }
     public String getNomeFantasia() { return nomeFantasia; }
     public void setNomeFantasia(String nomeFantasia) { this.nomeFantasia = nomeFantasia; }
-    public String getEndereco() { return endereco; }
-    public void setEndereco(String endereco) { this.endereco = endereco; }
+    public String getLogradouro() { return logradouro; }
+    public void setLogradouro(String logradouro) { this.logradouro = logradouro; }
     public String getBairro() { return bairro; }
     public void setBairro(String bairro) { this.bairro = bairro; }
     public String getCidade() { return cidade; }
@@ -77,7 +77,7 @@ public class Parametrizacao {
             "\"cnpj\":\"" + (cnpj != null ? cnpj : "") + "\"," +
             "\"razaoSocial\":\"" + (razaoSocial != null ? razaoSocial : "") + "\"," +
             "\"nomeFantasia\":\"" + (nomeFantasia != null ? nomeFantasia : "") + "\"," +
-            "\"endereco\":\"" + (endereco != null ? endereco : "") + "\"," +
+            "\"logradouro\":\"" + (logradouro != null ? logradouro : "") + "\"," +
             "\"bairro\":\"" + (bairro != null ? bairro : "") + "\"," +
             "\"cidade\":\"" + (cidade != null ? cidade : "") + "\"," +
             "\"uf\":\"" + (uf != null ? uf : "") + "\"," +

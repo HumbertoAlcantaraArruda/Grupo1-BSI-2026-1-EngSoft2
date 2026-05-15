@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.text.Normalizer;
 
 import agape.dao.ParametrizacaoDAO;
 import agape.model.Parametrizacao;
@@ -60,6 +61,55 @@ public class CParametrizacao implements HttpHandler {
         }
     }
 
+    // Remove acentos, espaços e caracteres especiais do nome do arquivo.
+    // Mantém apenas letras, números, hífen, underscore e ponto.
+    // Ex.: "Logo Grande São Paulo (2).png" → "logo_grande_sao_paulo_2_.png"
+    private String sanitizarNomeArquivo(String nome) {
+        if (nome == null || nome.trim().isEmpty()) return "arquivo";
+
+        // Separar extensão antes de sanitizar
+        int pontoExt = nome.lastIndexOf('.');
+        String base = pontoExt > 0 ? nome.substring(0, pontoExt) : nome;
+        String ext  = pontoExt > 0 ? nome.substring(pontoExt)    : "";
+
+        // Decompõe caracteres acentuados (ex.: ã → a + combining tilde)
+        // e remove os diacríticos resultantes
+        String semAcento = Normalizer.normalize(base, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+
+        // Substitui espaços e caracteres não permitidos por underscore
+        String sanitizado = semAcento
+                .replaceAll("[^a-zA-Z0-9._-]", "_")  // caracteres proibidos → _
+                .replaceAll("_+", "_")                 // múltiplos underscores → um só
+                .replaceAll("^_|_$", "")              // remove _ no início/fim
+                .toLowerCase();
+
+        if (sanitizado.isEmpty()) sanitizado = "arquivo";
+
+        // Sanitiza também a extensão (remove tudo exceto letras/números)
+        String extLimpa = ext.replaceAll("[^a-zA-Z0-9.]", "").toLowerCase();
+
+        return sanitizado + extLimpa;
+    }
+
+    // Resolve o diretório assets/img de forma robusta:
+    // IDEs diferentes definem user.dir de maneiras distintas (raiz do workspace vs. pasta do módulo)
+    private Path resolverDirAssets() {
+        Path base = Paths.get(System.getProperty("user.dir"));
+
+        // Caso 1: user.dir é a raiz do workspace (ex.: IntelliJ IDEA)
+        // C:\EGSII\Grupo1-BSI-2026-1-EngSoft2\ → FrontEnd/assets/img
+        Path candidato1 = base.resolve("FrontEnd/assets/img").normalize();
+        if (candidato1.getParent().getParent().toFile().isDirectory()) {
+            return candidato1;
+        }
+
+        // Caso 2: user.dir é a pasta BackEnd (ex.: NetBeans, linha de comando)
+        // C:\EGSII\Grupo1-BSI-2026-1-EngSoft2\BackEnd\ → ../FrontEnd/assets/img
+        Path candidato2 = base.resolve("../FrontEnd/assets/img").normalize();
+        return candidato2;
+    }
+
     // Extrai valor de string em JSON simples (sem escape interno — seguro para base64 e nomes de arquivo)
     private String extrairCampoJson(String json, String campo) {
         String chave = "\"" + campo + "\":\"";
@@ -91,7 +141,10 @@ public class CParametrizacao implements HttpHandler {
         String method = exchange.getRequestMethod();
 
         if (method.equalsIgnoreCase("OPTIONS")) {
-            enviarResposta(exchange, new ResponseObject());
+            ResponseObject opts = new ResponseObject();
+            opts.setStatus(ResponseObject.STATUS_OK);
+            opts.setCode(ResponseObject.CODE_OK);
+            enviarResposta(exchange, opts);
             return;
         }
 
@@ -106,26 +159,29 @@ public class CParametrizacao implements HttpHandler {
                 String logoBase64  = extrairCampoJson(body, "logoBase64");
                 String logoHBase64 = extrairCampoJson(body, "logoHBase64");
 
-                // Diretório: sobe da pasta BackEnd até a raiz do projeto e desce para FrontEnd/assets/img
-                Path assetsDir = Paths.get(System.getProperty("user.dir"))
-                        .resolve("../FrontEnd/assets/img").normalize();
+                // Resolve o caminho independente de onde o JVM foi iniciado:
+                // tenta user.dir/FrontEnd (raiz do workspace) e user.dir/../FrontEnd (pasta BackEnd)
+                Path assetsDir = resolverDirAssets();
                 Files.createDirectories(assetsDir);
+                System.out.println("[Parametrizacao] Salvando logos em: " + assetsDir.toAbsolutePath());
 
                 String nomeGrande  = null;
                 String nomePequeno = null;
 
                 if (!logoBase64.isEmpty()) {
                     String dadosB64 = logoBase64.contains(",") ? logoBase64.split(",")[1] : logoBase64;
-                    nomeGrande = extrairCampoJson(body, "nomeLogoGrande");
-                    if (nomeGrande.isEmpty()) nomeGrande = "logo_grande.png";
+                    String nomeRaw  = extrairCampoJson(body, "nomeLogoGrande");
+                    nomeGrande = sanitizarNomeArquivo(nomeRaw.isEmpty() ? "logo_grande.png" : nomeRaw);
                     Files.write(assetsDir.resolve(nomeGrande), Base64.getDecoder().decode(dadosB64));
+                    System.out.println("[Parametrizacao] Logo grande salvo: " + nomeGrande);
                 }
 
                 if (!logoHBase64.isEmpty()) {
                     String dadosB64 = logoHBase64.contains(",") ? logoHBase64.split(",")[1] : logoHBase64;
-                    nomePequeno = extrairCampoJson(body, "nomeLogoPequeno");
-                    if (nomePequeno.isEmpty()) nomePequeno = "logo_pequeno.png";
+                    String nomeRaw  = extrairCampoJson(body, "nomeLogoPequeno");
+                    nomePequeno = sanitizarNomeArquivo(nomeRaw.isEmpty() ? "logo_pequeno.png" : nomeRaw);
                     Files.write(assetsDir.resolve(nomePequeno), Base64.getDecoder().decode(dadosB64));
+                    System.out.println("[Parametrizacao] Logo pequeno salvo: " + nomePequeno);
                 }
 
                 dao.atualizarLogos(conn, nomeGrande, nomePequeno);
@@ -152,7 +208,7 @@ public class CParametrizacao implements HttpHandler {
                 p.setCnpj(extrairParam(exchange, body, "cnpj"));
                 p.setRazaoSocial(extrairParam(exchange, body, "razaoSocial"));
                 p.setNomeFantasia(extrairParam(exchange, body, "nomeFantasia"));
-                p.setEndereco(extrairParam(exchange, body, "endereco"));
+                p.setLogradouro(extrairParam(exchange, body, "logradouro"));
                 p.setBairro(extrairParam(exchange, body, "bairro"));
                 p.setCidade(extrairParam(exchange, body, "cidade"));
                 p.setUf(extrairParam(exchange, body, "uf"));

@@ -35,11 +35,20 @@ window.AGAPE.Utils.Sidebar = (function () {
         return caminho.substring(caminho.lastIndexOf('/') + 1);
     }
 
+    /* ---- Seção de configurações (sempre ao final) ----------------- */
+    var _itensConfig = [
+        {
+            rotulo: 'Parametrização',
+            href:   'parametrizacao.html',
+            icone:  'bi-gear'
+        }
+    ];
+
     /* ---- Montar HTML da sidebar ----------------------------------- */
     function _construirHtml() {
         var paginaAtual = _paginaAtual();
 
-        var itensHtml = _itens.map(function (item) {
+        function _montarItem(item) {
             var ativo = (paginaAtual === item.href) ? ' ativo' : '';
             return (
                 '<li class="nav-item">' +
@@ -49,7 +58,10 @@ window.AGAPE.Utils.Sidebar = (function () {
                 '</a>' +
                 '</li>'
             );
-        }).join('');
+        }
+
+        var itensHtml       = _itens.map(_montarItem).join('');
+        var itensConfigHtml = _itensConfig.map(_montarItem).join('');
 
         return (
             '<div class="sidebar-cabecalho">' +
@@ -60,6 +72,10 @@ window.AGAPE.Utils.Sidebar = (function () {
             '<p class="nav-secao">Cadastros</p>' +
             '<ul class="list-unstyled mb-0">' +
             itensHtml +
+            '</ul>' +
+            '<p class="nav-secao">Configurações</p>' +
+            '<ul class="list-unstyled mb-0">' +
+            itensConfigHtml +
             '</ul>' +
             '</nav>'
         );

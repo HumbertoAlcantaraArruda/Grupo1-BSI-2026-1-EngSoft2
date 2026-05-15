@@ -17,7 +17,7 @@ public class ParametrizacaoDAO {
                 p.setCnpj(rs.getString("cnpj"));
                 p.setRazaoSocial(rs.getString("razaoSocial"));
                 p.setNomeFantasia(rs.getString("nomeFantasia"));
-                p.setEndereco(rs.getString("logradouro"));
+                p.setLogradouro(rs.getString("logradouro"));
                 p.setBairro(rs.getString("bairro"));
                 p.setCidade(rs.getString("cidade"));
                 p.setUf(rs.getString("uf"));
@@ -68,25 +68,17 @@ public class ParametrizacaoDAO {
     public void atualizarLogos(Connection conn, String nomeGrande, String nomePequeno) throws SQLException {
         if (nomeGrande == null && nomePequeno == null) return;
 
-        if (nomeGrande != null && nomePequeno != null) {
-            String sql = "UPDATE Parametrizacao SET logotipoGrande=?, logotipoPequeno=?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, nomeGrande);
-                stmt.setString(2, nomePequeno);
-                stmt.executeUpdate();
-            }
-        } else if (nomeGrande != null) {
-            String sql = "UPDATE Parametrizacao SET logotipoGrande=?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, nomeGrande);
-                stmt.executeUpdate();
-            }
-        } else {
-            String sql = "UPDATE Parametrizacao SET logotipoPequeno=?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, nomePequeno);
-                stmt.executeUpdate();
-            }
+        StringBuilder sql = new StringBuilder("UPDATE Parametrizacao SET ");
+        if (nomeGrande  != null) sql.append("logotipoGrande=?, ");
+        if (nomePequeno != null) sql.append("logotipoPequeno=?, ");
+        /* Remove a vírgula final e aplica WHERE na única linha existente */
+        String query = sql.toString().replaceAll(", $", "") + " WHERE cnpj = (SELECT cnpj FROM (SELECT cnpj FROM Parametrizacao LIMIT 1) t)";
+
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            int i = 1;
+            if (nomeGrande  != null) stmt.setString(i++, nomeGrande);
+            if (nomePequeno != null) stmt.setString(i++, nomePequeno);
+            stmt.executeUpdate();
         }
     }
 
@@ -94,7 +86,7 @@ public class ParametrizacaoDAO {
         stmt.setString(1, p.getCnpj());
         stmt.setString(2, p.getRazaoSocial());
         stmt.setString(3, p.getNomeFantasia());
-        stmt.setString(4, p.getEndereco());
+        stmt.setString(4, p.getLogradouro());
         stmt.setString(5, p.getBairro());
         stmt.setString(6, p.getCidade());
         stmt.setString(7, p.getUf());

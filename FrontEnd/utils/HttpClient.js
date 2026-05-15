@@ -135,6 +135,30 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
+    /* ---- POST com corpo JSON (usado no upload de logos) ------------- */
+    HttpClient.prototype.postJson = async function (endpoint, corpo) {
+        try {
+            var resposta = await fetch(BASE_URL + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                body: JSON.stringify(corpo)
+            });
+
+            if (!resposta.ok) {
+                return {
+                    status: 'error',
+                    erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
+                };
+            }
+
+            var dados = await this._parsearResposta(resposta);
+            return { status: 'ok', dados: this._extrairDados(dados) };
+
+        } catch (erro) {
+            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
+        }
+    };
+
     /* ---- DELETE ----------------------------------------------------- */
     HttpClient.prototype.delete = async function (endpoint, params) {
         try {
