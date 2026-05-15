@@ -26,6 +26,9 @@ public class Main {
         // Parametrização
         //server.createContext("/parametrizacao", CParametrizacao.getInstancia());
 
+        // Categorias de Produto
+        server.createContext("/categoriaProduto", CCategoriaProduto.getInstancia());
+
         // Produtos
         server.createContext("/produto", CProduto.getInstancia());
 
@@ -43,8 +46,7 @@ public class Main {
         //server.createContext("/comprar", CCompra.getInstancia());
         // Inscrições
         //server.createContext("/cancelarInscricao", CInscricao.getInstancia());
-        // Categorias de Produto
-        //server.createContext("/categoriaProduto", CCategoriaProduto.getInstancia());
+
 
 
 

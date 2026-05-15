@@ -31,10 +31,10 @@ public class CCategoriaProduto implements HttpHandler {
         String path   = exchange.getRequestURI().getPath();
         String query  = exchange.getRequestURI().getQuery();
 
-        if (method.equalsIgnoreCase("OPTIONS")) {
-            enviarResposta(exchange, new ResponseObject());
-            return;
-        }
+//        if (method.equalsIgnoreCase("OPTIONS")) {
+//            enviarResposta(exchange, new ResponseObject());
+//            return;
+//        }
 
         try {
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
@@ -158,7 +158,7 @@ public class CCategoriaProduto implements HttpHandler {
 
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
 
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
