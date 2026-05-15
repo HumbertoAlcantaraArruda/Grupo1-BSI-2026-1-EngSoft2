@@ -23,29 +23,30 @@ public class Main {
 
         // == Rotas ==
 
-        // Usuários
-        server.createContext("/login",    CUsuario.getInstancia());
-        server.createContext("/cadastrar", CUsuario.getInstancia());
-        server.createContext("/usuarios",  CUsuario.getInstancia()); // GET listar / POST cadastrar
-        server.createContext("/usuario",   CUsuario.getInstancia()); // GET buscar / PUT atualizar / POST ativar|desativar
-
-        // Compras de Produtos
-        server.createContext("/comprar", CCompra.getInstancia());
-
         // Parametrização
         server.createContext("/parametrizacao", CParametrizacao.getInstancia());
 
-        // Inscrições
-        server.createContext("/cancelarInscricao", CInscricao.getInstancia());
+        // Produtos
+        server.createContext("/produto", CProduto.getInstancia());
 
         // Categorias de Evento
         server.createContext("/categoriaEvento", CCategoriaEvento.getInstancia());
 
-        // Categorias de Produto
-        server.createContext("/categoriaProduto", CCategoriaProduto.getInstancia());
 
-        // Produtos
-        server.createContext("/produto", CProduto.getInstancia());
+        // ===== ROTAS AINDA NÃO CONFIGURADAS =====
+        // Usuários
+        //server.createContext("/login",    CUsuario.getInstancia());
+        //server.createContext("/cadastrar", CUsuario.getInstancia());
+        //server.createContext("/usuarios",  CUsuario.getInstancia());
+        //server.createContext("/usuario",   CUsuario.getInstancia());
+        //Compras de Produtos
+        //server.createContext("/comprar", CCompra.getInstancia());
+        // Inscrições
+        //server.createContext("/cancelarInscricao", CInscricao.getInstancia());
+        // Categorias de Produto
+        //server.createContext("/categoriaProduto", CCategoriaProduto.getInstancia());
+
+
 
         server.setExecutor(null);
         server.start();
