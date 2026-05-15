@@ -1,50 +1,26 @@
-/* =====================================================================
-   Sidebar — Componente de navegação lateral reutilizável
-   Injetado via JS em todas as telas (Low Coupling: View não conhece HTML da sidebar)
-   Detecta a página atual e destaca o item ativo automaticamente
-   ===================================================================== */
+/* Sidebar — componente de navegação lateral injetado via JS em todas as telas */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Utils = window.AGAPE.Utils || {};
 
 window.AGAPE.Utils.Sidebar = (function () {
 
-    /* ---- Itens de navegação --------------------------------------- */
     var _itens = [
-        {
-            rotulo: 'Produtos',
-            href: 'produtos.html',
-            icone: 'bi-box-seam'
-        },
-        {
-            rotulo: 'Categoria de Produto',
-            href: 'categoriaProduto.html',
-            icone: 'bi-tags'
-        },
-        {
-            rotulo: 'Categoria de Evento',
-            href: 'categoriaEvento.html',
-            icone: 'bi-calendar-event'
-        }
+        { rotulo: 'Produtos',            href: 'produtos.html',          icone: 'bi-box-seam'      },
+        { rotulo: 'Categoria de Produto', href: 'categoriaProduto.html', icone: 'bi-tags'           },
+        { rotulo: 'Categoria de Evento',  href: 'categoriaEvento.html',  icone: 'bi-calendar-event' }
     ];
 
-    /* ---- Detectar o arquivo HTML atual ---------------------------- */
+    var _itensConfig = [
+        { rotulo: 'Parametrização', href: 'parametrizacao.html', icone: 'bi-gear' }
+    ];
+
+    // Retorna apenas o nome do arquivo da URL atual (ex.: "produtos.html")
     function _paginaAtual() {
         var caminho = window.location.pathname;
-        /* Retorna apenas o nome do arquivo (ex.: "produtos.html") */
         return caminho.substring(caminho.lastIndexOf('/') + 1);
     }
 
-    /* ---- Seção de configurações (sempre ao final) ----------------- */
-    var _itensConfig = [
-        {
-            rotulo: 'Parametrização',
-            href:   'parametrizacao.html',
-            icone:  'bi-gear'
-        }
-    ];
-
-    /* ---- Montar HTML da sidebar ----------------------------------- */
     function _construirHtml() {
         var paginaAtual = _paginaAtual();
 
@@ -55,13 +31,9 @@ window.AGAPE.Utils.Sidebar = (function () {
                 '<a class="nav-link' + ativo + '" href="' + item.href + '">' +
                 '<i class="bi ' + item.icone + '"></i>' +
                 '<span>' + item.rotulo + '</span>' +
-                '</a>' +
-                '</li>'
+                '</a></li>'
             );
         }
-
-        var itensHtml       = _itens.map(_montarItem).join('');
-        var itensConfigHtml = _itensConfig.map(_montarItem).join('');
 
         return (
             '<div class="sidebar-cabecalho">' +
@@ -70,36 +42,27 @@ window.AGAPE.Utils.Sidebar = (function () {
             '</div>' +
             '<nav class="sidebar-nav">' +
             '<p class="nav-secao">Cadastros</p>' +
-            '<ul class="list-unstyled mb-0">' +
-            itensHtml +
-            '</ul>' +
+            '<ul class="list-unstyled mb-0">' + _itens.map(_montarItem).join('') + '</ul>' +
             '<p class="nav-secao">Configurações</p>' +
-            '<ul class="list-unstyled mb-0">' +
-            itensConfigHtml +
-            '</ul>' +
+            '<ul class="list-unstyled mb-0">' + _itensConfig.map(_montarItem).join('') + '</ul>' +
             '</nav>'
         );
     }
 
-    /* ---- Injetar sidebar no elemento alvo ------------------------- */
     function inicializar(seletorAlvo) {
         var alvo = document.getElementById(seletorAlvo || 'sidebar-wrapper');
         if (!alvo) {
-            console.warn('[Sidebar] Elemento alvo não encontrado: #' + (seletorAlvo || 'sidebar-wrapper'));
+            console.warn('[Sidebar] Elemento não encontrado: #' + (seletorAlvo || 'sidebar-wrapper'));
             return;
         }
         alvo.innerHTML = _construirHtml();
     }
 
-    /* ---- Registrar novo item de navegação (OCP) ------------------- */
+    // Adiciona item à seção Cadastros sem alterar os existentes
     function registrarItem(item) {
         _itens.push(item);
     }
 
-    /* ---- API pública ---------------------------------------------- */
-    return {
-        inicializar: inicializar,
-        registrarItem: registrarItem
-    };
+    return { inicializar: inicializar, registrarItem: registrarItem };
 
 })();

@@ -1,20 +1,15 @@
-/* =====================================================================
-   CategoriaProduto — Entidade / Model
-   GRASP Information Expert: validações dos próprios atributos
-   SOLID LSP: substituível onde um Model base for esperado
-   ===================================================================== */
+/* CategoriaProduto — entidade com validações e serialização para o backend */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Models = window.AGAPE.Models || {};
 
 window.AGAPE.Models.CategoriaProduto = (function () {
 
-    /* ---- Construtor ------------------------------------------------- */
     function CategoriaProduto(dados) {
         dados = dados || {};
         this._idCatProd = dados.idCatProd || null;
         this._nome      = dados.nome      || '';
-        /* ativo: aceita boolean, string 'true'/'false' ou 1/0 */
+        // Aceita boolean, número (0/1) ou string ('true'/'false')
         this._ativo     = _parsearBooleano(dados.ativo, true);
     }
 
@@ -24,30 +19,25 @@ window.AGAPE.Models.CategoriaProduto = (function () {
         return padrao;
     }
 
-    /* ---- Getters ---------------------------------------------------- */
     CategoriaProduto.prototype.getIdCatProd = function () { return this._idCatProd; };
     CategoriaProduto.prototype.getNome      = function () { return this._nome;      };
     CategoriaProduto.prototype.getAtivo     = function () { return this._ativo;     };
 
-    /* ---- Setters ---------------------------------------------------- */
-    CategoriaProduto.prototype.setIdCatProd = function (v) { this._idCatProd = v;              };
-    CategoriaProduto.prototype.setNome      = function (v) { this._nome      = v;              };
-    CategoriaProduto.prototype.setAtivo     = function (v) { this._ativo     = Boolean(v);    };
+    CategoriaProduto.prototype.setIdCatProd = function (v) { this._idCatProd = v;           };
+    CategoriaProduto.prototype.setNome      = function (v) { this._nome      = v;           };
+    CategoriaProduto.prototype.setAtivo     = function (v) { this._ativo     = Boolean(v);  };
 
-    /* ---- Validações individuais (Information Expert) --------------- */
     CategoriaProduto.prototype.validarNome = function () {
         return typeof this._nome === 'string' && this._nome.trim().length >= 2;
     };
 
-    /* ---- Validação completa — retorna lista de erros --------------- */
     CategoriaProduto.prototype.validar = function () {
         var erros = [];
-        if (!this.validarNome())
-            erros.push('Nome deve ter pelo menos 2 caracteres.');
+        if (!this.validarNome()) erros.push('Nome deve ter pelo menos 2 caracteres.');
         return erros;
     };
 
-    /* ---- Serializar para envio ao backend (x-www-form-urlencoded) -- */
+    // Inclui idCatProd apenas na edição (PUT)
     CategoriaProduto.prototype.paraFormData = function () {
         var dados = {
             nome:  this._nome,

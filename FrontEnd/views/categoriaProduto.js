@@ -1,16 +1,11 @@
-/* =====================================================================
-   categoriaProduto.js — Camada View (bind de eventos)
-   REGRA: NÃO instancia Models. NÃO chama fetch. NÃO conhece Service.
-   Filtros de Nome e Status são aplicados no frontend via Controller.
-   ===================================================================== */
+/* categoriaProduto.js — View: vincula eventos ao DOM e delega ao Controller
+   Filtros de nome e status são aplicados no frontend pelo Controller */
 
 (function () {
 
-    /* ---- Referências ao Controller e utilitários ------------------- */
     var ctrl      = window.AGAPE.Controllers.CategoriaProdutoController.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    /* ---- Referências a elementos do DOM --------------------------- */
     var tabelaCorpo         = document.getElementById('tabela-corpo');
     var modalEl             = document.getElementById('modal-categoria');
     var formCategoria       = document.getElementById('form-categoria');
@@ -18,34 +13,29 @@
     var inputNome           = document.getElementById('nome');
     var selectAtivo         = document.getElementById('ativo');
     var modalTitulo         = document.getElementById('modal-titulo');
-
     var filtrNome           = document.getElementById('filtro-nome');
     var filtrStatus         = document.getElementById('filtro-status');
-
     var btnCadastrar        = document.getElementById('btn-cadastrar');
     var btnFiltrar          = document.getElementById('btn-filtrar');
     var btnLimpar           = document.getElementById('btn-limpar');
     var btnSalvar           = document.getElementById('btn-salvar');
     var btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
 
-    var modalObj            = new bootstrap.Modal(modalEl);
-    var modalExcluirObj     = new bootstrap.Modal(document.getElementById('modal-excluir'));
-    var idParaExcluir       = null;
+    var modalObj        = new bootstrap.Modal(modalEl);
+    var modalExcluirObj = new bootstrap.Modal(document.getElementById('modal-excluir'));
+    var idParaExcluir   = null;
 
-    /* ---- Inicialização -------------------------------------------- */
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
         await _carregarLista();
     }
 
-    /* ---- Carregar lista completa e armazenar em cache no Controller */
+    // Carrega lista completa e armazena no cache do Controller para filtragem local
     async function _carregarLista() {
         tabelaCorpo.innerHTML = '<tr><td colspan="4" class="tabela-vazia">Carregando...</td></tr>';
-        var resultado = await ctrl.listar();
-        _renderizarTabela(resultado);
+        _renderizarTabela(await ctrl.listar());
     }
 
-    /* ---- Renderizar tabela com o array recebido ------------------- */
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
             tabelaCorpo.innerHTML =
@@ -68,30 +58,20 @@
 
         var html = lista.map(function (c) {
             var ativo = (c.ativo === true || c.ativo === 1 || c.ativo === 'true');
-            var badge = ativo
-                ? '<span class="badge-ativo">Ativo</span>'
-                : '<span class="badge-inativo">Inativo</span>';
+            var badge = ativo ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
             return (
                 '<tr>' +
                 '<td>' + _escapar(String(c.idCatProd)) + '</td>' +
                 '<td>' + _escapar(c.nome) + '</td>' +
                 '<td>' + badge + '</td>' +
                 '<td>' +
-                '<button class="btn-acao btn-editar me-1" ' +
-                'data-id="' + c.idCatProd + '" ' +
-                'data-nome="' + _escapar(c.nome) + '" ' +
-                'data-ativo="' + ativo + '" ' +
-                'title="Editar">' +
-                '<i class="bi bi-pencil"></i>' +
-                '</button>' +
-                '<button class="btn-acao btn-excluir" ' +
-                'data-id="' + c.idCatProd + '" ' +
-                'data-nome="' + _escapar(c.nome) + '" ' +
-                'title="Excluir">' +
-                '<i class="bi bi-trash"></i>' +
-                '</button>' +
-                '</td>' +
-                '</tr>'
+                '<button class="btn-acao btn-editar me-1" data-id="' + c.idCatProd + '" ' +
+                'data-nome="' + _escapar(c.nome) + '" data-ativo="' + ativo + '" title="Editar">' +
+                '<i class="bi bi-pencil"></i></button>' +
+                '<button class="btn-acao btn-excluir" data-id="' + c.idCatProd + '" ' +
+                'data-nome="' + _escapar(c.nome) + '" title="Excluir">' +
+                '<i class="bi bi-trash"></i></button>' +
+                '</td></tr>'
             );
         }).join('');
 
@@ -99,14 +79,10 @@
         _bindBotoesTabela();
     }
 
-    /* ---- Vincular eventos nos botões da tabela -------------------- */
     function _bindBotoesTabela() {
         document.querySelectorAll('.btn-editar').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                _abrirModalEdicao(this.dataset);
-            });
+            btn.addEventListener('click', function () { _abrirModalEdicao(this.dataset); });
         });
-
         document.querySelectorAll('.btn-excluir').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 idParaExcluir = this.dataset.id;
@@ -116,29 +92,27 @@
         });
     }
 
-    /* ---- Abrir modal para cadastro -------------------------------- */
     btnCadastrar.addEventListener('click', function () {
-        modalTitulo.textContent = 'Cadastrar Categoria de Produto';
+        modalTitulo.textContent  = 'Cadastrar Categoria de Produto';
         validador.resetar(formCategoria);
         inputIdCatProd.value = '';
         inputNome.value      = '';
-        ativo.disabled = true;
         selectAtivo.value    = 'true';
+        // Campo "ativo" desabilitado no cadastro — POST não envia esse campo
+        selectAtivo.disabled = true;
         modalObj.show();
     });
 
-    /* ---- Abrir modal preenchido para edição ----------------------- */
     function _abrirModalEdicao(dados) {
-        modalTitulo.textContent = 'Alterar Categoria de Produto';
+        modalTitulo.textContent  = 'Alterar Categoria de Produto';
         validador.resetar(formCategoria);
         inputIdCatProd.value = dados.id;
         inputNome.value      = dados.nome;
-        ativo.disabled = false;
         selectAtivo.value    = dados.ativo === 'true' ? 'true' : 'false';
+        selectAtivo.disabled = false;
         modalObj.show();
     }
 
-    /* ---- Salvar --------------------------------------------------- */
     btnSalvar.addEventListener('click', async function () {
         if (!validador.validarFormulario(formCategoria)) return;
 
@@ -164,14 +138,11 @@
         }
     });
 
-    /* ---- Confirmar exclusão --------------------------------------- */
     btnConfirmarExcluir.addEventListener('click', async function () {
         if (!idParaExcluir) return;
-
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
         idParaExcluir = null;
-
         if (resultado.status === 'ok') {
             validador.mostrarAlerta('Categoria excluída com sucesso!', 'sucesso');
             await _carregarLista();
@@ -180,35 +151,23 @@
         }
     });
 
-    /* ---- Filtrar (no frontend sobre o cache do Controller) -------- */
     btnFiltrar.addEventListener('click', function () {
-        var filtros = {
-            nome:   filtrNome.value,
-            status: filtrStatus.value
-        };
-        var resultado = ctrl.filtrar(filtros);
-        _renderizarTabela(resultado);
+        _renderizarTabela(ctrl.filtrar({ nome: filtrNome.value, status: filtrStatus.value }));
     });
 
-    /* ---- Limpar filtros e recarregar ------------------------------ */
     btnLimpar.addEventListener('click', async function () {
-        filtrNome.value   = '';
-        filtrStatus.value = '';
+        filtrNome.value = filtrStatus.value = '';
         await _carregarLista();
     });
 
-    /* ---- Utilitário: escapar HTML (anti-XSS) ---------------------- */
+    // Escapa HTML para evitar XSS ao inserir dados do backend no DOM
     function _escapar(texto) {
         if (texto === null || texto === undefined) return '';
         return String(texto)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    /* ---- Aguardar DOM e inicializar ------------------------------- */
     document.addEventListener('DOMContentLoaded', inicializar);
 
 })();

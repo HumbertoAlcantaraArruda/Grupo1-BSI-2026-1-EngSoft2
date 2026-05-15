@@ -1,43 +1,34 @@
-/* =====================================================================
-   produtos.js — Camada View (bind de eventos)
-   REGRA: NÃO instancia Models. NÃO chama fetch. NÃO conhece Service.
-   Apenas delega ao Controller e renderiza o retorno no DOM.
-   ===================================================================== */
+/* produtos.js — View: vincula eventos ao DOM e delega ao Controller */
 
 (function () {
 
-    /* ---- Referências ao Controller e utilitários (via Singleton) -- */
     var ctrl      = window.AGAPE.Controllers.ProdutosController.getInstance();
     var mascaras  = window.AGAPE.Utils.Mascaras.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    /* ---- Referências a elementos do DOM --------------------------- */
-    var tabelaCorpo        = document.getElementById('tabela-corpo');
-    var modalEl            = document.getElementById('modal-produto');
-    var formProduto        = document.getElementById('form-produto');
-    var inputIdProd        = document.getElementById('idProd');
-    var inputNome          = document.getElementById('nome');
-    var selectCategoria    = document.getElementById('idCatProd');
-    var inputValorUni      = document.getElementById('valorUni');
-    var inputQtde          = document.getElementById('qtdeAtual');
-    var modalTitulo        = document.getElementById('modal-titulo');
-
-    var filtrNome          = document.getElementById('filtro-nome');
-    var filtrCategoria     = document.getElementById('filtro-categoria');
-    var filtrOperador      = document.getElementById('filtro-operador');
-    var filtrQtde          = document.getElementById('filtro-qtde');
-
-    var btnCadastrar       = document.getElementById('btn-cadastrar');
-    var btnFiltrar         = document.getElementById('btn-filtrar');
-    var btnLimpar          = document.getElementById('btn-limpar');
-    var btnSalvar          = document.getElementById('btn-salvar');
+    var tabelaCorpo         = document.getElementById('tabela-corpo');
+    var modalEl             = document.getElementById('modal-produto');
+    var formProduto         = document.getElementById('form-produto');
+    var inputIdProd         = document.getElementById('idProd');
+    var inputNome           = document.getElementById('nome');
+    var selectCategoria     = document.getElementById('idCatProd');
+    var inputValorUni       = document.getElementById('valorUni');
+    var inputQtde           = document.getElementById('qtdeAtual');
+    var modalTitulo         = document.getElementById('modal-titulo');
+    var filtrNome           = document.getElementById('filtro-nome');
+    var filtrCategoria      = document.getElementById('filtro-categoria');
+    var filtrOperador       = document.getElementById('filtro-operador');
+    var filtrQtde           = document.getElementById('filtro-qtde');
+    var btnCadastrar        = document.getElementById('btn-cadastrar');
+    var btnFiltrar          = document.getElementById('btn-filtrar');
+    var btnLimpar           = document.getElementById('btn-limpar');
+    var btnSalvar           = document.getElementById('btn-salvar');
     var btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
 
-    var modalObj           = new bootstrap.Modal(modalEl);
-    var modalExcluirObj    = new bootstrap.Modal(document.getElementById('modal-excluir'));
-    var idParaExcluir      = null;
+    var modalObj         = new bootstrap.Modal(modalEl);
+    var modalExcluirObj  = new bootstrap.Modal(document.getElementById('modal-excluir'));
+    var idParaExcluir    = null;
 
-    /* ---- Inicialização da página ---------------------------------- */
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
         mascaras.aplicar('#valorUni', 'monetario');
@@ -45,13 +36,11 @@
         await _carregarLista();
     }
 
-    /* ---- Carregar e popular selects de categoria ------------------ */
+    // Popula os selects de categoria no filtro e no formulário
     async function _carregarCategorias() {
         var resultado = await ctrl.carregarCategorias();
 
-        //console.log(resultado);
-
-        var opcaoPadrao = '<option value="">Todos</option>';
+        var opcaoPadrao     = '<option value="">Todos</option>';
         var opcaoPadraoForm = '<option value="">Selecione...</option>';
 
         if (resultado.status !== 'ok' || !Array.isArray(resultado.dados)) {
@@ -70,14 +59,12 @@
         filtrCategoria.innerHTML  = opcaoPadrao + opcoesCategoria;
     }
 
-    /* ---- Carregar lista completa de produtos ---------------------- */
     async function _carregarLista() {
         tabelaCorpo.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Carregando...</td></tr>';
         var resultado = await ctrl.listar();
         _renderizarTabela(resultado);
     }
 
-    /* ---- Renderizar tabela com os dados retornados ---------------- */
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
             tabelaCorpo.innerHTML =
@@ -112,18 +99,13 @@
                 'data-nome="' + _escapar(p.nome) + '" ' +
                 'data-idcatprod="' + p.idCatProd + '" ' +
                 'data-valoruni="' + p.valorUni + '" ' +
-                'data-qtde="' + p.qtdeAtual + '" ' +
-                'title="Editar">' +
-                '<i class="bi bi-pencil"></i>' +
-                '</button>' +
+                'data-qtde="' + p.qtdeAtual + '" title="Editar">' +
+                '<i class="bi bi-pencil"></i></button>' +
                 '<button class="btn-acao btn-excluir" ' +
                 'data-id="' + p.idProd + '" ' +
-                'data-nome="' + _escapar(p.nome) + '" ' +
-                'title="Excluir">' +
-                '<i class="bi bi-trash"></i>' +
-                '</button>' +
-                '</td>' +
-                '</tr>'
+                'data-nome="' + _escapar(p.nome) + '" title="Excluir">' +
+                '<i class="bi bi-trash"></i></button>' +
+                '</td></tr>'
             );
         }).join('');
 
@@ -131,14 +113,10 @@
         _bindBotoesTabela();
     }
 
-    /* ---- Vincular eventos nos botões da tabela -------------------- */
     function _bindBotoesTabela() {
         document.querySelectorAll('.btn-editar').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                _abrirModalEdicao(this.dataset);
-            });
+            btn.addEventListener('click', function () { _abrirModalEdicao(this.dataset); });
         });
-
         document.querySelectorAll('.btn-excluir').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 idParaExcluir = this.dataset.id;
@@ -148,48 +126,41 @@
         });
     }
 
-    /* ---- Abrir modal para cadastro -------------------------------- */
     btnCadastrar.addEventListener('click', function () {
         modalTitulo.textContent = 'Cadastrar Produto';
         validador.resetar(formProduto);
-        inputIdProd.value   = '';
-        inputNome.value     = '';
+        inputIdProd.value = '';
+        inputNome.value   = '';
         inputValorUni.value = '';
-        inputQtde.value     = '';
+        inputQtde.value   = '';
         selectCategoria.selectedIndex = 0;
         mascaras.remover('#valorUni');
         mascaras.aplicar('#valorUni', 'monetario');
         modalObj.show();
     });
 
-    /* ---- Abrir modal preenchido para edição ----------------------- */
     function _abrirModalEdicao(dados) {
-        modalTitulo.textContent = 'Alterar Produto';
+        modalTitulo.textContent   = 'Alterar Produto';
         validador.resetar(formProduto);
-        inputIdProd.value   = dados.id;
-        inputNome.value     = dados.nome;
-        inputQtde.value     = dados.qtde;
-        selectCategoria.value = dados.idcatprod;
-
-        /* Preencher campo monetário com máscara */
+        inputIdProd.value         = dados.id;
+        inputNome.value           = dados.nome;
+        inputQtde.value           = dados.qtde;
+        selectCategoria.value     = dados.idcatprod;
+        // dataset converte atributos para minúsculas (data-valoruni → valoruni)
         mascaras.remover('#valorUni');
         inputValorUni.value = mascaras.numeroParaMonetario(dados.valoruni);
         mascaras.aplicar('#valorUni', 'monetario');
-
         modalObj.show();
     }
 
-    /* ---- Salvar (cadastrar ou alterar) ----------------------------- */
     btnSalvar.addEventListener('click', async function () {
         if (!validador.validarFormulario(formProduto)) return;
-
-        var valorNumerico = mascaras.monetarioParaNumero(inputValorUni.value);
 
         var dados = {
             idProd:    inputIdProd.value || null,
             nome:      inputNome.value.trim(),
             idCatProd: selectCategoria.value,
-            valorUni:  valorNumerico,
+            valorUni:  mascaras.monetarioParaNumero(inputValorUni.value),
             qtdeAtual: inputQtde.value
         };
 
@@ -209,14 +180,11 @@
         }
     });
 
-    /* ---- Confirmar exclusão --------------------------------------- */
     btnConfirmarExcluir.addEventListener('click', async function () {
         if (!idParaExcluir) return;
-
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
         idParaExcluir = null;
-
         if (resultado.status === 'ok') {
             validador.mostrarAlerta('Produto excluído com sucesso!', 'sucesso');
             await _carregarLista();
@@ -225,7 +193,6 @@
         }
     });
 
-    /* ---- Filtrar -------------------------------------------------- */
     btnFiltrar.addEventListener('click', async function () {
         var filtros = {
             nome:       filtrNome.value,
@@ -234,46 +201,29 @@
             quantidade: filtrQtde.value
         };
         tabelaCorpo.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Filtrando...</td></tr>';
-        var resultado = await ctrl.filtrar(filtros);
-        _renderizarTabela(resultado);
+        _renderizarTabela(await ctrl.filtrar(filtros));
     });
 
-    /* ---- Limpar filtros e recarregar ------------------------------ */
     btnLimpar.addEventListener('click', async function () {
-        filtrNome.value        = '';
-        filtrCategoria.value   = '';
-        filtrOperador.value    = '';
-        filtrQtde.value        = '';
+        filtrNome.value = filtrCategoria.value = filtrOperador.value = filtrQtde.value = '';
         await _carregarLista();
     });
 
-    /* ---- Utilitário: traduzir operador (URL-encoded → símbolo) ---- */
-    /* Converte '%3E%3D' → '>=', '%3C' → '<', etc.                    */
-    var _OPERADORES = {
-        '>=': '>=',
-        '<=': '<=',
-        '>':  '>',
-        '<':  '<',
-        '=':  '='
-    };
-
+    // Decodifica operadores URL-encoded para exibição (ex.: %3E%3D → >=)
+    var _OPERADORES = { '>=': '>=', '<=': '<=', '>': '>', '<': '<', '=': '=' };
     function _traduzirOperador(valor) {
-        var decodificado = decodeURIComponent(valor || '');
-        return _OPERADORES[decodificado] || decodificado;
+        var dec = decodeURIComponent(valor || '');
+        return _OPERADORES[dec] || dec;
     }
 
-    /* ---- Utilitário: escapar HTML para evitar XSS ---------------- */
+    // Escapa HTML para evitar XSS ao inserir dados do backend no DOM
     function _escapar(texto) {
         if (texto === null || texto === undefined) return '';
         return String(texto)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    /* ---- Aguardar DOM pronto e inicializar ------------------------ */
     document.addEventListener('DOMContentLoaded', inicializar);
 
 })();

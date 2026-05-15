@@ -1,19 +1,15 @@
-/* =====================================================================
-   CategoriaEvento — Entidade / Model
-   GRASP Information Expert: validações dos próprios atributos
-   SOLID LSP: substituível onde um Model base for esperado
-   ===================================================================== */
+/* CategoriaEvento — entidade com validações e serialização para o backend */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Models = window.AGAPE.Models || {};
 
 window.AGAPE.Models.CategoriaEvento = (function () {
 
-    /* ---- Construtor ------------------------------------------------- */
     function CategoriaEvento(dados) {
         dados = dados || {};
         this._idCatEvento = dados.idCatEvento || null;
         this._nome        = dados.nome        || '';
+        // Aceita boolean, número (0/1) ou string ('true'/'false')
         this._ativo       = _parsearBooleano(dados.ativo, true);
     }
 
@@ -23,32 +19,25 @@ window.AGAPE.Models.CategoriaEvento = (function () {
         return padrao;
     }
 
-    /* ---- Getters ---------------------------------------------------- */
     CategoriaEvento.prototype.getIdCatEvento = function () { return this._idCatEvento; };
     CategoriaEvento.prototype.getNome        = function () { return this._nome;        };
     CategoriaEvento.prototype.getAtivo       = function () { return this._ativo;       };
 
-    /* ---- Setters ---------------------------------------------------- */
     CategoriaEvento.prototype.setIdCatEvento = function (v) { this._idCatEvento = v;          };
     CategoriaEvento.prototype.setNome        = function (v) { this._nome        = v;          };
     CategoriaEvento.prototype.setAtivo       = function (v) { this._ativo       = Boolean(v); };
 
-    /* ---- Validações individuais (Information Expert) --------------- */
     CategoriaEvento.prototype.validarNome = function () {
         return typeof this._nome === 'string' && this._nome.trim().length >= 2;
     };
 
-    /* ---- Validação completa — retorna lista de erros --------------- */
     CategoriaEvento.prototype.validar = function () {
         var erros = [];
-        if (!this.validarNome())
-            erros.push('Nome deve ter pelo menos 2 caracteres.');
+        if (!this.validarNome()) erros.push('Nome deve ter pelo menos 2 caracteres.');
         return erros;
     };
 
-    /* ---- Serializar para envio ao backend (x-www-form-urlencoded) -- */
-    /* PUT body: idCatEvento, ativo, nome                                */
-    /* POST body: nome (sem ativo e sem idCatEvento conforme a rota)     */
+    // PUT envia idCatEvento + nome + ativo
     CategoriaEvento.prototype.paraFormData = function () {
         var dados = {
             nome:  this._nome,
@@ -60,7 +49,7 @@ window.AGAPE.Models.CategoriaEvento = (function () {
         return dados;
     };
 
-    /* ---- Serializar apenas para POST (apenas nome, sem id/ativo) -- */
+    // POST envia apenas nome (sem id e sem ativo, conforme a rota)
     CategoriaEvento.prototype.paraFormDataCadastro = function () {
         return { nome: this._nome };
     };

@@ -8,7 +8,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-// import java.sql.PreparedStatement;
 import agape.control.ConexaoBD;
 import agape.model.Produto;
 

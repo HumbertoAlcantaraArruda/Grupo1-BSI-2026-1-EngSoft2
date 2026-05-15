@@ -1,8 +1,4 @@
-/* =====================================================================
-   Parametrizacao — Entidade / Model
-   GRASP Information Expert: validações dos próprios atributos
-   Tabela de registro único (upsert); PK = cnpj
-   ===================================================================== */
+/* Parametrizacao — entidade de registro único (upsert por CNPJ) */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Models = window.AGAPE.Models || {};
@@ -36,7 +32,6 @@ window.AGAPE.Models.Parametrizacao = (function () {
         this._obs                = dados.obs                || '';
     }
 
-    /* ---- Getters ---------------------------------------------------- */
     Parametrizacao.prototype.getCnpj               = function () { return this._cnpj;               };
     Parametrizacao.prototype.getRazaoSocial        = function () { return this._razaoSocial;        };
     Parametrizacao.prototype.getNomeFantasia       = function () { return this._nomeFantasia;       };
@@ -61,10 +56,8 @@ window.AGAPE.Models.Parametrizacao = (function () {
     Parametrizacao.prototype.getFusoHorario        = function () { return this._fusoHorario;        };
     Parametrizacao.prototype.getObs                = function () { return this._obs;                };
 
-    /* ---- Validações (Information Expert) --------------------------- */
     Parametrizacao.prototype.validarCnpj = function () {
-        var d = this._cnpj.replace(/\D/g, '');
-        return d.length === 14;
+        return this._cnpj.replace(/\D/g, '').length === 14;
     };
 
     Parametrizacao.prototype.validarRazaoSocial = function () {
@@ -77,38 +70,22 @@ window.AGAPE.Models.Parametrizacao = (function () {
 
     Parametrizacao.prototype.validar = function () {
         var erros = [];
-        if (!this.validarCnpj())        erros.push('CNPJ inválido — informe os 14 dígitos.');
-        if (!this.validarRazaoSocial()) erros.push('Razão Social deve ter pelo menos 2 caracteres.');
+        if (!this.validarCnpj())         erros.push('CNPJ inválido — informe os 14 dígitos.');
+        if (!this.validarRazaoSocial())  erros.push('Razão Social deve ter pelo menos 2 caracteres.');
         if (!this.validarNomeFantasia()) erros.push('Nome Fantasia deve ter pelo menos 2 caracteres.');
         return erros;
     };
 
-    /* ---- Serializar para POST x-www-form-urlencoded ---------------- */
     Parametrizacao.prototype.paraFormData = function () {
         return {
-            cnpj:               this._cnpj,
-            razaoSocial:        this._razaoSocial,
-            nomeFantasia:       this._nomeFantasia,
-            logradouro:         this._logradouro,
-            numEndereco:        this._numEndereco,
-            complemento:        this._complemento,
-            bairro:             this._bairro,
-            cidade:             this._cidade,
-            uf:                 this._uf,
-            cep:                this._cep,
-            pais:               this._pais,
-            email:              this._email,
-            telefone1:          this._telefone1,
-            telefone2:          this._telefone2,
-            site:               this._site,
-            responsavel:        this._responsavel,
-            inscricaoEstadual:  this._inscricaoEstadual,
-            inscricaoMunicipal: this._inscricaoMunicipal,
-            logotipoGrande:     this._logotipoGrande,
-            logotipoPequeno:    this._logotipoPequeno,
-            moedaPadrao:        this._moedaPadrao,
-            fusoHorario:        this._fusoHorario,
-            obs:                this._obs
+            cnpj: this._cnpj, razaoSocial: this._razaoSocial, nomeFantasia: this._nomeFantasia,
+            logradouro: this._logradouro, numEndereco: this._numEndereco, complemento: this._complemento,
+            bairro: this._bairro, cidade: this._cidade, uf: this._uf, cep: this._cep, pais: this._pais,
+            email: this._email, telefone1: this._telefone1, telefone2: this._telefone2, site: this._site,
+            responsavel: this._responsavel, inscricaoEstadual: this._inscricaoEstadual,
+            inscricaoMunicipal: this._inscricaoMunicipal, logotipoGrande: this._logotipoGrande,
+            logotipoPequeno: this._logotipoPequeno, moedaPadrao: this._moedaPadrao,
+            fusoHorario: this._fusoHorario, obs: this._obs
         };
     };
 

@@ -61,56 +61,48 @@ public class CParametrizacao implements HttpHandler {
         }
     }
 
-    // Remove acentos, espaços e caracteres especiais do nome do arquivo.
-    // Mantém apenas letras, números, hífen, underscore e ponto.
-    // Ex.: "Logo Grande São Paulo (2).png" → "logo_grande_sao_paulo_2_.png"
+    // Remove acentos e caracteres especiais do nome do arquivo
+    // Ex.: "Logo São Paulo (2).png" → "logo_sao_paulo_2.png"
     private String sanitizarNomeArquivo(String nome) {
         if (nome == null || nome.trim().isEmpty()) return "arquivo";
 
-        // Separar extensão antes de sanitizar
         int pontoExt = nome.lastIndexOf('.');
         String base = pontoExt > 0 ? nome.substring(0, pontoExt) : nome;
         String ext  = pontoExt > 0 ? nome.substring(pontoExt)    : "";
 
-        // Decompõe caracteres acentuados (ex.: ã → a + combining tilde)
-        // e remove os diacríticos resultantes
+        // Decomposição NFD: separa letras de seus diacríticos para poder removê-los
         String semAcento = Normalizer.normalize(base, Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
 
-        // Substitui espaços e caracteres não permitidos por underscore
         String sanitizado = semAcento
-                .replaceAll("[^a-zA-Z0-9._-]", "_")  // caracteres proibidos → _
-                .replaceAll("_+", "_")                 // múltiplos underscores → um só
-                .replaceAll("^_|_$", "")              // remove _ no início/fim
+                .replaceAll("[^a-zA-Z0-9._-]", "_")  // proibidos → _
+                .replaceAll("_+", "_")                 // reduz sequências de _
+                .replaceAll("^_|_$", "")               // remove _ nas bordas
                 .toLowerCase();
 
         if (sanitizado.isEmpty()) sanitizado = "arquivo";
 
-        // Sanitiza também a extensão (remove tudo exceto letras/números)
         String extLimpa = ext.replaceAll("[^a-zA-Z0-9.]", "").toLowerCase();
-
         return sanitizado + extLimpa;
     }
 
-    // Resolve o diretório assets/img de forma robusta:
-    // IDEs diferentes definem user.dir de maneiras distintas (raiz do workspace vs. pasta do módulo)
+    // Localiza FrontEnd/assets/img independente de onde a JVM foi iniciada.
+    // IntelliJ define user.dir como raiz do workspace; NetBeans define como pasta do módulo.
     private Path resolverDirAssets() {
         Path base = Paths.get(System.getProperty("user.dir"));
 
-        // Caso 1: user.dir é a raiz do workspace (ex.: IntelliJ IDEA)
-        // C:\EGSII\Grupo1-BSI-2026-1-EngSoft2\ → FrontEnd/assets/img
+        // IntelliJ: user.dir = raiz do workspace
         Path candidato1 = base.resolve("FrontEnd/assets/img").normalize();
         if (candidato1.getParent().getParent().toFile().isDirectory()) {
             return candidato1;
         }
 
-        // Caso 2: user.dir é a pasta BackEnd (ex.: NetBeans, linha de comando)
-        // C:\EGSII\Grupo1-BSI-2026-1-EngSoft2\BackEnd\ → ../FrontEnd/assets/img
-        Path candidato2 = base.resolve("../FrontEnd/assets/img").normalize();
-        return candidato2;
+        // NetBeans / linha de comando: user.dir = pasta BackEnd
+        return base.resolve("../FrontEnd/assets/img").normalize();
     }
 
-    // Extrai valor de string em JSON simples (sem escape interno — seguro para base64 e nomes de arquivo)
+    // Extrai valor de campo de JSON simples por busca textual (não usa parser)
+    // Seguro para base64 e nomes de arquivo pois esses valores não contêm aspas
     private String extrairCampoJson(String json, String campo) {
         String chave = "\"" + campo + "\":\"";
         int inicio = json.indexOf(chave);

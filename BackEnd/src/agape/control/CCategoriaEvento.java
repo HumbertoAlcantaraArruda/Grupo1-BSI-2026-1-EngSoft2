@@ -54,7 +54,7 @@ public class CCategoriaEvento implements HttpHandler {
         }
     }
 
-    // ── OPTIONS ───────────────────────────────────────────────────────────────
+    // OPTIONS
 
     private ResponseObject handleOptions() {
         ResponseObject r = new ResponseObject();
@@ -63,7 +63,7 @@ public class CCategoriaEvento implements HttpHandler {
         return r;
     }
 
-    // ── GET ───────────────────────────────────────────────────────────────────
+    // GET
 
     private ResponseObject handleGet(String path, String query) {
         String nomeParam  = param(query, "nome");
@@ -75,7 +75,7 @@ public class CCategoriaEvento implements HttpHandler {
         return buscar(nome, ativo);
     }
 
-    // ── POST ──────────────────────────────────────────────────────────────────
+    // POST
 
     private ResponseObject handlePost(String body) {
         String ativoStr = param(body, "ativo");
@@ -83,7 +83,7 @@ public class CCategoriaEvento implements HttpHandler {
         return inserir(param(body, "nome"), ativo);
     }
 
-    // ── PUT ───────────────────────────────────────────────────────────────────
+    // PUT
 
     private ResponseObject handlePut(String path, String body) {
         if (path.equals("/categoriaEvento"))
@@ -91,13 +91,13 @@ public class CCategoriaEvento implements HttpHandler {
         return naoEncontrado();
     }
 
-    // ── DELETE ────────────────────────────────────────────────────────────────
+    // DELETE
 
     private ResponseObject handleDelete(String query) {
         return excluir(parseSafeInt(param(query, "idCatEvento")));
     }
 
-    // ── operações ─────────────────────────────────────────────────────────────
+    // Operações de negócio
 
     public ResponseObject buscar(String nome, Boolean ativo) {
         ResponseObject response = new ResponseObject();
@@ -175,7 +175,7 @@ public class CCategoriaEvento implements HttpHandler {
         return response;
     }
 
-    // ── utilitários HTTP ──────────────────────────────────────────────────────
+    // Utilitários HTTP
 
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json  = response.toJson();

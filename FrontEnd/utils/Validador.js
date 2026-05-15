@@ -1,8 +1,4 @@
-/* =====================================================================
-   Validador — Integração com Bootstrap form-validation
-   Padrão: Singleton (GOF)
-   Responsabilidade: validar formulários e destacar campos (SRP)
-   ===================================================================== */
+/* Validador — singleton para validação visual de formulários via Bootstrap */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Utils = window.AGAPE.Utils || {};
@@ -11,33 +7,26 @@ window.AGAPE.Utils.Validador = (function () {
 
     var instancia = null;
 
-    /* ---- Construtor ------------------------------------------------- */
     function Validador() {}
 
-    /* ---- Ativa validação visual Bootstrap e retorna se é válido ---- */
-    /* Adiciona .was-validated ao formulário, acionando .is-invalid     */
+    // Aciona a validação visual do Bootstrap e retorna se o formulário é válido
     Validador.prototype.validarFormulario = function (formulario) {
         if (!formulario) return false;
         formulario.classList.add('was-validated');
         return formulario.checkValidity();
     };
 
-    /* ---- Reseta o estado visual de validação e limpa os campos ----- */
     Validador.prototype.resetar = function (formulario) {
         if (!formulario) return;
         formulario.classList.remove('was-validated');
         formulario.reset();
-        /* Remove classes Bootstrap de estado individualmente */
-        var campos = formulario.querySelectorAll('.is-valid, .is-invalid');
-        campos.forEach(function (campo) {
+        formulario.querySelectorAll('.is-valid, .is-invalid').forEach(function (campo) {
             campo.classList.remove('is-valid', 'is-invalid');
         });
     };
 
-    /* ---- Destacar campo individualmente com mensagem customizada --- */
     Validador.prototype.destacarCampo = function (campo, valido, mensagem) {
         if (!campo) return;
-
         if (valido) {
             campo.classList.remove('is-invalid');
             campo.classList.add('is-valid');
@@ -46,35 +35,26 @@ window.AGAPE.Utils.Validador = (function () {
             campo.classList.add('is-invalid');
             var feedback = campo.parentElement
                 ? campo.parentElement.querySelector('.invalid-feedback')
-                : null;
-            if (!feedback) {
-                feedback = campo.nextElementSibling;
-            }
+                : campo.nextElementSibling;
             if (feedback && feedback.classList.contains('invalid-feedback') && mensagem) {
                 feedback.textContent = mensagem;
             }
         }
     };
 
-    /* ---- Verificar se campo tem valor preenchido ------------------- */
     Validador.prototype.campoPreenchido = function (valor) {
         return valor !== null && valor !== undefined && String(valor).trim() !== '';
     };
 
-    /* ---- Mostrar alerta flutuante (Bootstrap toast/alert) ---------- */
+    // Exibe alerta flutuante que some automaticamente após 4 segundos
+    // tipo: 'sucesso' | 'erro' | 'aviso'
     Validador.prototype.mostrarAlerta = function (mensagem, tipo) {
-        /* tipo: 'sucesso' | 'erro' | 'aviso' */
-        var classeBs = tipo === 'sucesso'
-            ? 'alert-success'
-            : tipo === 'aviso'
-                ? 'alert-warning'
-                : 'alert-danger';
-
-        var icone = tipo === 'sucesso'
-            ? 'bi-check-circle'
-            : tipo === 'aviso'
-                ? 'bi-exclamation-triangle'
-                : 'bi-x-circle';
+        var classeBs = tipo === 'sucesso' ? 'alert-success'
+                     : tipo === 'aviso'   ? 'alert-warning'
+                                          : 'alert-danger';
+        var icone    = tipo === 'sucesso' ? 'bi-check-circle'
+                     : tipo === 'aviso'   ? 'bi-exclamation-triangle'
+                                          : 'bi-x-circle';
 
         var alerta = document.createElement('div');
         alerta.className = 'alert ' + classeBs + ' alert-dismissible fade show alerta-topo';
@@ -86,25 +66,19 @@ window.AGAPE.Utils.Validador = (function () {
 
         document.body.appendChild(alerta);
 
-        /* Remove automaticamente após 4 segundos */
         setTimeout(function () {
             if (alerta.parentElement) {
                 alerta.classList.remove('show');
                 setTimeout(function () {
-                    if (alerta.parentElement) {
-                        alerta.parentElement.removeChild(alerta);
-                    }
+                    if (alerta.parentElement) alerta.parentElement.removeChild(alerta);
                 }, 300);
             }
         }, 4000);
     };
 
-    /* ---- Interface Singleton --------------------------------------- */
     return {
         getInstance: function () {
-            if (!instancia) {
-                instancia = new Validador();
-            }
+            if (!instancia) instancia = new Validador();
             return instancia;
         }
     };

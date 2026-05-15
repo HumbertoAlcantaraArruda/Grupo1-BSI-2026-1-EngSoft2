@@ -27,8 +27,7 @@ public static CProduto getInstancia() {
     }
 
 
-    //Metodo que identifica a ROTA que o cliente está requisitando
-    @Override 
+    @Override
     public void handle(HttpExchange exchange) throws IOException {
        String method = exchange.getRequestMethod();
        String path = exchange.getRequestURI().getPath();
@@ -62,19 +61,13 @@ public static CProduto getInstancia() {
         return r;
     }
 
-// AUXILIAR PARA ENVIAR RESPOSTA
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json = response.toJson();
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        // Configura os headers CORS e o tipo de conteúdo
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        // Permitir acesso de qualquer origem (CORS)
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        // Permitir métodos HTTP específicos
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        // Permitir headers específicos
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
         // Enviar a resposta
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
         exchange.getResponseBody().write(bytes);

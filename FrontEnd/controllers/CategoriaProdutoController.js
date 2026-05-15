@@ -1,10 +1,5 @@
-/* =====================================================================
-   CategoriaProdutoController — Controller do caso de uso CategoriaProduto
-   Padrão: Singleton + Façade (GOF)
-   GRASP Controller: único ponto de entrada da View para o caso de uso
-   GRASP Creator: cria instâncias de CategoriaProduto
-   Observação: filtros são aplicados no frontend (API não suporta query filters)
-   ===================================================================== */
+/* CategoriaProdutoController — fachada do caso de uso CategoriaProduto
+   A API não aceita filtros via query; filtragem é feita localmente sobre _listaCache */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Controllers = window.AGAPE.Controllers || {};
@@ -13,15 +8,13 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
 
     var instancia = null;
 
-    /* ---- Construtor ------------------------------------------------- */
     function CategoriaProdutoController() {
-        this._service  = window.AGAPE.Services.CategoriaProdutoService.getInstance();
-        this._validador = window.AGAPE.Utils.Validador.getInstance();
-        /* Cache da lista completa para filtragem no frontend */
+        this._service    = window.AGAPE.Services.CategoriaProdutoService.getInstance();
+        this._validador  = window.AGAPE.Utils.Validador.getInstance();
         this._listaCache = [];
     }
 
-    /* ---- Listar todas as categorias e armazenar em cache ---------- */
+    // Armazena resultado no cache para uso posterior em filtrar()
     CategoriaProdutoController.prototype.listar = async function () {
         var resultado = await this._service.listar();
         if (resultado.status === 'ok' && Array.isArray(resultado.dados)) {
@@ -30,9 +23,7 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
         return resultado;
     };
 
-    /* ---- Filtrar no frontend (API não aceita query params) -------- */
-    /* filtros: { nome?, status? }                                      */
-    /* status: 'ativo' | 'inativo' | '' (todos)                        */
+    // filtros.status: 'ativo' | 'inativo' | '' (todos)
     CategoriaProdutoController.prototype.filtrar = function (filtros) {
         var lista = this._listaCache;
 
@@ -56,44 +47,28 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
         return { status: 'ok', dados: lista };
     };
 
-    /* ---- Cadastrar categoria (Creator: instancia CategoriaProduto) */
     CategoriaProdutoController.prototype.cadastrar = async function (dados) {
         var categoria = new window.AGAPE.Models.CategoriaProduto(dados);
-        var erros = categoria.validar();
-
-        if (erros.length > 0) {
-            return { status: 'error', erro: erros.join(' ') };
-        }
-
+        var erros     = categoria.validar();
+        if (erros.length > 0) return { status: 'error', erro: erros.join(' ') };
         return await this._service.cadastrar(categoria);
     };
 
-    /* ---- Alterar categoria ---------------------------------------- */
     CategoriaProdutoController.prototype.alterar = async function (dados) {
         var categoria = new window.AGAPE.Models.CategoriaProduto(dados);
-        var erros = categoria.validar();
-
-        if (erros.length > 0) {
-            return { status: 'error', erro: erros.join(' ') };
-        }
-
+        var erros     = categoria.validar();
+        if (erros.length > 0) return { status: 'error', erro: erros.join(' ') };
         return await this._service.alterar(categoria);
     };
 
-    /* ---- Excluir categoria ---------------------------------------- */
     CategoriaProdutoController.prototype.excluir = async function (idCatProd) {
-        if (!idCatProd) {
-            return { status: 'error', erro: 'ID da categoria não informado.' };
-        }
+        if (!idCatProd) return { status: 'error', erro: 'ID da categoria não informado.' };
         return await this._service.excluir(idCatProd);
     };
 
-    /* ---- Interface Singleton --------------------------------------- */
     return {
         getInstance: function () {
-            if (!instancia) {
-                instancia = new CategoriaProdutoController();
-            }
+            if (!instancia) instancia = new CategoriaProdutoController();
             return instancia;
         }
     };

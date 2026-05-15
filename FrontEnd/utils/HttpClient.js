@@ -1,24 +1,16 @@
-/* =====================================================================
-   HttpClient — Wrapper sobre fetch
-   Padrão: Singleton (GOF)
-   Responsabilidade: padronizar todas as chamadas HTTP (SRP)
-   Controllers dependem desta abstração, não de fetch diretamente (DIP)
-   ===================================================================== */
+/* HttpClient — singleton para chamadas HTTP padronizadas */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Utils = window.AGAPE.Utils || {};
 
 window.AGAPE.Utils.HttpClient = (function () {
 
-    /* URL base da API REST */
     var BASE_URL = 'http://localhost:8080';
-
     var instancia = null;
 
-    /* ---- Construtor ------------------------------------------------- */
     function HttpClient() {}
 
-    /* ---- Método auxiliar: tenta parsear JSON, senão retorna texto -- */
+    // Tenta parsear JSON; retorna texto puro se a resposta não for JSON válido
     HttpClient.prototype._parsearResposta = async function (resposta) {
         var texto = await resposta.text();
         try {
@@ -28,9 +20,7 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
-    /* ---- Método auxiliar: extrai result do envelope do backend ----- */
-    /* O backend sempre responde { status, code, messages, result }     */
-    /* Retorna result quando existe, senão retorna o objeto inteiro     */
+    // Extrai o campo result do envelope padrão do backend { status, code, messages, result }
     HttpClient.prototype._extrairDados = function (dados) {
         if (dados && typeof dados === 'object' && dados.result !== undefined) {
             return dados.result;
@@ -38,7 +28,21 @@ window.AGAPE.Utils.HttpClient = (function () {
         return dados;
     };
 
-    /* ---- Método auxiliar: traduz código HTTP em mensagem amigável -- */
+    // Monta URL com query string, ignorando parâmetros nulos ou vazios
+    HttpClient.prototype._montarUrl = function (endpoint, params) {
+        var url = new URL(BASE_URL + endpoint);
+        if (params && typeof params === 'object') {
+            Object.keys(params).forEach(function (chave) {
+                var valor = params[chave];
+                if (valor !== null && valor !== undefined && valor !== '') {
+                    url.searchParams.append(chave, valor);
+                }
+            });
+        }
+        return url.toString();
+    };
+
+    // Mensagens amigáveis por código HTTP
     var _MENSAGENS_HTTP = {
         400: 'Os dados enviados são inválidos. Verifique as informações e tente novamente.',
         401: 'Acesso não autorizado. Faça login novamente para continuar.',
@@ -64,31 +68,13 @@ window.AGAPE.Utils.HttpClient = (function () {
         return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
     };
 
-    /* ---- Método auxiliar: monta URL com query string --------------- */
-    HttpClient.prototype._montarUrl = function (endpoint, params) {
-        var url = new URL(BASE_URL + endpoint);
-        if (params && typeof params === 'object') {
-            Object.keys(params).forEach(function (chave) {
-                var valor = params[chave];
-                if (valor !== null && valor !== undefined && valor !== '') {
-                    url.searchParams.append(chave, valor);
-                }
-            });
-        }
-        return url.toString();
-    };
-
-    /* ---- GET -------------------------------------------------------- */
     HttpClient.prototype.get = async function (endpoint, params) {
         try {
             var url = this._montarUrl(endpoint, params);
             var resposta = await fetch(url);
 
             if (!resposta.ok) {
-                return {
-                    status: 'error',
-                    erro: this._mensagemAmigavel(resposta.status)
-                };
+                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -99,7 +85,6 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
-    /* ---- POST ------------------------------------------------------- */
     HttpClient.prototype.post = async function (endpoint, corpo) {
         try {
             var params = new URLSearchParams();
@@ -116,10 +101,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             });
 
             if (!resposta.ok) {
-                return {
-                    status: 'error',
-                    erro: this._mensagemAmigavel(resposta.status)
-                };
+                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -130,7 +112,6 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
-    /* ---- PUT -------------------------------------------------------- */
     HttpClient.prototype.put = async function (endpoint, corpo) {
         try {
             var params = new URLSearchParams();
@@ -147,10 +128,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             });
 
             if (!resposta.ok) {
-                return {
-                    status: 'error',
-                    erro: this._mensagemAmigavel(resposta.status)
-                };
+                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -161,7 +139,7 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
-    /* ---- POST com corpo JSON (usado no upload de logos) ------------- */
+    // Envia corpo como JSON (usado no upload de logos)
     HttpClient.prototype.postJson = async function (endpoint, corpo) {
         try {
             var resposta = await fetch(BASE_URL + endpoint, {
@@ -171,10 +149,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             });
 
             if (!resposta.ok) {
-                return {
-                    status: 'error',
-                    erro: this._mensagemAmigavel(resposta.status)
-                };
+                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -185,18 +160,13 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
-    /* ---- DELETE ----------------------------------------------------- */
     HttpClient.prototype.delete = async function (endpoint, params) {
         try {
             var url = this._montarUrl(endpoint, params);
-
             var resposta = await fetch(url, { method: 'DELETE' });
 
             if (!resposta.ok) {
-                return {
-                    status: 'error',
-                    erro: this._mensagemAmigavel(resposta.status)
-                };
+                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -207,12 +177,9 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
-    /* ---- Interface Singleton --------------------------------------- */
     return {
         getInstance: function () {
-            if (!instancia) {
-                instancia = new HttpClient();
-            }
+            if (!instancia) instancia = new HttpClient();
             return instancia;
         }
     };
