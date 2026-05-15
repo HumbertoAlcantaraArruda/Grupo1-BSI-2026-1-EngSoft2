@@ -66,7 +66,9 @@ public class ProdutoDAO {
         try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return mapear(rs);
+                if (rs.next()) {
+                    return mapear(rs);
+                }
             }
         }
         return null;
