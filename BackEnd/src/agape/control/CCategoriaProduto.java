@@ -59,18 +59,24 @@ public class CCategoriaProduto implements HttpHandler {
     }
 
     private ResponseObject handleGet(String query) {
-        String nomeParam = param(query, "nome");
-        String nome = nomeParam.isEmpty() ? null : nomeParam.trim();
-        return buscar(nome);
+        String nomeParam  = param(query, "nome");
+        String ativoParam = param(query, "ativo");
+        String nome   = nomeParam.isEmpty()  ? null : nomeParam.trim();
+        Boolean ativo = ativoParam.isEmpty() ? null : parseSafeBool(ativoParam, true);
+        return buscar(nome, ativo);
     }
 
     private ResponseObject handlePost(String body) {
-        return inserir(param(body, "nome"));
+        return inserir(param(body, "nome"), parseSafeBool(param(body, "ativo"), true));
     }
 
     private ResponseObject handlePut(String path, String body) {
         if (path.equals("/categoriaProduto"))
-            return atualizar(parseSafeInt(param(body, "idCatProd")), param(body, "nome"));
+            return atualizar(
+                parseSafeInt(param(body, "idCatProd")),
+                param(body, "nome"),
+                parseSafeBool(param(body, "ativo"), true)
+            );
         return naoEncontrado();
     }
 
@@ -78,19 +84,19 @@ public class CCategoriaProduto implements HttpHandler {
         return excluir(parseSafeInt(param(query, "idCatProd")));
     }
 
-    public ResponseObject buscar(String nome) {
+    public ResponseObject buscar(String nome, Boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            response.setResult(dao.buscar(nome));
+            response.setResult(dao.buscar(nome, ativo));
         } catch (Exception e) {
             erroInterno(response, e);
         }
         return response;
     }
 
-    public ResponseObject inserir(String nome) {
+    public ResponseObject inserir(String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
@@ -100,6 +106,7 @@ public class CCategoriaProduto implements HttpHandler {
 
             CategoriaProduto c = new CategoriaProduto();
             c.setNome(nome.trim());
+            c.setAtivo(ativo);
             dao.inserir(c);
 
             response.setStatus(ResponseObject.STATUS_OK);
@@ -112,7 +119,7 @@ public class CCategoriaProduto implements HttpHandler {
         return response;
     }
 
-    public ResponseObject atualizar(int idCatProd, String nome) {
+    public ResponseObject atualizar(int idCatProd, String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
@@ -125,6 +132,7 @@ public class CCategoriaProduto implements HttpHandler {
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outra categoria de produto com esse nome.");
 
             c.setNome(nome.trim());
+            c.setAtivo(ativo);
             dao.atualizar(c);
 
             response.setStatus(ResponseObject.STATUS_OK);
@@ -181,6 +189,11 @@ public class CCategoriaProduto implements HttpHandler {
 
     private int parseSafeInt(String val) {
         try { return Integer.parseInt(val.trim()); } catch (Exception e) { return 0; }
+    }
+
+    private boolean parseSafeBool(String val, boolean defaultVal) {
+        if (val == null || val.trim().isEmpty()) return defaultVal;
+        return val.trim().equalsIgnoreCase("true") || val.trim().equals("1");
     }
 
     private boolean vazio(String s) {

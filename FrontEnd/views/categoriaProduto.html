@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Categoria de Produto</title>
+
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../assets/css/agape.css">
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper"></div>
+
+    <!-- Conteúdo principal -->
+    <div id="content-wrapper">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Categoria de Produto</span>
+        </header>
+
+        <!-- Área de conteúdo -->
+        <div class="area-conteudo">
+
+            <!-- Título + Cadastrar -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="titulo-pagina">
+                    <i class="bi bi-tags me-2"></i>Categoria de Produto
+                </h1>
+                <button class="btn btn-primary" id="btn-cadastrar">
+                    <i class="bi bi-plus-circle me-1"></i> Cadastrar
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card-filtros card">
+                <div class="card-body">
+                    <p class="card-titulo-filtros">
+                        <i class="bi bi-funnel me-1"></i>Filtros
+                    </p>
+                    <div class="row g-3 align-items-end">
+
+                        <!-- Nome -->
+                        <div class="col-md-5">
+                            <label for="filtro-nome" class="form-label form-label-sm">Nome</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="filtro-nome" placeholder="Buscar por nome...">
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-md-4">
+                            <label for="filtro-status" class="form-label form-label-sm">Status</label>
+                            <select class="form-select form-select-sm" id="filtro-status">
+                                <option value="">Todos</option>
+                                <option value="ativo">Ativo</option>
+                                <option value="inativo">Inativo</option>
+                            </select>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="col-md-3 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" id="btn-filtrar">
+                                <i class="bi bi-search me-1"></i>Filtrar
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-limpar">
+                                <i class="bi bi-x-lg me-1"></i>Limpar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="tabela-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Nome</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="text-center" style="width: 100px">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-corpo">
+                            <tr>
+                                <td colspan="4" class="tabela-vazia">
+                                    <i class="bi bi-hourglass-split me-1"></i>Carregando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal: Cadastrar / Alterar Categoria de Produto -->
+<div class="modal fade" id="modal-categoria" tabindex="-1"
+     aria-labelledby="modal-titulo" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-titulo">Cadastrar Categoria de Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="form-categoria" novalidate>
+                    <input type="hidden" id="idCatProd">
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label campo-obrigatorio">Nome</label>
+                        <input type="text" class="form-control" id="nome"
+                               placeholder="Nome da categoria" required minlength="2">
+                        <div class="invalid-feedback">
+                            Nome deve ter pelo menos 2 caracteres.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ativo" class="form-label campo-obrigatorio">Status</label>
+                        <select class="form-select" id="ativo" required>
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Selecione um status.
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-salvar">
+                    <i class="bi bi-check-circle me-1"></i>Salvar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmar Exclusão -->
+<div class="modal fade" id="modal-excluir" tabindex="-1"
+     aria-labelledby="modal-excluir-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-excluir-titulo">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-1">Deseja excluir a categoria:</p>
+                <p class="fw-semibold mb-0" id="excluir-nome"></p>
+                <p class="text-muted small mt-2">Esta ação não pode ser desfeita.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm"
+                        id="btn-confirmar-excluir">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Scripts -->
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../utils/HttpClient.js"></script>
+<script src="../utils/Mascaras.js"></script>
+<script src="../utils/Validador.js"></script>
+<script src="../utils/Sidebar.js"></script>
+
+<script src="../models/CategoriaProduto.js"></script>
+
+<script src="../services/CategoriaProdutoService.js"></script>
+
+<script src="../controllers/CategoriaProdutoController.js"></script>
+
+<script src="./categoriaProduto.js"></script>
+
+</body>
+</html>

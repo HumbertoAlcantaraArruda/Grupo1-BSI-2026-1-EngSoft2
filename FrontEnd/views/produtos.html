@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Produtos</title>
+
+    <!-- Bootstrap CSS (local) -->
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <!-- Bootstrap Icons (local) -->
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <!-- Design System AGAPE -->
+    <link rel="stylesheet" href="../assets/css/agape.css">
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- =========================================================== -->
+    <!-- Sidebar — preenchida por Sidebar.js                         -->
+    <!-- =========================================================== -->
+    <div id="sidebar-wrapper"></div>
+
+    <!-- =========================================================== -->
+    <!-- Conteúdo principal                                          -->
+    <!-- =========================================================== -->
+    <div id="content-wrapper">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Produtos</span>
+        </header>
+
+        <!-- Área de conteúdo -->
+        <div class="area-conteudo">
+
+            <!-- Título + botão Cadastrar -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="titulo-pagina">
+                    <i class="bi bi-box-seam me-2"></i>Produtos
+                </h1>
+                <button class="btn btn-primary" id="btn-cadastrar">
+                    <i class="bi bi-plus-circle me-1"></i> Cadastrar
+                </button>
+            </div>
+
+            <!-- Card de filtros -->
+            <div class="card-filtros card">
+                <div class="card-body">
+                    <p class="card-titulo-filtros">
+                        <i class="bi bi-funnel me-1"></i>Filtros
+                    </p>
+                    <div class="row g-3 align-items-end">
+
+                        <!-- Filtro: Nome -->
+                        <div class="col-md-4">
+                            <label for="filtro-nome" class="form-label form-label-sm">Nome</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="filtro-nome" placeholder="Buscar por nome...">
+                        </div>
+
+                        <!-- Filtro: Categoria -->
+                        <div class="col-md-3">
+                            <label for="filtro-categoria" class="form-label form-label-sm">Categoria</label>
+                            <select class="form-select form-select-sm" id="filtro-categoria">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+
+                        <!-- Filtro composto: Operador + Quantidade -->
+                        <div class="col-md-2">
+                            <label for="filtro-operador" class="form-label form-label-sm">Qtd. operador</label>
+                            <select class="form-select form-select-sm" id="filtro-operador">
+                                <option value="">Nenhum</option>
+                                <option value=">=">maior ou igual (&gt;=)</option>
+                                <option value="<=">menor ou igual (&lt;=)</option>
+                                <option value=">">maior que (&gt;)</option>
+                                <option value="<">menor que (&lt;)</option>
+                                <option value="=">igual a (=)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="filtro-qtde" class="form-label form-label-sm">Quantidade</label>
+                            <input type="number" class="form-control form-control-sm"
+                                   id="filtro-qtde" min="0" placeholder="0">
+                        </div>
+
+                        <!-- Botões de ação dos filtros -->
+                        <div class="col-md-1 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm w-100" id="btn-filtrar"
+                                    title="Aplicar filtros">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm w-100" id="btn-limpar"
+                                    title="Limpar filtros">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de produtos -->
+            <div class="tabela-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Nome</th>
+                                <th scope="col">Categoria</th>
+                                <th scope="col">Valor Unit.</th>
+                                <th scope="col">Quantidade</th>
+                                <th scope="col" class="text-center" style="width: 100px">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-corpo">
+                            <tr>
+                                <td colspan="6" class="tabela-vazia">
+                                    <i class="bi bi-hourglass-split me-1"></i>Carregando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /area-conteudo -->
+    </div><!-- /content-wrapper -->
+</div><!-- /wrapper -->
+
+
+<!-- ================================================================ -->
+<!-- Modal: Cadastrar / Alterar Produto                               -->
+<!-- ================================================================ -->
+<div class="modal fade" id="modal-produto" tabindex="-1"
+     aria-labelledby="modal-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-titulo">Cadastrar Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="form-produto" novalidate>
+                    <!-- Campo oculto para ID na edição -->
+                    <input type="hidden" id="idProd">
+
+                    <div class="row g-3">
+
+                        <!-- Nome -->
+                        <div class="col-md-8">
+                            <label for="nome" class="form-label campo-obrigatorio">Nome</label>
+                            <input type="text" class="form-control" id="nome"
+                                   placeholder="Nome do produto" required minlength="2">
+                            <div class="invalid-feedback">
+                                Nome deve ter pelo menos 2 caracteres.
+                            </div>
+                        </div>
+
+                        <!-- Categoria -->
+                        <div class="col-md-4">
+                            <label for="idCatProd" class="form-label campo-obrigatorio">Categoria</label>
+                            <select class="form-select" id="idCatProd" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Selecione uma categoria.
+                            </div>
+                        </div>
+
+                        <!-- Valor Unitário (com máscara monetária) -->
+                        <div class="col-md-4">
+                            <label for="valorUni" class="form-label campo-obrigatorio">Valor Unitário (R$)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control" id="valorUni"
+                                       placeholder="0,00" required
+                                       inputmode="numeric">
+                                <div class="invalid-feedback">
+                                    Informe um valor válido.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quantidade -->
+                        <div class="col-md-4">
+                            <label for="qtdeAtual" class="form-label campo-obrigatorio">Quantidade Atual</label>
+                            <input type="number" class="form-control" id="qtdeAtual"
+                                   placeholder="0" min="0" required>
+                            <div class="invalid-feedback">
+                                Informe uma quantidade válida (mínimo 0).
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-salvar">
+                    <i class="bi bi-check-circle me-1"></i>Salvar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- Modal: Confirmar Exclusão                                        -->
+<!-- ================================================================ -->
+<div class="modal fade" id="modal-excluir" tabindex="-1"
+     aria-labelledby="modal-excluir-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-excluir-titulo">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-1">Deseja excluir o produto:</p>
+                <p class="fw-semibold mb-0" id="excluir-nome"></p>
+                <p class="text-muted small mt-2">Esta ação não pode ser desfeita.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm"
+                        id="btn-confirmar-excluir">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- Scripts — ordem obrigatória                                      -->
+<!-- ================================================================ -->
+<!-- 1. jQuery -->
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<!-- 2. jQuery Mask Plugin -->
+<script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<!-- 3. Bootstrap Bundle (Popper incluso) -->
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- 4. Utilitários -->
+<script src="../utils/HttpClient.js"></script>
+<script src="../utils/Mascaras.js"></script>
+<script src="../utils/Validador.js"></script>
+<script src="../utils/Sidebar.js"></script>
+
+<!-- 5. Model -->
+<script src="../models/Produto.js"></script>
+
+<!-- 6. Service -->
+<script src="../services/ProdutoService.js"></script>
+
+<!-- 7. Controller -->
+<script src="../controllers/ProdutosController.js"></script>
+
+<!-- 8. View (bind) -->
+<script src="./produtos.js"></script>
+
+</body>
+</html>

@@ -17,17 +17,21 @@ public class CategoriaProdutoDAO {
         CategoriaProduto c = new CategoriaProduto();
         c.setIdCatProd(rs.getInt("idCatProd"));
         c.setNome(rs.getString("nome"));
+        c.setAtivo(rs.getBoolean("ativo"));
         return c;
     }
 
-    public List<CategoriaProduto> buscar(String nome) throws Exception {
+    public List<CategoriaProduto> buscar(String nome, Boolean ativo) throws Exception {
         StringBuilder sql = new StringBuilder("SELECT * FROM CategoriaProduto WHERE 1=1");
         if (nome != null && !nome.isEmpty()) sql.append(" AND nome LIKE ?");
+        if (ativo != null) sql.append(" AND ativo = ?");
         sql.append(" ORDER BY nome");
 
         List<CategoriaProduto> lista = new ArrayList<>();
         try (PreparedStatement stmt = getConn().prepareStatement(sql.toString())) {
-            if (nome != null && !nome.isEmpty()) stmt.setString(1, "%" + nome + "%");
+            int i = 1;
+            if (nome != null && !nome.isEmpty()) stmt.setString(i++, "%" + nome + "%");
+            if (ativo != null) stmt.setBoolean(i++, ativo);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) lista.add(mapear(rs));
             }
@@ -58,9 +62,10 @@ public class CategoriaProdutoDAO {
     }
 
     public void inserir(CategoriaProduto c) throws Exception {
-        String sql = "INSERT INTO CategoriaProduto (nome) VALUES (?)";
+        String sql = "INSERT INTO CategoriaProduto (nome, ativo) VALUES (?, ?)";
         try (PreparedStatement stmt = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, c.getNome());
+            stmt.setBoolean(2, c.isAtivo());
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) c.setIdCatProd(rs.getInt(1));
@@ -69,10 +74,11 @@ public class CategoriaProdutoDAO {
     }
 
     public void atualizar(CategoriaProduto c) throws Exception {
-        String sql = "UPDATE CategoriaProduto SET nome = ? WHERE idCatProd = ?";
+        String sql = "UPDATE CategoriaProduto SET nome = ?, ativo = ? WHERE idCatProd = ?";
         try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
             stmt.setString(1, c.getNome());
-            stmt.setInt(2, c.getIdCatProd());
+            stmt.setBoolean(2, c.isAtivo());
+            stmt.setInt(3, c.getIdCatProd());
             stmt.executeUpdate();
         }
     }

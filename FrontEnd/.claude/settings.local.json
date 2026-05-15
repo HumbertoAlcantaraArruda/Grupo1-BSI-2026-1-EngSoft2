@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\assets\\\\css\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\assets\\\\libs\\\\bootstrap\\\\css\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\assets\\\\libs\\\\bootstrap\\\\js\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\assets\\\\libs\\\\jquery\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\assets\\\\libs\\\\jquery-mask\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\assets\\\\libs\\\\icons\\\\fonts\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\controllers\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\models\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\services\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\utils\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\EGSII\\\\Grupo1-BSI-2026-1-EngSoft2\\\\FrontEnd\\\\views\")"
+    ]
+  }
+}
