@@ -38,6 +38,32 @@ window.AGAPE.Utils.HttpClient = (function () {
         return dados;
     };
 
+    /* ---- Método auxiliar: traduz código HTTP em mensagem amigável -- */
+    var _MENSAGENS_HTTP = {
+        400: 'Os dados enviados são inválidos. Verifique as informações e tente novamente.',
+        401: 'Acesso não autorizado. Faça login novamente para continuar.',
+        403: 'Você não tem permissão para realizar esta ação.',
+        404: 'O registro solicitado não foi encontrado.',
+        405: 'Esta operação não é permitida no momento.',
+        408: 'A requisição demorou muito. Verifique sua conexão e tente novamente.',
+        409: 'Já existe um registro com essas informações. Verifique os dados e tente novamente.',
+        422: 'Não foi possível processar as informações. Verifique os campos e tente novamente.',
+        429: 'Muitas requisições em pouco tempo. Aguarde um momento e tente novamente.',
+        500: 'Ocorreu um problema no servidor. Tente novamente em instantes.',
+        502: 'O servidor está temporariamente indisponível. Tente novamente em breve.',
+        503: 'O serviço está em manutenção. Tente novamente em breve.',
+        504: 'O servidor demorou muito para responder. Tente novamente.'
+    };
+
+    HttpClient.prototype._mensagemAmigavel = function (codigo) {
+        return _MENSAGENS_HTTP[codigo] ||
+               'Não foi possível concluir a operação. Tente novamente.';
+    };
+
+    HttpClient.prototype._erroConexao = function () {
+        return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
+    };
+
     /* ---- Método auxiliar: monta URL com query string --------------- */
     HttpClient.prototype._montarUrl = function (endpoint, params) {
         var url = new URL(BASE_URL + endpoint);
@@ -61,7 +87,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             if (!resposta.ok) {
                 return {
                     status: 'error',
-                    erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
+                    erro: this._mensagemAmigavel(resposta.status)
                 };
             }
 
@@ -69,7 +95,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: this._erroConexao() };
         }
     };
 
@@ -92,7 +118,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             if (!resposta.ok) {
                 return {
                     status: 'error',
-                    erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
+                    erro: this._mensagemAmigavel(resposta.status)
                 };
             }
 
@@ -100,7 +126,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: this._erroConexao() };
         }
     };
 
@@ -123,7 +149,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             if (!resposta.ok) {
                 return {
                     status: 'error',
-                    erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
+                    erro: this._mensagemAmigavel(resposta.status)
                 };
             }
 
@@ -131,7 +157,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: this._erroConexao() };
         }
     };
 
@@ -147,7 +173,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             if (!resposta.ok) {
                 return {
                     status: 'error',
-                    erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
+                    erro: this._mensagemAmigavel(resposta.status)
                 };
             }
 
@@ -155,7 +181,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: this._erroConexao() };
         }
     };
 
@@ -169,7 +195,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             if (!resposta.ok) {
                 return {
                     status: 'error',
-                    erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
+                    erro: this._mensagemAmigavel(resposta.status)
                 };
             }
 
@@ -177,7 +203,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: this._erroConexao() };
         }
     };
 
