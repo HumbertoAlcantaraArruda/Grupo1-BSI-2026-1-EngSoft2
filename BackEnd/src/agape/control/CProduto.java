@@ -33,10 +33,7 @@ public static CProduto getInstancia() {
        String method = exchange.getRequestMethod();
        String path = exchange.getRequestURI().getPath();
        String query = exchange.getRequestURI().getQuery();
-       if (method.equalsIgnoreCase("OPTIONS")){
-        enviarResposta(exchange, new ResponseObject());
-        return;
-      }
+
       try{
           String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         ResponseObject response =  switch(method.toUpperCase()){
@@ -66,7 +63,7 @@ public static CProduto getInstancia() {
         // Permitir acesso de qualquer origem (CORS)
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         // Permitir métodos HTTP específicos
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
         // Permitir headers específicos
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
         // Enviar a resposta

@@ -24,7 +24,7 @@ public class Main {
         // == Rotas ==
 
         // Parametrização
-        server.createContext("/parametrizacao", CParametrizacao.getInstancia());
+        //server.createContext("/parametrizacao", CParametrizacao.getInstancia());
 
         // Produtos
         server.createContext("/produto", CProduto.getInstancia());
