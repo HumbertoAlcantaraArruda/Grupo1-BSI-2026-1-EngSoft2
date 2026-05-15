@@ -3,6 +3,7 @@ package agape;
 import com.sun.net.httpserver.HttpServer;
 
 import agape.control.CCategoriaEvento;
+import agape.control.CCategoriaProduto;
 import agape.control.CCompra;
 import agape.control.CInscricao;
 import agape.control.CParametrizacao;
@@ -39,6 +40,9 @@ public class Main {
 
         // Categorias de Evento
         server.createContext("/categoriaEvento", CCategoriaEvento.getInstancia());
+
+        // Categorias de Produto
+        server.createContext("/categoriaProduto", CCategoriaProduto.getInstancia());
 
         // Produtos
         server.createContext("/produto", CProduto.getInstancia());

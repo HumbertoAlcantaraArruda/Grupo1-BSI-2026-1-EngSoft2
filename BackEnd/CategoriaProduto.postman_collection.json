@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "AGAPE - CategoriaProduto",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET",
+      "item": [
+        {
+          "name": "Listar todas as categorias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            }
+          }
+        },
+        {
+          "name": "Filtrar por nome",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto?nome=Ali",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"],
+              "query": [
+                { "key": "nome", "value": "Ali" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST",
+      "item": [
+        {
+          "name": "Cadastrar categoria - sucesso",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "nome", "value": "Alimentação" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar categoria - nome vazio (400)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "nome", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar categoria - nome duplicado (409)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "nome", "value": "Alimentação" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "PUT",
+      "item": [
+        {
+          "name": "Atualizar categoria - sucesso",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "idCatProd", "value": "1" },
+                { "key": "nome", "value": "Alimentos Básicos" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar categoria - nome vazio (400)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "idCatProd", "value": "1" },
+                { "key": "nome", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar categoria - ID inexistente (404)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "idCatProd", "value": "9999" },
+                { "key": "nome", "value": "Qualquer Nome" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar categoria - nome duplicado (409)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "idCatProd", "value": "1" },
+                { "key": "nome", "value": "Higiene" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "DELETE",
+      "item": [
+        {
+          "name": "Excluir categoria - sucesso",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto?idCatProd=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"],
+              "query": [
+                { "key": "idCatProd", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Excluir categoria - ID inexistente (404)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "http://localhost:8080/categoriaProduto?idCatProd=9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["categoriaProduto"],
+              "query": [
+                { "key": "idCatProd", "value": "9999" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
