@@ -48,7 +48,7 @@
 
     /* ---- Renderizar tabela --------------------------------------- */
     function _renderizarTabela(resultado) {
-        if (!resultado.sucesso) {
+        if (resultado.status !== 'ok') {
             tabelaCorpo.innerHTML =
                 '<tr><td colspan="4" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
@@ -154,7 +154,7 @@
             ? await ctrl.alterar(dados)
             : await ctrl.cadastrar(dados);
 
-        if (resultado.sucesso) {
+        if (resultado.status === 'ok') {
             modalObj.hide();
             validador.mostrarAlerta(
                 dados.id ? 'Categoria alterada com sucesso!' : 'Categoria cadastrada com sucesso!',
@@ -174,7 +174,7 @@
         modalExcluirObj.hide();
         idParaExcluir = null;
 
-        if (resultado.sucesso) {
+        if (resultado.status === 'ok') {
             validador.mostrarAlerta('Categoria excluída com sucesso!', 'sucesso');
             await _carregarLista();
         } else {

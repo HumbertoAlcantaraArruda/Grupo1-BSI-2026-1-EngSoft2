@@ -28,6 +28,16 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
+    /* ---- Método auxiliar: extrai result do envelope do backend ----- */
+    /* O backend sempre responde { status, code, messages, result }     */
+    /* Retorna result quando existe, senão retorna o objeto inteiro     */
+    HttpClient.prototype._extrairDados = function (dados) {
+        if (dados && typeof dados === 'object' && dados.result !== undefined) {
+            return dados.result;
+        }
+        return dados;
+    };
+
     /* ---- Método auxiliar: monta URL com query string --------------- */
     HttpClient.prototype._montarUrl = function (endpoint, params) {
         var url = new URL(BASE_URL + endpoint);
@@ -50,16 +60,16 @@ window.AGAPE.Utils.HttpClient = (function () {
 
             if (!resposta.ok) {
                 return {
-                    sucesso: false,
+                    status: 'error',
                     erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
                 };
             }
 
             var dados = await this._parsearResposta(resposta);
-            return { sucesso: true, dados: dados };
+            return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { sucesso: false, erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
         }
     };
 
@@ -81,16 +91,16 @@ window.AGAPE.Utils.HttpClient = (function () {
 
             if (!resposta.ok) {
                 return {
-                    sucesso: false,
+                    status: 'error',
                     erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
                 };
             }
 
             var dados = await this._parsearResposta(resposta);
-            return { sucesso: true, dados: dados };
+            return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { sucesso: false, erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
         }
     };
 
@@ -112,16 +122,16 @@ window.AGAPE.Utils.HttpClient = (function () {
 
             if (!resposta.ok) {
                 return {
-                    sucesso: false,
+                    status: 'error',
                     erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
                 };
             }
 
             var dados = await this._parsearResposta(resposta);
-            return { sucesso: true, dados: dados };
+            return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { sucesso: false, erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
         }
     };
 
@@ -134,16 +144,16 @@ window.AGAPE.Utils.HttpClient = (function () {
 
             if (!resposta.ok) {
                 return {
-                    sucesso: false,
+                    status: 'error',
                     erro: 'Erro HTTP ' + resposta.status + ': ' + resposta.statusText
                 };
             }
 
             var dados = await this._parsearResposta(resposta);
-            return { sucesso: true, dados: dados };
+            return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            return { sucesso: false, erro: 'Falha na conexão: ' + erro.message };
+            return { status: 'error', erro: 'Falha na conexão: ' + erro.message };
         }
     };
 

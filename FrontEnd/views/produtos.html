@@ -68,23 +68,21 @@
                             </select>
                         </div>
 
-                        <!-- Filtro composto: Operador + Quantidade -->
-                        <div class="col-md-2">
-                            <label for="filtro-operador" class="form-label form-label-sm">Qtd. operador</label>
-                            <select class="form-select form-select-sm" id="filtro-operador">
-                                <option value="">Nenhum</option>
-                                <option value=">=">maior ou igual (&gt;=)</option>
-                                <option value="<=">menor ou igual (&lt;=)</option>
-                                <option value=">">maior que (&gt;)</option>
-                                <option value="<">menor que (&lt;)</option>
-                                <option value="=">igual a (=)</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label for="filtro-qtde" class="form-label form-label-sm">Quantidade</label>
-                            <input type="number" class="form-control form-control-sm"
-                                   id="filtro-qtde" min="0" placeholder="0">
+                        <!-- Filtro composto: Operador + Quantidade (sempre juntos) -->
+                        <div class="col-md-4">
+                            <label class="form-label form-label-sm">Quantidade</label>
+                            <div class="input-group input-group-sm">
+                                <select class="form-select" id="filtro-operador" style="max-width: 130px;">
+                                    <option value="">operador</option>
+                                    <option value=">=">maior ou igual (&gt;=)</option>
+                                    <option value="<=">menor ou igual (&lt;=)</option>
+                                    <option value=">">maior que (&gt;)</option>
+                                    <option value="<">menor que (&lt;)</option>
+                                    <option value="=">igual a (=)</option>
+                                </select>
+                                <input type="number" class="form-control" id="filtro-qtde"
+                                       min="0" placeholder="valor">
+                            </div>
                         </div>
 
                         <!-- Botões de ação dos filtros -->

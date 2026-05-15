@@ -49,10 +49,12 @@
     async function _carregarCategorias() {
         var resultado = await ctrl.carregarCategorias();
 
+        //console.log(resultado);
+
         var opcaoPadrao = '<option value="">Todos</option>';
         var opcaoPadraoForm = '<option value="">Selecione...</option>';
 
-        if (!resultado.sucesso || !Array.isArray(resultado.dados)) {
+        if (resultado.status !== 'ok' || !Array.isArray(resultado.dados)) {
             selectCategoria.innerHTML = opcaoPadraoForm;
             filtrCategoria.innerHTML  = opcaoPadrao;
             return;
@@ -77,7 +79,7 @@
 
     /* ---- Renderizar tabela com os dados retornados ---------------- */
     function _renderizarTabela(resultado) {
-        if (!resultado.sucesso) {
+        if (resultado.status !== 'ok') {
             tabelaCorpo.innerHTML =
                 '<tr><td colspan="6" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
@@ -196,7 +198,7 @@
             ? await ctrl.alterar(dados)
             : await ctrl.cadastrar(dados);
 
-        if (resultado.sucesso) {
+        if (resultado.status === 'ok') {
             modalObj.hide();
             validador.mostrarAlerta(
                 dados.idProd ? 'Produto alterado com sucesso!' : 'Produto cadastrado com sucesso!',
@@ -216,7 +218,7 @@
         modalExcluirObj.hide();
         idParaExcluir = null;
 
-        if (resultado.sucesso) {
+        if (resultado.status === 'ok') {
             validador.mostrarAlerta('Produto excluído com sucesso!', 'sucesso');
             await _carregarLista();
         } else {

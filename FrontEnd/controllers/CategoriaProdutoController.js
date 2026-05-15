@@ -24,7 +24,7 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
     /* ---- Listar todas as categorias e armazenar em cache ---------- */
     CategoriaProdutoController.prototype.listar = async function () {
         var resultado = await this._service.listar();
-        if (resultado.sucesso && Array.isArray(resultado.dados)) {
+        if (resultado.status === 'ok' && Array.isArray(resultado.dados)) {
             this._listaCache = resultado.dados;
         }
         return resultado;
@@ -53,7 +53,7 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
             });
         }
 
-        return { sucesso: true, dados: lista };
+        return { status: 'ok', dados: lista };
     };
 
     /* ---- Cadastrar categoria (Creator: instancia CategoriaProduto) */
@@ -62,7 +62,7 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
         var erros = categoria.validar();
 
         if (erros.length > 0) {
-            return { sucesso: false, erro: erros.join(' ') };
+            return { status: 'error', erro: erros.join(' ') };
         }
 
         return await this._service.cadastrar(categoria);
@@ -74,7 +74,7 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
         var erros = categoria.validar();
 
         if (erros.length > 0) {
-            return { sucesso: false, erro: erros.join(' ') };
+            return { status: 'error', erro: erros.join(' ') };
         }
 
         return await this._service.alterar(categoria);
@@ -83,7 +83,7 @@ window.AGAPE.Controllers.CategoriaProdutoController = (function () {
     /* ---- Excluir categoria ---------------------------------------- */
     CategoriaProdutoController.prototype.excluir = async function (idCatProd) {
         if (!idCatProd) {
-            return { sucesso: false, erro: 'ID da categoria não informado.' };
+            return { status: 'error', erro: 'ID da categoria não informado.' };
         }
         return await this._service.excluir(idCatProd);
     };

@@ -47,7 +47,7 @@ window.AGAPE.Controllers.CategoriaEventoController = (function () {
         var erros = categoria.validar();
 
         if (erros.length > 0) {
-            return { sucesso: false, erro: erros.join(' ') };
+            return { status: 'error', erro: erros.join(' ') };
         }
 
         return await this._service.cadastrar(categoria);
@@ -59,7 +59,7 @@ window.AGAPE.Controllers.CategoriaEventoController = (function () {
         var erros = categoria.validar();
 
         if (erros.length > 0) {
-            return { sucesso: false, erro: erros.join(' ') };
+            return { status: 'error', erro: erros.join(' ') };
         }
 
         return await this._service.alterar(categoria);
@@ -68,7 +68,7 @@ window.AGAPE.Controllers.CategoriaEventoController = (function () {
     /* ---- Excluir categoria ---------------------------------------- */
     CategoriaEventoController.prototype.excluir = async function (id) {
         if (!id) {
-            return { sucesso: false, erro: 'ID da categoria não informado.' };
+            return { status: 'error', erro: 'ID da categoria não informado.' };
         }
         return await this._service.excluir(id);
     };

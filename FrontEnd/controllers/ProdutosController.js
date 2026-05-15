@@ -54,7 +54,7 @@ window.AGAPE.Controllers.ProdutosController = (function () {
         var erros = produto.validar();
 
         if (erros.length > 0) {
-            return { sucesso: false, erro: erros.join(' ') };
+            return { status: 'error', erro: erros.join(' ') };
         }
 
         return await this._service.cadastrar(produto);
@@ -66,7 +66,7 @@ window.AGAPE.Controllers.ProdutosController = (function () {
         var erros = produto.validar();
 
         if (erros.length > 0) {
-            return { sucesso: false, erro: erros.join(' ') };
+            return { status: 'error', erro: erros.join(' ') };
         }
 
         return await this._service.alterar(produto);
@@ -75,7 +75,7 @@ window.AGAPE.Controllers.ProdutosController = (function () {
     /* ---- Excluir produto ------------------------------------------ */
     ProdutosController.prototype.excluir = async function (idProd) {
         if (!idProd) {
-            return { sucesso: false, erro: 'ID do produto não informado.' };
+            return { status: 'error', erro: 'ID do produto não informado.' };
         }
         return await this._service.excluir(idProd);
     };
