@@ -72,7 +72,7 @@
 
     /* ---- Carregar lista completa de produtos ---------------------- */
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="6" class="tabela-vazia">Carregando...</td></tr>';
+        tabelaCorpo.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Carregando...</td></tr>';
         var resultado = await ctrl.listar();
         _renderizarTabela(resultado);
     }
@@ -81,7 +81,7 @@
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
             tabelaCorpo.innerHTML =
-                '<tr><td colspan="6" class="tabela-vazia text-danger">' +
+                '<tr><td colspan="5" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
                 _escapar(resultado.erro || 'Erro ao carregar dados.') +
                 '</td></tr>';
@@ -92,7 +92,7 @@
 
         if (lista.length === 0) {
             tabelaCorpo.innerHTML =
-                '<tr><td colspan="6" class="tabela-vazia">' +
+                '<tr><td colspan="5" class="tabela-vazia">' +
                 '<i class="bi bi-inbox me-1"></i>Nenhum produto encontrado.' +
                 '</td></tr>';
             return;
@@ -102,7 +102,6 @@
             var valorFormatado = mascaras.numeroParaMonetario(p.valorUni);
             return (
                 '<tr>' +
-                '<td>' + _escapar(String(p.idProd)) + '</td>' +
                 '<td>' + _escapar(p.nome) + '</td>' +
                 '<td>' + _escapar(p.nomeCategoria || p.idCatProd || '-') + '</td>' +
                 '<td>R$ ' + valorFormatado + '</td>' +
@@ -234,7 +233,7 @@
             operador:   filtrOperador.value,
             quantidade: filtrQtde.value
         };
-        tabelaCorpo.innerHTML = '<tr><td colspan="6" class="tabela-vazia">Filtrando...</td></tr>';
+        tabelaCorpo.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Filtrando...</td></tr>';
         var resultado = await ctrl.filtrar(filtros);
         _renderizarTabela(resultado);
     });
@@ -247,6 +246,21 @@
         filtrQtde.value        = '';
         await _carregarLista();
     });
+
+    /* ---- Utilitário: traduzir operador (URL-encoded → símbolo) ---- */
+    /* Converte '%3E%3D' → '>=', '%3C' → '<', etc.                    */
+    var _OPERADORES = {
+        '>=': '>=',
+        '<=': '<=',
+        '>':  '>',
+        '<':  '<',
+        '=':  '='
+    };
+
+    function _traduzirOperador(valor) {
+        var decodificado = decodeURIComponent(valor || '');
+        return _OPERADORES[decodificado] || decodificado;
+    }
 
     /* ---- Utilitário: escapar HTML para evitar XSS ---------------- */
     function _escapar(texto) {

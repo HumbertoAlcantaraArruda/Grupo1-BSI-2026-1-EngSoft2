@@ -35,11 +35,12 @@ public class CCategoriaEvento implements HttpHandler {
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
 
             ResponseObject response = switch (method.toUpperCase()) {
-                case "GET"    -> handleGet(path, query);
-                case "POST"   -> handlePost(body);
-                case "PUT"    -> handlePut(path, body);
-                case "DELETE" -> handleDelete(query);
-                default       -> naoEncontrado();
+                case "GET"     -> handleGet(path, query);
+                case "POST"    -> handlePost(body);
+                case "PUT"     -> handlePut(path, body);
+                case "DELETE"  -> handleDelete(query);
+                case "OPTIONS" -> handleOptions();
+                default        -> naoEncontrado();
             };
 
             enviarResposta(exchange, response);
@@ -51,6 +52,15 @@ public class CCategoriaEvento implements HttpHandler {
             erro.addMessage("Erro inesperado: " + e.getMessage());
             enviarResposta(exchange, erro);
         }
+    }
+
+    // ── OPTIONS ───────────────────────────────────────────────────────────────
+
+    private ResponseObject handleOptions() {
+        ResponseObject r = new ResponseObject();
+        r.setStatus(ResponseObject.STATUS_OK);
+        r.setCode(ResponseObject.CODE_OK);
+        return r;
     }
 
     // ── GET ───────────────────────────────────────────────────────────────────
@@ -77,14 +87,14 @@ public class CCategoriaEvento implements HttpHandler {
 
     private ResponseObject handlePut(String path, String body) {
         if (path.equals("/categoriaEvento"))
-            return atualizar(parseSafeInt(param(body, "id")), param(body, "nome"), parseSafeBool(param(body, "ativo")));
+            return atualizar(parseSafeInt(param(body, "idCatEvento")), param(body, "nome"), parseSafeBool(param(body, "ativo")));
         return naoEncontrado();
     }
 
     // ── DELETE ────────────────────────────────────────────────────────────────
 
     private ResponseObject handleDelete(String query) {
-        return excluir(parseSafeInt(param(query, "id")));
+        return excluir(parseSafeInt(param(query, "idCatEvento")));
     }
 
     // ── operações ─────────────────────────────────────────────────────────────
@@ -173,8 +183,8 @@ public class CCategoriaEvento implements HttpHandler {
 
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
         exchange.getResponseBody().write(bytes);

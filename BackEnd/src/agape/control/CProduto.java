@@ -37,11 +37,12 @@ public static CProduto getInstancia() {
       try{
           String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         ResponseObject response =  switch(method.toUpperCase()){
-          case "GET" -> handleGet(path, query);
-          case "POST" -> handlePost(path, query, body);
-          case "PUT" -> handlePut(path, body);
-          case "DELETE" -> handleDelete(query);
-           default -> naoEncontrado();
+          case "GET"     -> handleGet(path, query);
+          case "POST"    -> handlePost(path, query, body);
+          case "PUT"     -> handlePut(path, body);
+          case "DELETE"  -> handleDelete(query);
+          case "OPTIONS" -> handleOptions();
+          default        -> naoEncontrado();
         };
         enviarResposta(exchange, response);
       }
@@ -54,6 +55,13 @@ public static CProduto getInstancia() {
       }
     }
 
+    private ResponseObject handleOptions() {
+        ResponseObject r = new ResponseObject();
+        r.setStatus(ResponseObject.STATUS_OK);
+        r.setCode(ResponseObject.CODE_OK);
+        return r;
+    }
+
 // AUXILIAR PARA ENVIAR RESPOSTA
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json = response.toJson();
@@ -63,7 +71,8 @@ public static CProduto getInstancia() {
         // Permitir acesso de qualquer origem (CORS)
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         // Permitir métodos HTTP específicos
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
         // Permitir headers específicos
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
         // Enviar a resposta

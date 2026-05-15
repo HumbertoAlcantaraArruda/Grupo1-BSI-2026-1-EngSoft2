@@ -122,6 +122,7 @@
         validador.resetar(formCategoria);
         inputIdCatProd.value = '';
         inputNome.value      = '';
+        ativo.disabled = true;
         selectAtivo.value    = 'true';
         modalObj.show();
     });
@@ -132,6 +133,7 @@
         validador.resetar(formCategoria);
         inputIdCatProd.value = dados.id;
         inputNome.value      = dados.nome;
+        ativo.disabled = false;
         selectAtivo.value    = dados.ativo === 'true' ? 'true' : 'false';
         modalObj.show();
     }

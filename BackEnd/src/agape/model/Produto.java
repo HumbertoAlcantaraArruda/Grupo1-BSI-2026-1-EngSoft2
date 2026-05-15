@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class Produto {
     private int idProd;
     private int idCatProd;
+    private String nomeCategoria;
     private String nome;
     private float valorUni;
     private int qtdeAtual;
@@ -23,6 +24,14 @@ public class Produto {
 
     public void setIdCatProd(int idCatProd) {
         this.idCatProd = idCatProd;
+    }
+
+    public String getNomeCategoria() {
+        return nomeCategoria;
+    }
+
+    public void setNomeCategoria(String nomeCategoria) {
+        this.nomeCategoria = nomeCategoria;
     }
 
     public String getNome() {
@@ -53,6 +62,7 @@ public class Produto {
         return "{" +
                 "\"idProd\":" + idProd + "," +
                 "\"idCatProd\":" + idCatProd + "," +
+                "\"nomeCategoria\":" + (nomeCategoria != null ? "\"" + nomeCategoria + "\"" : "null") + "," +
                 "\"nome\":\"" + nome + "\"," +
                 "\"valorUni\":" + valorUni + "," +
                 "\"qtdeAtual\":" + qtdeAtual +

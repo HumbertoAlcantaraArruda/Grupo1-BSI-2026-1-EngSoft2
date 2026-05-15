@@ -72,13 +72,14 @@
                         <div class="col-md-4">
                             <label class="form-label form-label-sm">Quantidade</label>
                             <div class="input-group input-group-sm">
-                                <select class="form-select" id="filtro-operador" style="max-width: 130px;">
-                                    <option value="">operador</option>
-                                    <option value=">=">maior ou igual (&gt;=)</option>
-                                    <option value="<=">menor ou igual (&lt;=)</option>
-                                    <option value=">">maior que (&gt;)</option>
-                                    <option value="<">menor que (&lt;)</option>
-                                    <option value="=">igual a (=)</option>
+                                <select class="form-select" id="filtro-operador" style="max-width: 90px;"
+                                        title="Selecione o operador de comparação">
+                                    <option value="">Selecione</option>
+                                    <option value=">=">&gt;=</option>
+                                    <option value="<=">&lt;=</option>
+                                    <option value=">">&gt;</option>
+                                    <option value="<">&lt;</option>
+                                    <option value="=">=</option>
                                 </select>
                                 <input type="number" class="form-control" id="filtro-qtde"
                                        min="0" placeholder="valor">
@@ -107,7 +108,7 @@
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th scope="col">#</th>
+                                <!-- <th scope="col">#</th> -->
                                 <th scope="col">Nome</th>
                                 <th scope="col">Categoria</th>
                                 <th scope="col">Valor Unit.</th>
@@ -117,7 +118,7 @@
                         </thead>
                         <tbody id="tabela-corpo">
                             <tr>
-                                <td colspan="6" class="tabela-vazia">
+                                <td colspan="5" class="tabela-vazia">
                                     <i class="bi bi-hourglass-split me-1"></i>Carregando...
                                 </td>
                             </tr>

@@ -44,7 +44,7 @@ window.AGAPE.Services.CategoriaEventoService = (function () {
 
     /* ---- Excluir categoria por ID --------------------------------- */
     CategoriaEventoService.prototype.excluir = async function (id) {
-        return await this._http.delete('/categoriaEvento', { id: id });
+        return await this._http.delete('/categoriaEvento', { idCatEvento: id });
     };
 
     /* ---- Interface Singleton --------------------------------------- */

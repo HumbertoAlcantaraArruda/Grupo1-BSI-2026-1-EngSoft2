@@ -12,9 +12,9 @@ window.AGAPE.Models.CategoriaEvento = (function () {
     /* ---- Construtor ------------------------------------------------- */
     function CategoriaEvento(dados) {
         dados = dados || {};
-        this._id    = dados.id    || null;
-        this._nome  = dados.nome  || '';
-        this._ativo = _parsearBooleano(dados.ativo, true);
+        this._idCatEvento = dados.idCatEvento || null;
+        this._nome        = dados.nome        || '';
+        this._ativo       = _parsearBooleano(dados.ativo, true);
     }
 
     function _parsearBooleano(valor, padrao) {
@@ -24,14 +24,14 @@ window.AGAPE.Models.CategoriaEvento = (function () {
     }
 
     /* ---- Getters ---------------------------------------------------- */
-    CategoriaEvento.prototype.getId    = function () { return this._id;    };
-    CategoriaEvento.prototype.getNome  = function () { return this._nome;  };
-    CategoriaEvento.prototype.getAtivo = function () { return this._ativo; };
+    CategoriaEvento.prototype.getIdCatEvento = function () { return this._idCatEvento; };
+    CategoriaEvento.prototype.getNome        = function () { return this._nome;        };
+    CategoriaEvento.prototype.getAtivo       = function () { return this._ativo;       };
 
     /* ---- Setters ---------------------------------------------------- */
-    CategoriaEvento.prototype.setId    = function (v) { this._id    = v;           };
-    CategoriaEvento.prototype.setNome  = function (v) { this._nome  = v;           };
-    CategoriaEvento.prototype.setAtivo = function (v) { this._ativo = Boolean(v);  };
+    CategoriaEvento.prototype.setIdCatEvento = function (v) { this._idCatEvento = v;          };
+    CategoriaEvento.prototype.setNome        = function (v) { this._nome        = v;          };
+    CategoriaEvento.prototype.setAtivo       = function (v) { this._ativo       = Boolean(v); };
 
     /* ---- Validações individuais (Information Expert) --------------- */
     CategoriaEvento.prototype.validarNome = function () {
@@ -47,15 +47,15 @@ window.AGAPE.Models.CategoriaEvento = (function () {
     };
 
     /* ---- Serializar para envio ao backend (x-www-form-urlencoded) -- */
-    /* PUT body: id, ativo, nome                                         */
-    /* POST body: nome (sem ativo e sem id conforme a rota)              */
+    /* PUT body: idCatEvento, ativo, nome                                */
+    /* POST body: nome (sem ativo e sem idCatEvento conforme a rota)     */
     CategoriaEvento.prototype.paraFormData = function () {
         var dados = {
             nome:  this._nome,
             ativo: this._ativo ? 'true' : 'false'
         };
-        if (this._id !== null && this._id !== undefined) {
-            dados.id = this._id;
+        if (this._idCatEvento !== null && this._idCatEvento !== undefined) {
+            dados.idCatEvento = this._idCatEvento;
         }
         return dados;
     };

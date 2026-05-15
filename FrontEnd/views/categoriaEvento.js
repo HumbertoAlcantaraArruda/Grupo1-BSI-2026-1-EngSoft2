@@ -74,19 +74,19 @@
                 : '<span class="badge-inativo">Inativo</span>';
             return (
                 '<tr>' +
-                '<td>' + _escapar(String(c.id)) + '</td>' +
+                '<td>' + _escapar(String(c.idCatEvento)) + '</td>' +
                 '<td>' + _escapar(c.nome) + '</td>' +
                 '<td>' + badge + '</td>' +
                 '<td>' +
                 '<button class="btn-acao btn-editar me-1" ' +
-                'data-id="' + c.id + '" ' +
+                'data-id="' + c.idCatEvento + '" ' +
                 'data-nome="' + _escapar(c.nome) + '" ' +
                 'data-ativo="' + ativo + '" ' +
                 'title="Editar">' +
                 '<i class="bi bi-pencil"></i>' +
                 '</button>' +
                 '<button class="btn-acao btn-excluir" ' +
-                'data-id="' + c.id + '" ' +
+                'data-id="' + c.idCatEvento + '" ' +
                 'data-nome="' + _escapar(c.nome) + '" ' +
                 'title="Excluir">' +
                 '<i class="bi bi-trash"></i>' +
@@ -124,8 +124,9 @@
         inputId.value        = '';
         inputNome.value      = '';
         selectAtivo.value    = 'true';
+        ativo.disabled = true;
         /* Campo "Status" visível apenas na edição (POST não envia ativo) */
-        secaoAtivo.style.display = 'none';
+        //secaoAtivo.style.display = 'none';
         modalObj.show();
     });
 
@@ -134,6 +135,7 @@
         modalTitulo.textContent = 'Alterar Categoria de Evento';
         validador.resetar(formCategoria);
         inputId.value        = dados.id;
+        ativo.disabled = false;
         inputNome.value      = dados.nome;
         selectAtivo.value    = dados.ativo === 'true' ? 'true' : 'false';
         secaoAtivo.style.display = 'block';
@@ -145,19 +147,19 @@
         if (!validador.validarFormulario(formCategoria)) return;
 
         var dados = {
-            id:    inputId.value || null,
-            nome:  inputNome.value.trim(),
-            ativo: selectAtivo.value === 'true'
+            idCatEvento: inputId.value || null,
+            nome:        inputNome.value.trim(),
+            ativo:       selectAtivo.value === 'true'
         };
 
-        var resultado = dados.id
+        var resultado = dados.idCatEvento
             ? await ctrl.alterar(dados)
             : await ctrl.cadastrar(dados);
 
         if (resultado.status === 'ok') {
             modalObj.hide();
             validador.mostrarAlerta(
-                dados.id ? 'Categoria alterada com sucesso!' : 'Categoria cadastrada com sucesso!',
+                dados.idCatEvento ? 'Categoria alterada com sucesso!' : 'Categoria cadastrada com sucesso!',
                 'sucesso'
             );
             await _carregarLista();
@@ -168,7 +170,10 @@
 
     /* ---- Confirmar exclusão --------------------------------------- */
     btnConfirmarExcluir.addEventListener('click', async function () {
-        if (!idParaExcluir) return;
+        if (!idParaExcluir){
+            console.log("erro aqui");
+            return;
+        }
 
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
