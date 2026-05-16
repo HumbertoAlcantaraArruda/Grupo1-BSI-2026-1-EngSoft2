@@ -10,16 +10,14 @@ import java.sql.SQLException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-import agape.dao.InscricaoDAO;
+import agape.model.Inscricao;
 import agape.util.ResponseObject;
 
 public class CInscricao implements HttpHandler {
 
     private static CInscricao instancia;
-    private InscricaoDAO inscricaoDAO;
 
     private CInscricao() {
-        inscricaoDAO = new InscricaoDAO();
     }
 
     public static CInscricao getInstancia() {
@@ -32,7 +30,7 @@ public class CInscricao implements HttpHandler {
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json = response.toJson();
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        
+
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -67,18 +65,19 @@ public class CInscricao implements HttpHandler {
         }
 
         try {
+            Connection conn = ConexaoBD.getInstance().getConexao();
             String path = exchange.getRequestURI().getPath();
 
             if (path.equals("/cancelarInscricao")) {
                 String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 int idInscricao = Integer.parseInt(extrairParam(exchange, body, "idInscricao"));
                 String obs = extrairParam(exchange, body, "obs");
-                
+
                 if (obs == null || obs.trim().isEmpty()) {
                     obs = "Cancelamento via Sistema";
                 }
 
-                ResponseObject response = cancelarInscricaoFlow(idInscricao, obs);
+                ResponseObject response = cancelarInscricaoFlow(conn, idInscricao, obs);
                 enviarResposta(exchange, response);
             }
         } catch (Exception e) {
@@ -90,12 +89,9 @@ public class CInscricao implements HttpHandler {
         }
     }
 
-    public ResponseObject cancelarInscricaoFlow(int idInscricao, String obs) {
+    public ResponseObject cancelarInscricaoFlow(Connection conn, int idInscricao, String obs) {
         ResponseObject response = new ResponseObject();
-        Connection conn = null;
         try {
-            conn = ConexaoBD.getInstance().getConexao();
-            
             // TRAVA DE SEGURANÇA: Verificar se já está cancelado
             String checkSql = "SELECT status FROM Inscricao WHERE idInscricao = ?";
             try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
@@ -119,7 +115,9 @@ public class CInscricao implements HttpHandler {
             }
 
             conn.setAutoCommit(false);
-            boolean sucesso = inscricaoDAO.cancelar(conn, idInscricao, obs);
+            Inscricao i = new Inscricao();
+            i.setIdInscricao(idInscricao);
+            boolean sucesso = i.cancelar(conn, obs);
             if (sucesso) {
                 conn.commit();
                 response.setStatus(ResponseObject.STATUS_OK);

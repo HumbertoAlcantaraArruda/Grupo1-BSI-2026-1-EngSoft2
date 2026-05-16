@@ -1,15 +1,19 @@
 package agape.model;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 
+import agape.dao.CompraDAO;
+
 public class Compra {
+    private final CompraDAO dao = new CompraDAO();
+
     private int idCompra;
     private LocalDateTime dataHora;
     private float valorTotal;
     private int idFornecedor;
     private int idUsuario;
 
-    // GETTERS E SETTERS
     public int getIdCompra() {
         return idCompra;
     }
@@ -48,5 +52,13 @@ public class Compra {
 
     public void setIdUsuario(int idUsuario) {
         this.idUsuario = idUsuario;
+    }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public int inserir(Connection conn) throws Exception {
+        int id = dao.inserir(conn, this);
+        this.idCompra = id;
+        return id;
     }
 }

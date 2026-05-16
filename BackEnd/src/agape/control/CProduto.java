@@ -3,29 +3,26 @@ package agape.control;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import agape.dao.ProdutoDAO;
 import agape.model.Produto;
 import agape.util.ResponseObject;
 
 public class CProduto implements HttpHandler {
     private static CProduto instancia;
-    private final ProdutoDAO produtoDAO;
 
     private CProduto() {
-        produtoDAO = new ProdutoDAO();
     }
 
-public static CProduto getInstancia() {
+    public static CProduto getInstancia() {
         if (instancia == null) {
             instancia = new CProduto();
         }
         return instancia;
     }
-
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -34,12 +31,13 @@ public static CProduto getInstancia() {
        String query = exchange.getRequestURI().getQuery();
 
       try{
+          Connection conn = ConexaoBD.getInstance().getConexao();
           String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         ResponseObject response =  switch(method.toUpperCase()){
-          case "GET"     -> handleGet(path, query);
-          case "POST"    -> handlePost(path, query, body);
-          case "PUT"     -> handlePut(path, body);
-          case "DELETE"  -> handleDelete(query);
+          case "GET"     -> handleGet(conn, path, query);
+          case "POST"    -> handlePost(conn, path, query, body);
+          case "PUT"     -> handlePut(conn, path, body);
+          case "DELETE"  -> handleDelete(conn, query);
           case "OPTIONS" -> handleOptions();
           default        -> naoEncontrado();
         };
@@ -68,7 +66,6 @@ public static CProduto getInstancia() {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        // Enviar a resposta
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
         exchange.getResponseBody().write(bytes);
         exchange.close();
@@ -87,12 +84,12 @@ public static CProduto getInstancia() {
         return "";
     }
 
-    public ResponseObject buscar(int qtd, String catProd, String nome, String op){
+    public ResponseObject buscar(Connection conn, int qtd, String catProd, String nome, String op){
         ResponseObject response = new ResponseObject();
         try{
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            response.setResult(produtoDAO.buscar(qtd,catProd,nome,op));
+            response.setResult(new Produto().buscar(conn, qtd, catProd, nome, op));
         }
         catch (Exception e){
             response.setStatus(ResponseObject.STATUS_FAIL);
@@ -102,7 +99,7 @@ public static CProduto getInstancia() {
         return response;
     }
 
-    private ResponseObject handleGet(String path, String query) {
+    private ResponseObject handleGet(Connection conn, String path, String query) {
         String catProdParam = param(query, "idCatProd");
         String nomeParam = param(query, "nome");
         String operadorParam = param(query, "operador");
@@ -117,12 +114,13 @@ public static CProduto getInstancia() {
         if (qtdeStr != null){
             qtd=Integer.parseInt(qtdeStr);
         }
-        return buscar(qtd, catProd,nome,op);
+        return buscar(conn, qtd, catProd, nome, op);
     }
 
-    private ResponseObject handlePost(String path, String query, String body) {
+    private ResponseObject handlePost(Connection conn, String path, String query, String body) {
         String src = (query != null ? query : "") + "&" + body;
         return inserir(
+            conn,
             parseSafeInt(param(src, "idCatProd")),
             param(src, "nome"),
             parseSafeFloat(param(src, "valorUni")),
@@ -130,9 +128,10 @@ public static CProduto getInstancia() {
         );
     }
 
-    private ResponseObject handlePut(String path, String body) {
+    private ResponseObject handlePut(Connection conn, String path, String body) {
         if (path.equals("/produto"))
             return atualizar(
+                conn,
                 parseSafeInt(param(body, "idProd")),
                 parseSafeInt(param(body, "idCatProd")),
                 param(body, "nome"),
@@ -142,11 +141,11 @@ public static CProduto getInstancia() {
         return naoEncontrado();
     }
 
-    private ResponseObject handleDelete(String query) {
-        return excluir(parseSafeInt(param(query, "idProd")));
+    private ResponseObject handleDelete(Connection conn, String query) {
+        return excluir(conn, parseSafeInt(param(query, "idProd")));
     }
 
-    public ResponseObject inserir(int idCatProd, String nome, float valorUni, int qtdeAtual) {
+    public ResponseObject inserir(Connection conn, int idCatProd, String nome, float valorUni, int qtdeAtual) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome)) {
@@ -155,16 +154,17 @@ public static CProduto getInstancia() {
             if (idCatProd <= 0){
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Categoria do produto é obrigatória.");
             }
-            if (produtoDAO.existeNome(nome.trim(), 0)){
+
+            Produto p = new Produto();
+            if (p.existeNome(conn, nome.trim(), 0)){
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe um produto com esse nome.");
             }
 
-            Produto p = new Produto();
             p.setIdCatProd(idCatProd);
             p.setNome(nome.trim());
             p.setValorUni(valorUni);
             p.setQtdeAtual(qtdeAtual);
-            produtoDAO.inserir(p);
+            p.inserir(conn);
 
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_CREATED);
@@ -177,7 +177,7 @@ public static CProduto getInstancia() {
         return response;
     }
 
-    public ResponseObject atualizar(int idProd, int idCatProd, String nome, float valorUni, int qtdeAtual) {
+    public ResponseObject atualizar(Connection conn, int idProd, int idCatProd, String nome, float valorUni, int qtdeAtual) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome)){
@@ -187,11 +187,11 @@ public static CProduto getInstancia() {
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Categoria do produto é obrigatória.");
             }
 
-            Produto p = produtoDAO.buscarPorId(idProd);
+            Produto p = new Produto().buscarPorId(conn, idProd);
             if (p == null) {
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Produto não encontrado.");
             }
-            if (produtoDAO.existeNome(nome.trim(), idProd)){
+            if (p.existeNome(conn, nome.trim(), idProd)){
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outro produto com esse nome.");
             }
 
@@ -199,7 +199,7 @@ public static CProduto getInstancia() {
             p.setNome(nome.trim());
             p.setValorUni(valorUni);
             p.setQtdeAtual(qtdeAtual);
-            produtoDAO.atualizar(p);
+            p.atualizar(conn);
 
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
@@ -212,13 +212,14 @@ public static CProduto getInstancia() {
         return response;
     }
 
-    public ResponseObject excluir(int id) {
+    public ResponseObject excluir(Connection conn, int id) {
         ResponseObject response = new ResponseObject();
         try {
-            if (produtoDAO.buscarPorId(id) == null) {
+            Produto p = new Produto().buscarPorId(conn, id);
+            if (p == null) {
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Produto não encontrado.");
             }
-            produtoDAO.excluir(id);
+            p.excluir(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Produto excluído com sucesso.");

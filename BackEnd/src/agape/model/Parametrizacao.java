@@ -1,6 +1,13 @@
 package agape.model;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import agape.dao.ParametrizacaoDAO;
+
 public class Parametrizacao {
+    private final ParametrizacaoDAO dao = new ParametrizacaoDAO();
+
     private String cnpj;
     private String razaoSocial;
     private String nomeFantasia;
@@ -71,6 +78,20 @@ public class Parametrizacao {
     public void setFusoHorario(String fusoHorario) { this.fusoHorario = fusoHorario; }
     public String getObs() { return obs; }
     public void setObs(String obs) { this.obs = obs; }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public Parametrizacao buscar(Connection conn) throws SQLException {
+        return dao.buscar(conn);
+    }
+
+    public void salvar(Connection conn) throws SQLException {
+        dao.salvar(conn, this);
+    }
+
+    public void atualizarLogos(Connection conn, String nomeGrande, String nomePequeno) throws SQLException {
+        dao.atualizarLogos(conn, nomeGrande, nomePequeno);
+    }
 
     public String toJson() {
         return "{" +

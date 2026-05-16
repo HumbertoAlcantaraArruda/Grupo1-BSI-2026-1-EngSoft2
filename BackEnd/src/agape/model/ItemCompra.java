@@ -1,8 +1,12 @@
 package agape.model;
 
-import java.time.LocalDateTime;
+import java.sql.Connection;
+
+import agape.dao.ItemCompraDAO;
 
 public class ItemCompra {
+    private final ItemCompraDAO dao = new ItemCompraDAO();
+
     private int idCompra;
     private int idProd;
     private int quantidade;
@@ -38,5 +42,11 @@ public class ItemCompra {
 
     public void setValorUnitario(float valorUnitario) {
         this.valorUnitario = valorUnitario;
+    }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public void inserir(Connection conn) throws Exception {
+        dao.inserir(conn, this);
     }
 }

@@ -1,0 +1,28 @@
+/* AuthService — chamadas HTTP para autenticação de usuário */
+
+window.AGAPE = window.AGAPE || {};
+window.AGAPE.Services = window.AGAPE.Services || {};
+
+window.AGAPE.Services.AuthService = (function () {
+
+    var instancia = null;
+
+    function AuthService() {
+        this._http = window.AGAPE.Utils.HttpClient.getInstance();
+    }
+
+    AuthService.prototype.login = async function (email, senha) {
+        console.log("Iniciando...");
+        console.log(senha);
+        console.log(email);
+        return await this._http.post('/login', { email: email, senha: senha });
+    };
+
+    return {
+        getInstance: function () {
+            if (!instancia) instancia = new AuthService();
+            return instancia;
+        }
+    };
+
+})();

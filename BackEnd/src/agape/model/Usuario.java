@@ -1,8 +1,14 @@
 package agape.model;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import agape.dao.UsuarioDAO;
 
 public class Usuario {
+
+    private final UsuarioDAO dao = new UsuarioDAO();
 
     private int idUsuario;
     private String nome;
@@ -13,8 +19,6 @@ public class Usuario {
     private String nivel;
     private LocalDateTime dataAtivacao;
     private LocalDateTime dataDesativacao;
-
-    // GETTERS E SETTERS
 
     public int getIdUsuario() {
         return idUsuario;
@@ -86,6 +90,48 @@ public class Usuario {
 
     public void setDataDesativacao(LocalDateTime dataDesativacao) {
         this.dataDesativacao = dataDesativacao;
+    }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public List<Usuario> listar(Connection conn) throws Exception {
+        return dao.listar(conn);
+    }
+
+    public Usuario buscarPorId(Connection conn, int id) throws Exception {
+        return dao.buscarPorId(conn, id);
+    }
+
+    public Usuario buscarPorCpf(Connection conn, String cpf) throws Exception {
+        return dao.buscarPorCpf(conn, cpf);
+    }
+
+    public Usuario buscarPorEmail(Connection conn, String email) throws Exception {
+        return dao.buscarPorEmail(conn, email);
+    }
+
+    public boolean existeCpf(Connection conn, String cpf, int idExcluir) throws Exception {
+        return dao.existeCpf(conn, cpf, idExcluir);
+    }
+
+    public boolean existeEmail(Connection conn, String email, int idExcluir) throws Exception {
+        return dao.existeEmail(conn, email, idExcluir);
+    }
+
+    public void inserir(Connection conn) throws Exception {
+        dao.inserir(conn, this);
+    }
+
+    public void atualizar(Connection conn) throws Exception {
+        dao.atualizar(conn, this);
+    }
+
+    public void ativar(Connection conn) throws Exception {
+        dao.ativar(conn, this.idUsuario);
+    }
+
+    public void desativar(Connection conn) throws Exception {
+        dao.desativar(conn, this.idUsuario);
     }
 
     public String toJson() {

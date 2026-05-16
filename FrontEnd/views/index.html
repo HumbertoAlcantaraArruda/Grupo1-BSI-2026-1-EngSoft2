@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AGAPE — Ambiente de Gestão e Apoio Pastoral Especializado">
+  <title>AGAPE — Entrar</title>
+
+  <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/agape.css">
+</head>
+
+<body>
+
+  <main class="login-page" role="main">
+    <div class="login-card" role="region" aria-label="Área de autenticação">
+
+      <!-- Cabeçalho vermelho -->
+      <div class="login-header">
+        <img id="login-logo" src="../assets/img/logotipogrande_padrao.png" alt="Logo AGAPE" class="login-logo">
+        <p class="login-subtitle">Ambiente de Gestão e Apoio Pastoral Especializado</p>
+      </div>
+
+      <!-- Corpo do formulário -->
+      <div class="login-body">
+
+        <!-- Alerta de erro -->
+        <div id="login-alert" class="login-alert" role="alert" aria-live="assertive">
+          <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+          <span id="login-alert-msg"></span>
+        </div>
+
+        <form id="login-form" novalidate autocomplete="off">
+
+          <!-- E-mail -->
+          <div class="mb-3">
+            <label for="email" class="form-label">E-mail</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              placeholder="seu@email.com"
+              autocomplete="username"
+              aria-required="true"
+              aria-describedby="email-error"
+            >
+            <span id="email-error" class="field-error" role="alert"></span>
+          </div>
+
+          <!-- Senha -->
+          <div class="mb-4">
+            <label for="senha" class="form-label">Senha</label>
+            <div class="input-password-wrapper">
+              <input
+                type="password"
+                id="senha"
+                name="senha"
+                class="form-control"
+                placeholder="Digite sua senha"
+                autocomplete="current-password"
+                aria-required="true"
+                aria-describedby="senha-error"
+              >
+              <button
+                type="button"
+                id="toggle-password"
+                class="toggle-password"
+                aria-label="Mostrar ou ocultar senha"
+                tabindex="-1"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            <span id="senha-error" class="field-error" role="alert"></span>
+          </div>
+
+          <!-- Botão de login -->
+          <button type="submit" id="btn-login" class="btn-login">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Entrar
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../assets/libs/jquery/jquery.min.js"></script>
+  <script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+  <script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <script src="../utils/Auth.js"></script>
+  <script src="../utils/HttpClient.js"></script>
+  <script src="../utils/Mascaras.js"></script>
+  <script src="../utils/Validador.js"></script>
+
+  <script src="../services/ParametrizacaoService.js"></script>
+  <script src="../services/AuthService.js"></script>
+  <script src="../controllers/AuthController.js"></script>
+
+  <script src="./index.js"></script>
+
+</body>
+</html>

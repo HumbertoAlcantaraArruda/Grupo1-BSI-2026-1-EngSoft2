@@ -1,6 +1,5 @@
 package agape.dao;
 
-import agape.control.ConexaoBD;
 import agape.model.CategoriaEvento;
 
 import java.sql.*;
@@ -8,10 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CategoriaEventoDAO {
-
-    private Connection getConn() {
-        return ConexaoBD.getInstance().getConexao();
-    }
 
     private CategoriaEvento mapear(ResultSet rs) throws SQLException {
         CategoriaEvento c = new CategoriaEvento();
@@ -21,11 +16,9 @@ public class CategoriaEventoDAO {
         return c;
     }
 
-    // ── escrita ───────────────────────────────────────────────────────────────
-
-    public void inserir(CategoriaEvento c) throws Exception {
+    public void inserir(Connection conn, CategoriaEvento c) throws Exception {
         String sql = "INSERT INTO CategoriaEvento (nome, ativo) VALUES (?, ?)";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, c.getNome());
             stmt.setBoolean(2, c.isAtivo());
             stmt.executeUpdate();
@@ -35,9 +28,9 @@ public class CategoriaEventoDAO {
         }
     }
 
-    public void atualizar(CategoriaEvento c) throws Exception {
+    public void atualizar(Connection conn, CategoriaEvento c) throws Exception {
         String sql = "UPDATE CategoriaEvento SET nome=?, ativo=? WHERE idCatEvento=?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, c.getNome());
             stmt.setBoolean(2, c.isAtivo());
             stmt.setInt(3, c.getIdCatEvento());
@@ -45,28 +38,26 @@ public class CategoriaEventoDAO {
         }
     }
 
-    public void excluir(int id) throws Exception {
+    public void excluir(Connection conn, int id) throws Exception {
         String sql = "DELETE FROM CategoriaEvento WHERE idCatEvento=?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         }
     }
 
-    // ── leitura ───────────────────────────────────────────────────────────────
-
-    public List<CategoriaEvento> listar() throws Exception {
-        return buscar(null, null);
+    public List<CategoriaEvento> listar(Connection conn) throws Exception {
+        return buscar(conn, null, null);
     }
 
-    public List<CategoriaEvento> buscar(String nome, Boolean ativo) throws Exception {
+    public List<CategoriaEvento> buscar(Connection conn, String nome, Boolean ativo) throws Exception {
         StringBuilder sql = new StringBuilder("SELECT * FROM CategoriaEvento WHERE 1=1");
         if (nome  != null && !nome.isEmpty()) sql.append(" AND nome LIKE ?");
         if (ativo != null)                    sql.append(" AND ativo=?");
         sql.append(" ORDER BY nome");
 
         List<CategoriaEvento> lista = new ArrayList<>();
-        try (PreparedStatement stmt = getConn().prepareStatement(sql.toString())) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             int i = 1;
             if (nome  != null && !nome.isEmpty()) stmt.setString(i++, "%" + nome + "%");
             if (ativo != null)                    stmt.setBoolean(i++, ativo);
@@ -77,9 +68,9 @@ public class CategoriaEventoDAO {
         return lista;
     }
 
-    public CategoriaEvento buscarPorId(int id) throws Exception {
+    public CategoriaEvento buscarPorId(Connection conn, int id) throws Exception {
         String sql = "SELECT * FROM CategoriaEvento WHERE idCatEvento=?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) return mapear(rs);
@@ -88,9 +79,9 @@ public class CategoriaEventoDAO {
         return null;
     }
 
-    public CategoriaEvento buscarPorNome(String nome) throws Exception {
+    public CategoriaEvento buscarPorNome(Connection conn, String nome) throws Exception {
         String sql = "SELECT * FROM CategoriaEvento WHERE nome=?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, nome);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) return mapear(rs);
@@ -99,11 +90,9 @@ public class CategoriaEventoDAO {
         return null;
     }
 
-    // ── verificação de unicidade ──────────────────────────────────────────────
-
-    public boolean existeNome(String nome, int idExcluir) throws Exception {
+    public boolean existeNome(Connection conn, String nome, int idExcluir) throws Exception {
         String sql = "SELECT 1 FROM CategoriaEvento WHERE nome=? AND idCatEvento<>?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, nome);
             stmt.setInt(2, idExcluir);
             try (ResultSet rs = stmt.executeQuery()) {

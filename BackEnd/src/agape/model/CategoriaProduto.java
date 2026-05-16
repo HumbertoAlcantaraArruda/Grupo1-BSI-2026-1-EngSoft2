@@ -1,6 +1,13 @@
 package agape.model;
 
+import java.sql.Connection;
+import java.util.List;
+
+import agape.dao.CategoriaProdutoDAO;
+
 public class CategoriaProduto {
+    private final CategoriaProdutoDAO dao = new CategoriaProdutoDAO();
+
     private int idCatProd;
     private String nome;
     private boolean ativo;
@@ -27,6 +34,32 @@ public class CategoriaProduto {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public List<CategoriaProduto> buscar(Connection conn, String nome, Boolean ativo) throws Exception {
+        return dao.buscar(conn, nome, ativo);
+    }
+
+    public CategoriaProduto buscarPorId(Connection conn, int id) throws Exception {
+        return dao.buscarPorId(conn, id);
+    }
+
+    public boolean existeNome(Connection conn, String nome, int idExcluir) throws Exception {
+        return dao.existeNome(conn, nome, idExcluir);
+    }
+
+    public void inserir(Connection conn) throws Exception {
+        dao.inserir(conn, this);
+    }
+
+    public void atualizar(Connection conn) throws Exception {
+        dao.atualizar(conn, this);
+    }
+
+    public void excluir(Connection conn) throws Exception {
+        dao.excluir(conn, this.idCatProd);
     }
 
     public String toJson() {

@@ -12,17 +12,14 @@ import java.nio.file.Paths;
 import java.util.Base64;
 import java.text.Normalizer;
 
-import agape.dao.ParametrizacaoDAO;
 import agape.model.Parametrizacao;
 import agape.util.ResponseObject;
 
 public class CParametrizacao implements HttpHandler {
 
     private static CParametrizacao instancia;
-    private ParametrizacaoDAO dao;
 
     private CParametrizacao() {
-        dao = new ParametrizacaoDAO();
     }
 
     public static CParametrizacao getInstancia() {
@@ -176,7 +173,7 @@ public class CParametrizacao implements HttpHandler {
                     System.out.println("[Parametrizacao] Logo pequeno salvo: " + nomePequeno);
                 }
 
-                dao.atualizarLogos(conn, nomeGrande, nomePequeno);
+                new Parametrizacao().atualizarLogos(conn, nomeGrande, nomePequeno);
 
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);
@@ -187,7 +184,7 @@ public class CParametrizacao implements HttpHandler {
             }
 
             if (method.equalsIgnoreCase("GET")) {
-                Parametrizacao p = dao.buscar(conn);
+                Parametrizacao p = new Parametrizacao().buscar(conn);
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);
                 response.setCode(ResponseObject.CODE_OK);
@@ -221,7 +218,7 @@ public class CParametrizacao implements HttpHandler {
                 p.setFusoHorario(extrairParam(exchange, body, "fusoHorario"));
                 p.setObs(extrairParam(exchange, body, "obs"));
 
-                dao.salvar(conn, p);
+                p.salvar(conn);
 
                 ResponseObject response = new ResponseObject();
                 response.setStatus(ResponseObject.STATUS_OK);

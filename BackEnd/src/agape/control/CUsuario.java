@@ -3,23 +3,26 @@ package agape.control;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.time.LocalDateTime;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
-import agape.dao.UsuarioDAO;
 import agape.model.Usuario;
+import agape.security.JWTTokenProvider;
 import agape.util.Criptografia;
 import agape.util.ResponseObject;
 
 public class CUsuario implements HttpHandler {
 
+    private static final String NIVEL_ADM    = "ADM";
+    private static final String NIVEL_COLAB  = "COLAB";
+    private static final String NIVEL_PAROQ  = "PAROQ";
+
     private static CUsuario instancia;
-    private final UsuarioDAO dao;
 
     private CUsuario() {
-        this.dao = new UsuarioDAO();
     }
 
     public static CUsuario getInstancia() {
@@ -39,12 +42,16 @@ public class CUsuario implements HttpHandler {
         }
 
         try {
+            Connection conn = ConexaoBD.getInstance().getConexao();
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
 
+            // Nível do solicitante: preenchido pelo AuthFilter (null em /login, que é pública).
+            String requesterNivel = (String) exchange.getAttribute("usuarioNivel");
+
             ResponseObject response = switch (method.toUpperCase()) {
-                case "GET"    -> handleGet(path, query);
-                case "POST"   -> handlePost(path, body, query);
-                case "PUT"    -> handlePut(path, body);
+                case "GET"    -> handleGet(conn, path, query);
+                case "POST"   -> handlePost(conn, path, body, query, requesterNivel);
+                case "PUT"    -> handlePut(conn, path, body, requesterNivel);
                 default       -> naoEncontrado();
             };
 
@@ -59,45 +66,43 @@ public class CUsuario implements HttpHandler {
         }
     }
 
-    // ── GET ───────────────────────────────────────────────────────────────────
-
-    private ResponseObject handleGet(String path, String query) {
+    private ResponseObject handleGet(Connection conn, String path, String query) {
         String id    = param(query, "id");
         String cpf   = param(query, "cpf");
         String email = param(query, "email");
 
-        if (!id.isEmpty())    return buscarPorId(parseSafeInt(id));
-        if (!cpf.isEmpty())   return buscarPorCpf(cpf);
-        if (!email.isEmpty()) return buscarPorEmail(email);
-        if (path.equals("/usuarios")) return listar();
+        if (!id.isEmpty())    return buscarPorId(conn, parseSafeInt(id));
+        if (!cpf.isEmpty())   return buscarPorCpf(conn, cpf);
+        if (!email.isEmpty()) return buscarPorEmail(conn, email);
+        if (path.equals("/usuarios")) return listar(conn);
 
         return naoEncontrado();
     }
 
-    // ── POST ──────────────────────────────────────────────────────────────────
-
-    private ResponseObject handlePost(String path, String body, String query) {
+    private ResponseObject handlePost(Connection conn, String path, String body, String query, String requesterNivel) {
         String combined = (query != null ? query : "") + "&" + body;
         return switch (path) {
-            case "/login"             -> login(param(body, "email"), param(body, "senha"));
+            case "/login"             -> login(conn, param(body, "email"), param(body, "senha"));
             case "/cadastrar",
                  "/usuarios"          -> cadastrar(
+                                            conn,
+                                            requesterNivel,
                                             param(body, "nome"),
                                             param(body, "cpf"),
                                             param(body, "email"),
                                             param(body, "senha"),
                                             param(body, "nivel"));
-            case "/usuario/ativar"    -> ativar(parseSafeInt(param(combined, "id")));
-            case "/usuario/desativar" -> desativar(parseSafeInt(param(combined, "id")));
+            case "/usuario/ativar"    -> ativar(conn, requesterNivel, parseSafeInt(param(combined, "id")));
+            case "/usuario/desativar" -> desativar(conn, requesterNivel, parseSafeInt(param(combined, "id")));
             default -> naoEncontrado();
         };
     }
 
-    // ── PUT ───────────────────────────────────────────────────────────────────
-
-    private ResponseObject handlePut(String path, String body) {
+    private ResponseObject handlePut(Connection conn, String path, String body, String requesterNivel) {
         if (path.equals("/usuario")) {
             return atualizar(
+                conn,
+                requesterNivel,
                 parseSafeInt(param(body, "id")),
                 param(body, "nome"),
                 param(body, "cpf"),
@@ -108,28 +113,34 @@ public class CUsuario implements HttpHandler {
         return naoEncontrado();
     }
 
-    // ── operações ─────────────────────────────────────────────────────────────
-
-    public ResponseObject cadastrar(String nome, String cpf, String email, String senha, String nivel) {
+    public ResponseObject cadastrar(Connection conn, String requesterNivel, String nome, String cpf, String email, String senha, String nivel) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome) || vazio(cpf) || vazio(email) || vazio(senha) || vazio(nivel))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Todos os campos são obrigatórios.");
-            if (dao.existeCpf(cpf.trim(), 0))
-                return falha(response, ResponseObject.CODE_CONFLICT, "CPF já cadastrado.");
-            if (dao.existeEmail(email.trim(), 0))
-                return falha(response, ResponseObject.CODE_CONFLICT, "E-mail já cadastrado.");
+
+            String nivelNovo = nivel.trim().toUpperCase();
+
+            // Regra: COLAB só pode cadastrar usuários com nível PAROQ.
+            if (NIVEL_COLAB.equalsIgnoreCase(requesterNivel) && !NIVEL_PAROQ.equals(nivelNovo))
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Colaborador só pode cadastrar usuários com nível PAROQ.");
 
             Usuario u = new Usuario();
+            if (u.existeCpf(conn, cpf.trim(), 0))
+                return falha(response, ResponseObject.CODE_CONFLICT, "CPF já cadastrado.");
+            if (u.existeEmail(conn, email.trim(), 0))
+                return falha(response, ResponseObject.CODE_CONFLICT, "E-mail já cadastrado.");
+
             u.setNome(nome.trim());
             u.setCpf(cpf.trim());
             u.setEmail(email.trim());
             u.setSenha(Criptografia.hashSenha(senha));
-            u.setNivel(nivel.trim().toUpperCase());
+            u.setNivel(nivelNovo);
             u.setStatus(1);
             u.setDataAtivacao(LocalDateTime.now());
 
-            dao.inserir(u);
+            u.inserir(conn);
 
             u.setSenha(null);
             response.setStatus(ResponseObject.STATUS_OK);
@@ -143,25 +154,27 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject login(String email, String senha) {
+    public ResponseObject login(Connection conn, String email, String senha) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(email) || vazio(senha))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "E-mail e senha são obrigatórios.");
 
-            Usuario u = dao.buscarPorEmail(email.trim());
+            Usuario u = new Usuario().buscarPorEmail(conn, email.trim());
             if (u == null)
                 return falha(response, ResponseObject.CODE_UNAUTHORIZED, "Credenciais inválidas.");
             if (u.getStatus() == 0)
                 return falha(response, ResponseObject.CODE_FORBIDDEN, "Usuário inativo.");
-            if (!u.getSenha().equals(Criptografia.hashSenha(senha)))
+            if (!Criptografia.verificarSenha(senha, u.getSenha()))
                 return falha(response, ResponseObject.CODE_UNAUTHORIZED, "Credenciais inválidas.");
+
+            String token = JWTTokenProvider.createToken(u.getEmail(), u.getNivel());
 
             u.setSenha(null);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Login realizado com sucesso.");
-            response.setResult(u);
+            response.setResult(new LoginResult(u, token));
 
         } catch (Exception e) {
             erroInterno(response);
@@ -169,10 +182,10 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject listar() {
+    public ResponseObject listar(Connection conn) {
         ResponseObject response = new ResponseObject();
         try {
-            var lista = dao.listar();
+            var lista = new Usuario().listar(conn);
             lista.forEach(u -> u.setSenha(null));
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
@@ -183,10 +196,10 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject buscarPorId(int id) {
+    public ResponseObject buscarPorId(Connection conn, int id) {
         ResponseObject response = new ResponseObject();
         try {
-            Usuario u = dao.buscarPorId(id);
+            Usuario u = new Usuario().buscarPorId(conn, id);
             if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
             u.setSenha(null);
@@ -199,12 +212,12 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject buscarPorCpf(String cpf) {
+    public ResponseObject buscarPorCpf(Connection conn, String cpf) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(cpf))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "CPF é obrigatório.");
-            Usuario u = dao.buscarPorCpf(cpf.trim());
+            Usuario u = new Usuario().buscarPorCpf(conn, cpf.trim());
             if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
             u.setSenha(null);
@@ -217,12 +230,12 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject buscarPorEmail(String email) {
+    public ResponseObject buscarPorEmail(Connection conn, String email) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(email))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "E-mail é obrigatório.");
-            Usuario u = dao.buscarPorEmail(email.trim());
+            Usuario u = new Usuario().buscarPorEmail(conn, email.trim());
             if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
             u.setSenha(null);
@@ -235,25 +248,38 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject atualizar(int id, String nome, String cpf, String email, String nivel) {
+    public ResponseObject atualizar(Connection conn, String requesterNivel, int id, String nome, String cpf, String email, String nivel) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome) || vazio(cpf) || vazio(email) || vazio(nivel))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Todos os campos são obrigatórios.");
 
-            Usuario u = dao.buscarPorId(id);
+            String nivelNovo = nivel.trim().toUpperCase();
+
+            Usuario u = new Usuario().buscarPorId(conn, id);
             if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
-            if (dao.existeCpf(cpf.trim(), id))
+
+            // Regra: COLAB só pode alterar usuários PAROQ e só pode mantê-los PAROQ.
+            if (NIVEL_COLAB.equalsIgnoreCase(requesterNivel)) {
+                if (!NIVEL_PAROQ.equalsIgnoreCase(u.getNivel()))
+                    return falha(response, ResponseObject.CODE_FORBIDDEN,
+                            "Colaborador só pode alterar usuários com nível PAROQ.");
+                if (!NIVEL_PAROQ.equals(nivelNovo))
+                    return falha(response, ResponseObject.CODE_FORBIDDEN,
+                            "Colaborador não pode alterar o nível para diferente de PAROQ.");
+            }
+
+            if (u.existeCpf(conn, cpf.trim(), id))
                 return falha(response, ResponseObject.CODE_CONFLICT, "CPF já pertence a outro usuário.");
-            if (dao.existeEmail(email.trim(), id))
+            if (u.existeEmail(conn, email.trim(), id))
                 return falha(response, ResponseObject.CODE_CONFLICT, "E-mail já pertence a outro usuário.");
 
             u.setNome(nome.trim());
             u.setCpf(cpf.trim());
             u.setEmail(email.trim());
-            u.setNivel(nivel.trim().toUpperCase());
-            dao.atualizar(u);
+            u.setNivel(nivelNovo);
+            u.atualizar(conn);
 
             u.setSenha(null);
             response.setStatus(ResponseObject.STATUS_OK);
@@ -267,12 +293,18 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject ativar(int id) {
+    public ResponseObject ativar(Connection conn, String requesterNivel, int id) {
         ResponseObject response = new ResponseObject();
         try {
-            if (dao.buscarPorId(id) == null)
+            Usuario u = new Usuario().buscarPorId(conn, id);
+            if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
-            dao.ativar(id);
+
+            if (NIVEL_COLAB.equalsIgnoreCase(requesterNivel) && !NIVEL_PAROQ.equalsIgnoreCase(u.getNivel()))
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Colaborador só pode ativar usuários com nível PAROQ.");
+
+            u.ativar(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Usuário ativado com sucesso.");
@@ -282,12 +314,18 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject desativar(int id) {
+    public ResponseObject desativar(Connection conn, String requesterNivel, int id) {
         ResponseObject response = new ResponseObject();
         try {
-            if (dao.buscarPorId(id) == null)
+            Usuario u = new Usuario().buscarPorId(conn, id);
+            if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
-            dao.desativar(id);
+
+            if (NIVEL_COLAB.equalsIgnoreCase(requesterNivel) && !NIVEL_PAROQ.equalsIgnoreCase(u.getNivel()))
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Colaborador só pode desativar usuários com nível PAROQ.");
+
+            u.desativar(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Usuário desativado com sucesso.");
@@ -297,7 +335,23 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    // ── utilitários HTTP ──────────────────────────────────────────────────────
+    /** Resultado de /login: usuário + token JWT, serializado via toJson() pelo ResponseObject. */
+    private static class LoginResult {
+        private final Usuario usuario;
+        private final String token;
+
+        LoginResult(Usuario usuario, String token) {
+            this.usuario = usuario;
+            this.token = token;
+        }
+
+        public String toJson() {
+            return "{" +
+                    "\"token\":\"" + token + "\"," +
+                    "\"usuario\":" + usuario.toJson() +
+                    "}";
+        }
+    }
 
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json  = response.toJson();
@@ -306,7 +360,7 @@ public class CUsuario implements HttpHandler {
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
         exchange.getResponseBody().write(bytes);

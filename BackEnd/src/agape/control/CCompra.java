@@ -9,9 +9,6 @@ import java.sql.SQLException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-import agape.dao.CompraDAO;
-import agape.dao.ItemCompraDAO;
-import agape.dao.ProdutoDAO;
 import agape.model.Compra;
 import agape.model.ItemCompra;
 import agape.util.ResponseObject;
@@ -19,14 +16,8 @@ import agape.util.ResponseObject;
 public class CCompra implements HttpHandler {
 
     private static CCompra instancia;
-    private CompraDAO compraDAO;
-    private ItemCompraDAO itemCompraDAO;
-    private ProdutoDAO produtoDAO;
 
     private CCompra() {
-        compraDAO = new CompraDAO();
-        itemCompraDAO = new ItemCompraDAO();
-        produtoDAO = new ProdutoDAO();
     }
 
     public static CCompra getInstancia() {
@@ -39,7 +30,7 @@ public class CCompra implements HttpHandler {
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json = response.toJson();
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        
+
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -91,12 +82,13 @@ public class CCompra implements HttpHandler {
 
         try {
             if (method.equalsIgnoreCase("POST")) {
+                Connection conn = ConexaoBD.getInstance().getConexao();
                 String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-                
+
                 int idFornecedor = parseSafeInt(extrairParam(exchange, body, "idFornecedor"));
                 int idUsuario = parseSafeInt(extrairParam(exchange, body, "idUsuario"));
                 float valorTotal = parseSafeFloat(extrairParam(exchange, body, "valorTotal"));
-                
+
                 String[] idsProdutosStr = extrairParam(exchange, body, "idProdutos").split(",");
                 String[] quantidadesStr = extrairParam(exchange, body, "quantidades").split(",");
                 String[] valoresUnitariosStr = extrairParam(exchange, body, "valoresUnitarios").split(",");
@@ -112,7 +104,7 @@ public class CCompra implements HttpHandler {
                     valoresUnitarios[i] = parseSafeFloat(valoresUnitariosStr[i]);
                 }
 
-                ResponseObject response = efetuarCompraDeProdutos(idFornecedor, idUsuario, valorTotal, idsProdutos, quantidades, valoresUnitarios);
+                ResponseObject response = efetuarCompraDeProdutos(conn, idFornecedor, idUsuario, valorTotal, idsProdutos, quantidades, valoresUnitarios);
                 enviarResposta(exchange, response);
             }
         } catch (Exception e) {
@@ -124,11 +116,9 @@ public class CCompra implements HttpHandler {
         }
     }
 
-    public ResponseObject efetuarCompraDeProdutos(int idFornecedor, int idUsuario, float valorTotal, int[] idsProdutos, int[] quantidades, float[] valoresUnitarios) {
+    public ResponseObject efetuarCompraDeProdutos(Connection conn, int idFornecedor, int idUsuario, float valorTotal, int[] idsProdutos, int[] quantidades, float[] valoresUnitarios) {
         ResponseObject response = new ResponseObject();
-        Connection conn = null;
         try {
-            conn = ConexaoBD.getInstance().getConexao();
             conn.setAutoCommit(false);
 
             Compra compra = new Compra();
@@ -137,7 +127,7 @@ public class CCompra implements HttpHandler {
             compra.setIdFornecedor(idFornecedor);
             compra.setIdUsuario(idUsuario);
 
-            int idCompra = compraDAO.inserir(conn, compra);
+            int idCompra = compra.inserir(conn);
 
             for (int i = 0; i < idsProdutos.length; i++) {
                 if (idsProdutos[i] > 0) {
@@ -146,10 +136,7 @@ public class CCompra implements HttpHandler {
                     item.setIdProd(idsProdutos[i]);
                     item.setQuantidade(quantidades[i]);
                     item.setValorUnitario(valoresUnitarios[i]);
-                    itemCompraDAO.inserir(conn, item);
-                    
-                    // Atualiza estoque (quantidade comprada aumenta o estoque)
-                    //produtoDAO.atualizarEstoque(conn, idsProdutos[i], quantidades[i]);
+                    item.inserir(conn);
                 }
             }
 

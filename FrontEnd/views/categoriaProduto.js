@@ -3,6 +3,8 @@
 
 (function () {
 
+    if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
+
     var ctrl      = window.AGAPE.Controllers.CategoriaProdutoController.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
@@ -32,14 +34,14 @@
 
     // Carrega lista completa e armazena no cache do Controller para filtragem local
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="4" class="tabela-vazia">Carregando...</td></tr>';
+        tabelaCorpo.innerHTML = '<tr><td colspan="3" class="tabela-vazia">Carregando...</td></tr>';
         _renderizarTabela(await ctrl.listar());
     }
 
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
             tabelaCorpo.innerHTML =
-                '<tr><td colspan="4" class="tabela-vazia text-danger">' +
+                '<tr><td colspan="3" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
                 _escapar(resultado.erro || 'Erro ao carregar dados.') +
                 '</td></tr>';
@@ -50,7 +52,7 @@
 
         if (lista.length === 0) {
             tabelaCorpo.innerHTML =
-                '<tr><td colspan="4" class="tabela-vazia">' +
+                '<tr><td colspan="3" class="tabela-vazia">' +
                 '<i class="bi bi-inbox me-1"></i>Nenhuma categoria encontrada.' +
                 '</td></tr>';
             return;
@@ -61,7 +63,6 @@
             var badge = ativo ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
             return (
                 '<tr>' +
-                '<td>' + _escapar(String(c.idCatProd)) + '</td>' +
                 '<td>' + _escapar(c.nome) + '</td>' +
                 '<td>' + badge + '</td>' +
                 '<td>' +

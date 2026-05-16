@@ -1,11 +1,17 @@
 package agape.model;
 
+import java.sql.Connection;
+import java.util.List;
+
+import agape.dao.CategoriaEventoDAO;
+
 public class CategoriaEvento {
+    private final CategoriaEventoDAO dao = new CategoriaEventoDAO();
+
     private int idCatEvento;
     private String nome;
     private boolean ativo = true;
 
-    // GETTERS E SETTERS
     public int getIdCatEvento() {
         return idCatEvento;
     }
@@ -28,6 +34,40 @@ public class CategoriaEvento {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public List<CategoriaEvento> listar(Connection conn) throws Exception {
+        return dao.listar(conn);
+    }
+
+    public List<CategoriaEvento> buscar(Connection conn, String nome, Boolean ativo) throws Exception {
+        return dao.buscar(conn, nome, ativo);
+    }
+
+    public CategoriaEvento buscarPorId(Connection conn, int id) throws Exception {
+        return dao.buscarPorId(conn, id);
+    }
+
+    public CategoriaEvento buscarPorNome(Connection conn, String nome) throws Exception {
+        return dao.buscarPorNome(conn, nome);
+    }
+
+    public boolean existeNome(Connection conn, String nome, int idExcluir) throws Exception {
+        return dao.existeNome(conn, nome, idExcluir);
+    }
+
+    public void inserir(Connection conn) throws Exception {
+        dao.inserir(conn, this);
+    }
+
+    public void atualizar(Connection conn) throws Exception {
+        dao.atualizar(conn, this);
+    }
+
+    public void excluir(Connection conn) throws Exception {
+        dao.excluir(conn, this.idCatEvento);
     }
 
     public String toJson() {

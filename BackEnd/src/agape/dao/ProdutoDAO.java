@@ -8,13 +8,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import agape.control.ConexaoBD;
 import agape.model.Produto;
 
 public class ProdutoDAO {
-    private Connection getConn(){
-        return ConexaoBD.getInstance().getConexao();
-    }
 
     /* Usado por buscarPorId — SELECT * sem alias */
     private Produto mapear(ResultSet rs) throws SQLException {
@@ -39,7 +35,7 @@ public class ProdutoDAO {
         return p;
     }
 
-    public List<Produto> buscar (int qtd, String catProd, String nome, String op) throws SQLException {
+    public List<Produto> buscar(Connection conn, int qtd, String catProd, String nome, String op) throws SQLException {
         StringBuilder sql = new StringBuilder(
             "SELECT p.idProd, p.idCatProd, p.nome AS nomeProduto, p.valorUni, p.qtdAtual, " +
             "cp.nome AS nomeCategoria " +
@@ -58,7 +54,7 @@ public class ProdutoDAO {
         }
         sql.append(" ORDER BY p.nome");
         List<Produto> produto = new ArrayList<>();
-        try (PreparedStatement stmt = getConn().prepareStatement(sql.toString())) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             int i = 1;
             if (catProd != null) {
                 stmt.setString(i++, catProd);
@@ -78,9 +74,9 @@ public class ProdutoDAO {
         return produto;
     }
 
-    public Produto buscarPorId(int id) throws SQLException {
+    public Produto buscarPorId(Connection conn, int id) throws SQLException {
         String sql = "SELECT * FROM Produto WHERE idProd = ?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -91,9 +87,9 @@ public class ProdutoDAO {
         return null;
     }
 
-    public boolean existeNome(String nome, int idIgnorar) throws SQLException {
+    public boolean existeNome(Connection conn, String nome, int idIgnorar) throws SQLException {
         String sql = "SELECT COUNT(*) FROM Produto WHERE nome = ? AND idProd != ?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, nome);
             stmt.setInt(2, idIgnorar);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -103,9 +99,9 @@ public class ProdutoDAO {
         return false;
     }
 
-    public void inserir(Produto p) throws SQLException {
+    public void inserir(Connection conn, Produto p) throws SQLException {
         String sql = "INSERT INTO Produto (idCatProd, nome, valorUni, qtdAtual) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, p.getIdCatProd());
             stmt.setString(2, p.getNome());
             stmt.setFloat(3, p.getValorUni());
@@ -117,9 +113,9 @@ public class ProdutoDAO {
         }
     }
 
-    public void atualizar(Produto p) throws SQLException {
+    public void atualizar(Connection conn, Produto p) throws SQLException {
         String sql = "UPDATE Produto SET idCatProd = ?, nome = ?, valorUni = ?, qtdAtual = ? WHERE idProd = ?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, p.getIdCatProd());
             stmt.setString(2, p.getNome());
             stmt.setFloat(3, p.getValorUni());
@@ -129,9 +125,9 @@ public class ProdutoDAO {
         }
     }
 
-    public void excluir(int id) throws SQLException {
+    public void excluir(Connection conn, int id) throws SQLException {
         String sql = "DELETE FROM Produto WHERE idProd = ?";
-        try (PreparedStatement stmt = getConn().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         }

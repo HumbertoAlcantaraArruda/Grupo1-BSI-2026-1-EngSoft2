@@ -68,11 +68,46 @@ window.AGAPE.Utils.HttpClient = (function () {
         return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
     };
 
+    // Retorna o objeto Auth ou null se ainda não carregado
+    HttpClient.prototype._auth = function () {
+        // return (window.AGAPE.Utils.Auth && window.AGAPE.Utils.Auth.getInstance) ?
+        //        window.AGAPE.Utils.Auth.getInstance() : null;
+        return window.AGAPE.Utils.Auth.getInstance();
+    };
+
+    // Monta headers anexando Authorization: Bearer <token> quando houver sessão
+    HttpClient.prototype._montarHeaders = function (extras) {
+        var headers = Object.assign({}, extras || {});
+        var auth = this._auth();
+
+        console.log(auth);
+
+        if (auth) {
+            var token = auth.getToken(); // erro!!!
+            if (token) headers['Authorization'] = 'Bearer ' + token;
+        }
+        return headers;
+    };
+
+    // Trata 401: se havia sessão, encerra e redireciona ao login.
+    // Retorna true se a sessão foi encerrada (caller deve abortar).
+    HttpClient.prototype._tratar401 = function () {
+        var auth = this._auth();
+        if (auth && auth.estaLogado()) {
+            auth.logout();
+            return true;
+        }
+        return false;
+    };
+
     HttpClient.prototype.get = async function (endpoint, params) {
         try {
             var url = this._montarUrl(endpoint, params);
-            var resposta = await fetch(url);
+            var resposta = await fetch(url, { headers: this._montarHeaders() });
 
+            if (resposta.status === 401 && this._tratar401()) {
+                return { status: 'error', erro: this._mensagemAmigavel(401) };
+            }
             if (!resposta.ok) {
                 return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
@@ -88,6 +123,7 @@ window.AGAPE.Utils.HttpClient = (function () {
     HttpClient.prototype.post = async function (endpoint, corpo) {
         try {
             var params = new URLSearchParams();
+
             Object.keys(corpo).forEach(function (chave) {
                 if (corpo[chave] !== null && corpo[chave] !== undefined) {
                     params.append(chave, corpo[chave]);
@@ -96,10 +132,15 @@ window.AGAPE.Utils.HttpClient = (function () {
 
             var resposta = await fetch(BASE_URL + endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: this._montarHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
                 body: params.toString()
             });
 
+            console.log("Resposta POST: ", resposta);
+
+            if (resposta.status === 401 && this._tratar401()) {
+                return { status: 'error', erro: this._mensagemAmigavel(401) };
+            }
             if (!resposta.ok) {
                 return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
@@ -108,6 +149,7 @@ window.AGAPE.Utils.HttpClient = (function () {
             return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
+            console.log("HttpClient, erro: " + erro);
             return { status: 'error', erro: this._erroConexao() };
         }
     };
@@ -123,10 +165,13 @@ window.AGAPE.Utils.HttpClient = (function () {
 
             var resposta = await fetch(BASE_URL + endpoint, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: this._montarHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
                 body: params.toString()
             });
 
+            if (resposta.status === 401 && this._tratar401()) {
+                return { status: 'error', erro: this._mensagemAmigavel(401) };
+            }
             if (!resposta.ok) {
                 return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
@@ -144,10 +189,13 @@ window.AGAPE.Utils.HttpClient = (function () {
         try {
             var resposta = await fetch(BASE_URL + endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                headers: this._montarHeaders({ 'Content-Type': 'application/json; charset=UTF-8' }),
                 body: JSON.stringify(corpo)
             });
 
+            if (resposta.status === 401 && this._tratar401()) {
+                return { status: 'error', erro: this._mensagemAmigavel(401) };
+            }
             if (!resposta.ok) {
                 return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
@@ -163,8 +211,14 @@ window.AGAPE.Utils.HttpClient = (function () {
     HttpClient.prototype.delete = async function (endpoint, params) {
         try {
             var url = this._montarUrl(endpoint, params);
-            var resposta = await fetch(url, { method: 'DELETE' });
+            var resposta = await fetch(url, {
+                method: 'DELETE',
+                headers: this._montarHeaders()
+            });
 
+            if (resposta.status === 401 && this._tratar401()) {
+                return { status: 'error', erro: this._mensagemAmigavel(401) };
+            }
             if (!resposta.ok) {
                 return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
             }
@@ -180,6 +234,8 @@ window.AGAPE.Utils.HttpClient = (function () {
     return {
         getInstance: function () {
             if (!instancia) instancia = new HttpClient();
+
+            console.log("instancia de httpCliente", instancia);
             return instancia;
         }
     };

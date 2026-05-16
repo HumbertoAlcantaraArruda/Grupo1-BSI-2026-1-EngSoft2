@@ -9,10 +9,8 @@ import agape.control.CInscricao;
 import agape.control.CParametrizacao;
 import agape.control.CUsuario;
 import agape.control.CProduto;
+import agape.security.AuthFilter;
 
-//import com.sun.net.httpserver.HttpExchange;
-
-//import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 public class Main {
@@ -23,32 +21,21 @@ public class Main {
 
         // == Rotas ==
 
-        // Parametrização
-        server.createContext("/parametrizacao", CParametrizacao.getInstancia());
+        // Pública (única que pode ser acessada sem token)
+        server.createContext("/login", CUsuario.getInstancia());
 
-        // Categorias de Produto
-        server.createContext("/categoriaProduto", CCategoriaProduto.getInstancia());
+        // Rotas operacionais — ADM e COLAB
+        server.createContext("/parametrizacao",    new AuthFilter(CParametrizacao.getInstancia(),   "ADM", "COLAB"));
+        server.createContext("/categoriaProduto",  new AuthFilter(CCategoriaProduto.getInstancia(), "ADM", "COLAB"));
+        server.createContext("/produto",           new AuthFilter(CProduto.getInstancia(),          "ADM", "COLAB"));
+        server.createContext("/categoriaEvento",   new AuthFilter(CCategoriaEvento.getInstancia(),  "ADM", "COLAB"));
+        server.createContext("/comprar",           new AuthFilter(CCompra.getInstancia(),           "ADM", "COLAB"));
+        server.createContext("/cancelarInscricao", new AuthFilter(CInscricao.getInstancia(),        "ADM", "COLAB"));
 
-        // Produtos
-        server.createContext("/produto", CProduto.getInstancia());
-
-        // Categorias de Evento
-        server.createContext("/categoriaEvento", CCategoriaEvento.getInstancia());
-
-
-        // ===== ROTAS AINDA NÃO CONFIGURADAS =====
-        // Usuários
-        //server.createContext("/login",    CUsuario.getInstancia());
-        //server.createContext("/cadastrar", CUsuario.getInstancia());
-        //server.createContext("/usuarios",  CUsuario.getInstancia());
-        //server.createContext("/usuario",   CUsuario.getInstancia());
-        //Compras de Produtos
-        //server.createContext("/comprar", CCompra.getInstancia());
-        // Inscrições
-        //server.createContext("/cancelarInscricao", CInscricao.getInstancia());
-
-
-
+        // Gestão de usuários — ADM e COLAB (COLAB só consegue criar/alterar PAROQ; regra dentro do controller)
+        server.createContext("/cadastrar", new AuthFilter(CUsuario.getInstancia(), "ADM", "COLAB"));
+        server.createContext("/usuarios",  new AuthFilter(CUsuario.getInstancia(), "ADM", "COLAB"));
+        server.createContext("/usuario",   new AuthFilter(CUsuario.getInstancia(), "ADM", "COLAB"));
 
         server.setExecutor(null);
         server.start();

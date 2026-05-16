@@ -2,6 +2,8 @@
 
 (function () {
 
+    if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
+
     var ctrl      = window.AGAPE.Controllers.CategoriaEventoController.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
@@ -31,14 +33,14 @@
     }
 
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="4" class="tabela-vazia">Carregando...</td></tr>';
+        tabelaCorpo.innerHTML = '<tr><td colspan="3" class="tabela-vazia">Carregando...</td></tr>';
         _renderizarTabela(await ctrl.listar());
     }
 
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
             tabelaCorpo.innerHTML =
-                '<tr><td colspan="4" class="tabela-vazia text-danger">' +
+                '<tr><td colspan="3" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
                 _escapar(resultado.erro || 'Erro ao carregar dados.') +
                 '</td></tr>';
@@ -49,7 +51,7 @@
 
         if (lista.length === 0) {
             tabelaCorpo.innerHTML =
-                '<tr><td colspan="4" class="tabela-vazia">' +
+                '<tr><td colspan="3" class="tabela-vazia">' +
                 '<i class="bi bi-inbox me-1"></i>Nenhuma categoria encontrada.' +
                 '</td></tr>';
             return;
@@ -60,7 +62,6 @@
             var badge = ativo ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
             return (
                 '<tr>' +
-                '<td>' + _escapar(String(c.idCatEvento)) + '</td>' +
                 '<td>' + _escapar(c.nome) + '</td>' +
                 '<td>' + badge + '</td>' +
                 '<td>' +
@@ -152,7 +153,7 @@
     });
 
     btnFiltrar.addEventListener('click', async function () {
-        tabelaCorpo.innerHTML = '<tr><td colspan="4" class="tabela-vazia">Filtrando...</td></tr>';
+        tabelaCorpo.innerHTML = '<tr><td colspan="3" class="tabela-vazia">Filtrando...</td></tr>';
         _renderizarTabela(await ctrl.filtrar({ nome: filtrNome.value, ativo: filtrAtivo.value }));
     });
 

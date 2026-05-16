@@ -3,21 +3,19 @@ package agape.control;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
-import agape.dao.CategoriaEventoDAO;
 import agape.model.CategoriaEvento;
 import agape.util.ResponseObject;
 
 public class CCategoriaEvento implements HttpHandler {
 
     private static CCategoriaEvento instancia;
-    private final CategoriaEventoDAO dao;
 
     private CCategoriaEvento() {
-        this.dao = new CategoriaEventoDAO();
     }
 
     public static CCategoriaEvento getInstancia() {
@@ -32,13 +30,14 @@ public class CCategoriaEvento implements HttpHandler {
         String query  = exchange.getRequestURI().getQuery();
 
         try {
+            Connection conn = ConexaoBD.getInstance().getConexao();
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
 
             ResponseObject response = switch (method.toUpperCase()) {
-                case "GET"     -> handleGet(path, query);
-                case "POST"    -> handlePost(body);
-                case "PUT"     -> handlePut(path, body);
-                case "DELETE"  -> handleDelete(query);
+                case "GET"     -> handleGet(conn, path, query);
+                case "POST"    -> handlePost(conn, body);
+                case "PUT"     -> handlePut(conn, path, body);
+                case "DELETE"  -> handleDelete(conn, query);
                 case "OPTIONS" -> handleOptions();
                 default        -> naoEncontrado();
             };
@@ -54,8 +53,6 @@ public class CCategoriaEvento implements HttpHandler {
         }
     }
 
-    // OPTIONS
-
     private ResponseObject handleOptions() {
         ResponseObject r = new ResponseObject();
         r.setStatus(ResponseObject.STATUS_OK);
@@ -63,66 +60,57 @@ public class CCategoriaEvento implements HttpHandler {
         return r;
     }
 
-    // GET
-
-    private ResponseObject handleGet(String path, String query) {
+    private ResponseObject handleGet(Connection conn, String path, String query) {
         String nomeParam  = param(query, "nome");
         String ativoParam = param(query, "ativo");
 
         String  nome  = nomeParam.isEmpty()  ? null : nomeParam.trim();
         Boolean ativo = ativoParam.isEmpty() ? null : parseSafeBool(ativoParam);
 
-        return buscar(nome, ativo);
+        return buscar(conn, nome, ativo);
     }
 
-    // POST
-
-    private ResponseObject handlePost(String body) {
+    private ResponseObject handlePost(Connection conn, String body) {
         String ativoStr = param(body, "ativo");
         boolean ativo   = ativoStr.isEmpty() || parseSafeBool(ativoStr);
-        return inserir(param(body, "nome"), ativo);
+        return inserir(conn, param(body, "nome"), ativo);
     }
 
-    // PUT
-
-    private ResponseObject handlePut(String path, String body) {
+    private ResponseObject handlePut(Connection conn, String path, String body) {
         if (path.equals("/categoriaEvento"))
-            return atualizar(parseSafeInt(param(body, "idCatEvento")), param(body, "nome"), parseSafeBool(param(body, "ativo")));
+            return atualizar(conn, parseSafeInt(param(body, "idCatEvento")), param(body, "nome"), parseSafeBool(param(body, "ativo")));
         return naoEncontrado();
     }
 
-    // DELETE
-
-    private ResponseObject handleDelete(String query) {
-        return excluir(parseSafeInt(param(query, "idCatEvento")));
+    private ResponseObject handleDelete(Connection conn, String query) {
+        return excluir(conn, parseSafeInt(param(query, "idCatEvento")));
     }
 
-    // Operações de negócio
-
-    public ResponseObject buscar(String nome, Boolean ativo) {
+    public ResponseObject buscar(Connection conn, String nome, Boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            response.setResult(dao.buscar(nome, ativo));
+            response.setResult(new CategoriaEvento().buscar(conn, nome, ativo));
         } catch (Exception e) {
             erroInterno(response, e);
         }
         return response;
     }
 
-    public ResponseObject inserir(String nome, boolean ativo) {
+    public ResponseObject inserir(Connection conn, String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nome é obrigatório.");
-            if (dao.existeNome(nome.trim(), 0))
-                return falha(response, ResponseObject.CODE_CONFLICT, "Já existe uma categoria com esse nome.");
 
             CategoriaEvento c = new CategoriaEvento();
+            if (c.existeNome(conn, nome.trim(), 0))
+                return falha(response, ResponseObject.CODE_CONFLICT, "Já existe uma categoria com esse nome.");
+
             c.setNome(nome.trim());
             c.setAtivo(ativo);
-            dao.inserir(c);
+            c.inserir(conn);
 
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_CREATED);
@@ -134,21 +122,21 @@ public class CCategoriaEvento implements HttpHandler {
         return response;
     }
 
-    public ResponseObject atualizar(int id, String nome, boolean ativo) {
+    public ResponseObject atualizar(Connection conn, int id, String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nome é obrigatório.");
 
-            CategoriaEvento c = dao.buscarPorId(id);
+            CategoriaEvento c = new CategoriaEvento().buscarPorId(conn, id);
             if (c == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Categoria não encontrada.");
-            if (dao.existeNome(nome.trim(), id))
+            if (c.existeNome(conn, nome.trim(), id))
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outra categoria com esse nome.");
 
             c.setNome(nome.trim());
             c.setAtivo(ativo);
-            dao.atualizar(c);
+            c.atualizar(conn);
 
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
@@ -160,12 +148,13 @@ public class CCategoriaEvento implements HttpHandler {
         return response;
     }
 
-    public ResponseObject excluir(int id) {
+    public ResponseObject excluir(Connection conn, int id) {
         ResponseObject response = new ResponseObject();
         try {
-            if (dao.buscarPorId(id) == null)
+            CategoriaEvento c = new CategoriaEvento().buscarPorId(conn, id);
+            if (c == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Categoria não encontrada.");
-            dao.excluir(id);
+            c.excluir(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Categoria excluída com sucesso.");
@@ -174,8 +163,6 @@ public class CCategoriaEvento implements HttpHandler {
         }
         return response;
     }
-
-    // Utilitários HTTP
 
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
         String json  = response.toJson();

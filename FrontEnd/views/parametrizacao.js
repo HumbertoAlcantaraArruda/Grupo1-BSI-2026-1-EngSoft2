@@ -2,6 +2,8 @@
 
 (function () {
 
+    if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
+
     var ctrl      = window.AGAPE.Controllers.ParametrizacaoController.getInstance();
     var mascaras  = window.AGAPE.Utils.Mascaras.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();

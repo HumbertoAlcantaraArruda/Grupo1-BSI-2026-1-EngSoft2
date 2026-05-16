@@ -1,8 +1,14 @@
 package agape.model;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 
+import agape.dao.InscricaoDAO;
+
 public class Inscricao {
+    private final InscricaoDAO dao = new InscricaoDAO();
+
     private int idInscricao;
     private int status;
     private int idUsuario;
@@ -65,5 +71,11 @@ public class Inscricao {
 
     public void setDataObsStatus(LocalDateTime dataObsStatus) {
         this.dataObsStatus = dataObsStatus;
+    }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public boolean cancelar(Connection conn, String obs) throws SQLException {
+        return dao.cancelar(conn, this.idInscricao, obs);
     }
 }

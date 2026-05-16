@@ -1,8 +1,14 @@
 package agape.model;
 
-import java.time.LocalDateTime;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+
+import agape.dao.ProdutoDAO;
 
 public class Produto {
+    private final ProdutoDAO dao = new ProdutoDAO();
+
     private int idProd;
     private int idCatProd;
     private String nomeCategoria;
@@ -56,6 +62,32 @@ public class Produto {
 
     public void setQtdeAtual(int qtdeAtual) {
         this.qtdeAtual = qtdeAtual;
+    }
+
+    // ── Persistência (DAO encapsulado) ─────────────────────────────────────
+
+    public List<Produto> buscar(Connection conn, int qtd, String catProd, String nome, String op) throws SQLException {
+        return dao.buscar(conn, qtd, catProd, nome, op);
+    }
+
+    public Produto buscarPorId(Connection conn, int id) throws SQLException {
+        return dao.buscarPorId(conn, id);
+    }
+
+    public boolean existeNome(Connection conn, String nome, int idIgnorar) throws SQLException {
+        return dao.existeNome(conn, nome, idIgnorar);
+    }
+
+    public void inserir(Connection conn) throws SQLException {
+        dao.inserir(conn, this);
+    }
+
+    public void atualizar(Connection conn) throws SQLException {
+        dao.atualizar(conn, this);
+    }
+
+    public void excluir(Connection conn) throws SQLException {
+        dao.excluir(conn, this.idProd);
     }
 
     public String toJson() {

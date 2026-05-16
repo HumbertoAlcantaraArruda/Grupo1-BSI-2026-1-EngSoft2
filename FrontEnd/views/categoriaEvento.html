@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../assets/css/agape.css">
+    <style>body { display: none; }</style>
 </head>
 <body>
 
@@ -81,17 +82,16 @@
             <div class="tabela-wrapper">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead>
+                        <thead class="text-center">
                             <tr>
-                                <th scope="col">#</th>
                                 <th scope="col">Nome</th>
                                 <th scope="col">Status</th>
-                                <th scope="col" class="text-center" style="width: 100px">Ações</th>
+                                <th scope="col" style="width: 100px">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="tabela-corpo">
+                        <tbody id="tabela-corpo" class="text-center">
                             <tr>
-                                <td colspan="4" class="tabela-vazia">
+                                <td colspan="3" class="tabela-vazia">
                                     <i class="bi bi-hourglass-split me-1"></i>Carregando...
                                 </td>
                             </tr>
@@ -195,6 +195,7 @@
 <script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
 <script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
 
+<script src="../utils/Auth.js"></script>
 <script src="../utils/HttpClient.js"></script>
 <script src="../utils/Mascaras.js"></script>
 <script src="../utils/Validador.js"></script>

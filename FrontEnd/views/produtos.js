@@ -2,6 +2,8 @@
 
 (function () {
 
+    if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
+
     var ctrl      = window.AGAPE.Controllers.ProdutosController.getInstance();
     var mascaras  = window.AGAPE.Utils.Mascaras.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
@@ -91,8 +93,8 @@
                 '<tr>' +
                 '<td>' + _escapar(p.nome) + '</td>' +
                 '<td>' + _escapar(p.nomeCategoria || p.idCatProd || '-') + '</td>' +
-                '<td>R$ ' + valorFormatado + '</td>' +
                 '<td>' + _escapar(String(p.qtdeAtual)) + '</td>' +
+                '<td>R$ ' + valorFormatado + '</td>' +
                 '<td>' +
                 '<button class="btn-acao btn-editar me-1" ' +
                 'data-id="' + p.idProd + '" ' +

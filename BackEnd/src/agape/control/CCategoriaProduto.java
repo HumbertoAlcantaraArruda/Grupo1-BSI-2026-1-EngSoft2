@@ -3,21 +3,19 @@ package agape.control;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import agape.dao.CategoriaProdutoDAO;
 import agape.model.CategoriaProduto;
 import agape.util.ResponseObject;
 
 public class CCategoriaProduto implements HttpHandler {
 
     private static CCategoriaProduto instancia;
-    private final CategoriaProdutoDAO dao;
 
     private CCategoriaProduto() {
-        this.dao = new CategoriaProdutoDAO();
     }
 
     public static CCategoriaProduto getInstancia() {
@@ -32,13 +30,14 @@ public class CCategoriaProduto implements HttpHandler {
         String query  = exchange.getRequestURI().getQuery();
 
         try {
+            Connection conn = ConexaoBD.getInstance().getConexao();
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
 
             ResponseObject response = switch (method.toUpperCase()) {
-                case "GET"     -> handleGet(query);
-                case "POST"    -> handlePost(body);
-                case "PUT"     -> handlePut(path, body);
-                case "DELETE"  -> handleDelete(query);
+                case "GET"     -> handleGet(conn, query);
+                case "POST"    -> handlePost(conn, body);
+                case "PUT"     -> handlePut(conn, path, body);
+                case "DELETE"  -> handleDelete(conn, query);
                 case "OPTIONS" -> handleOptions();
                 default        -> naoEncontrado();
             };
@@ -61,21 +60,22 @@ public class CCategoriaProduto implements HttpHandler {
         return r;
     }
 
-    private ResponseObject handleGet(String query) {
+    private ResponseObject handleGet(Connection conn, String query) {
         String nomeParam  = param(query, "nome");
         String ativoParam = param(query, "ativo");
         String nome   = nomeParam.isEmpty()  ? null : nomeParam.trim();
         Boolean ativo = ativoParam.isEmpty() ? null : parseSafeBool(ativoParam, true);
-        return buscar(nome, ativo);
+        return buscar(conn, nome, ativo);
     }
 
-    private ResponseObject handlePost(String body) {
-        return inserir(param(body, "nome"), parseSafeBool(param(body, "ativo"), true));
+    private ResponseObject handlePost(Connection conn, String body) {
+        return inserir(conn, param(body, "nome"), parseSafeBool(param(body, "ativo"), true));
     }
 
-    private ResponseObject handlePut(String path, String body) {
+    private ResponseObject handlePut(Connection conn, String path, String body) {
         if (path.equals("/categoriaProduto"))
             return atualizar(
+                conn,
                 parseSafeInt(param(body, "idCatProd")),
                 param(body, "nome"),
                 parseSafeBool(param(body, "ativo"), true)
@@ -83,34 +83,35 @@ public class CCategoriaProduto implements HttpHandler {
         return naoEncontrado();
     }
 
-    private ResponseObject handleDelete(String query) {
-        return excluir(parseSafeInt(param(query, "idCatProd")));
+    private ResponseObject handleDelete(Connection conn, String query) {
+        return excluir(conn, parseSafeInt(param(query, "idCatProd")));
     }
 
-    public ResponseObject buscar(String nome, Boolean ativo) {
+    public ResponseObject buscar(Connection conn, String nome, Boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            response.setResult(dao.buscar(nome, ativo));
+            response.setResult(new CategoriaProduto().buscar(conn, nome, ativo));
         } catch (Exception e) {
             erroInterno(response, e);
         }
         return response;
     }
 
-    public ResponseObject inserir(String nome, boolean ativo) {
+    public ResponseObject inserir(Connection conn, String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nome é obrigatório.");
-            if (dao.existeNome(nome.trim(), 0))
-                return falha(response, ResponseObject.CODE_CONFLICT, "Já existe uma categoria de produto com esse nome.");
 
             CategoriaProduto c = new CategoriaProduto();
+            if (c.existeNome(conn, nome.trim(), 0))
+                return falha(response, ResponseObject.CODE_CONFLICT, "Já existe uma categoria de produto com esse nome.");
+
             c.setNome(nome.trim());
             c.setAtivo(ativo);
-            dao.inserir(c);
+            c.inserir(conn);
 
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_CREATED);
@@ -122,21 +123,21 @@ public class CCategoriaProduto implements HttpHandler {
         return response;
     }
 
-    public ResponseObject atualizar(int idCatProd, String nome, boolean ativo) {
+    public ResponseObject atualizar(Connection conn, int idCatProd, String nome, boolean ativo) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nome é obrigatório.");
 
-            CategoriaProduto c = dao.buscarPorId(idCatProd);
+            CategoriaProduto c = new CategoriaProduto().buscarPorId(conn, idCatProd);
             if (c == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Categoria de produto não encontrada.");
-            if (dao.existeNome(nome.trim(), idCatProd))
+            if (c.existeNome(conn, nome.trim(), idCatProd))
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outra categoria de produto com esse nome.");
 
             c.setNome(nome.trim());
             c.setAtivo(ativo);
-            dao.atualizar(c);
+            c.atualizar(conn);
 
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
@@ -148,12 +149,13 @@ public class CCategoriaProduto implements HttpHandler {
         return response;
     }
 
-    public ResponseObject excluir(int id) {
+    public ResponseObject excluir(Connection conn, int id) {
         ResponseObject response = new ResponseObject();
         try {
-            if (dao.buscarPorId(id) == null)
+            CategoriaProduto c = new CategoriaProduto().buscarPorId(conn, id);
+            if (c == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Categoria de produto não encontrada.");
-            dao.excluir(id);
+            c.excluir(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Categoria de produto excluída com sucesso.");
