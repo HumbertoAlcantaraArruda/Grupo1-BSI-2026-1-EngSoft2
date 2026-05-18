@@ -14,7 +14,8 @@ window.AGAPE.Utils.Sidebar = (function () {
     ];
 
     var _itensConfig = [
-        { rotulo: 'Parametrização', href: 'parametrizacao.html', icone: 'bi-gear', niveis: ['ADM'] }
+        { rotulo: 'Usuários',       href: 'usuarios.html',       icone: 'bi-people',  niveis: ['ADM'] },
+        { rotulo: 'Parametrização', href: 'parametrizacao.html', icone: 'bi-gear',    niveis: ['ADM'] }
     ];
 
     function _filtrarPorNivel(lista, nivel) {

@@ -134,6 +134,14 @@ public class Usuario {
         dao.desativar(conn, this.idUsuario);
     }
 
+    public int contarAdmAtivos(Connection conn) throws Exception {
+        return dao.contarAdmAtivos(conn);
+    }
+
+    public void excluir(Connection conn) throws Exception {
+        dao.excluir(conn, this.idUsuario);
+    }
+
     public String toJson() {
         return "{" +
             "\"idUsuario\":"   + idUsuario + "," +

@@ -47,11 +47,13 @@ public class CUsuario implements HttpHandler {
 
             // Nível do solicitante: preenchido pelo AuthFilter (null em /login, que é pública).
             String requesterNivel = (String) exchange.getAttribute("usuarioNivel");
+            String requesterEmail = (String) exchange.getAttribute("usuarioEmail");
 
             ResponseObject response = switch (method.toUpperCase()) {
                 case "GET"    -> handleGet(conn, path, query);
-                case "POST"   -> handlePost(conn, path, body, query, requesterNivel);
-                case "PUT"    -> handlePut(conn, path, body, requesterNivel);
+                case "POST"   -> handlePost(conn, path, body, query, requesterNivel, requesterEmail);
+                case "PUT"    -> handlePut(conn, path, body, requesterNivel, requesterEmail);
+                case "DELETE" -> handleDelete(conn, query, requesterNivel, requesterEmail);
                 default       -> naoEncontrado();
             };
 
@@ -79,7 +81,7 @@ public class CUsuario implements HttpHandler {
         return naoEncontrado();
     }
 
-    private ResponseObject handlePost(Connection conn, String path, String body, String query, String requesterNivel) {
+    private ResponseObject handlePost(Connection conn, String path, String body, String query, String requesterNivel, String requesterEmail) {
         String combined = (query != null ? query : "") + "&" + body;
         return switch (path) {
             case "/login"             -> login(conn, param(body, "email"), param(body, "senha"));
@@ -93,16 +95,23 @@ public class CUsuario implements HttpHandler {
                                             param(body, "senha"),
                                             param(body, "nivel"));
             case "/usuario/ativar"    -> ativar(conn, requesterNivel, parseSafeInt(param(combined, "id")));
-            case "/usuario/desativar" -> desativar(conn, requesterNivel, parseSafeInt(param(combined, "id")));
+            case "/usuario/desativar" -> desativar(conn, requesterNivel, requesterEmail, parseSafeInt(param(combined, "id")));
             default -> naoEncontrado();
         };
     }
 
-    private ResponseObject handlePut(Connection conn, String path, String body, String requesterNivel) {
+    private ResponseObject handleDelete(Connection conn, String query, String requesterNivel, String requesterEmail) {
+        if (!NIVEL_ADM.equalsIgnoreCase(requesterNivel))
+            return falha(new ResponseObject(), ResponseObject.CODE_FORBIDDEN, "Apenas administradores podem excluir usuários.");
+        return excluir(conn, requesterEmail, parseSafeInt(param(query, "id")));
+    }
+
+    private ResponseObject handlePut(Connection conn, String path, String body, String requesterNivel, String requesterEmail) {
         if (path.equals("/usuario")) {
             return atualizar(
                 conn,
                 requesterNivel,
+                requesterEmail,
                 parseSafeInt(param(body, "id")),
                 param(body, "nome"),
                 param(body, "cpf"),
@@ -248,7 +257,7 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject atualizar(Connection conn, String requesterNivel, int id, String nome, String cpf, String email, String nivel) {
+    public ResponseObject atualizar(Connection conn, String requesterNivel, String requesterEmail, int id, String nome, String cpf, String email, String nivel) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(nome) || vazio(cpf) || vazio(email) || vazio(nivel))
@@ -259,6 +268,10 @@ public class CUsuario implements HttpHandler {
             Usuario u = new Usuario().buscarPorId(conn, id);
             if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
+
+            if (u.getEmail().equalsIgnoreCase(requesterEmail) && !nivelNovo.equals(u.getNivel()))
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Você não tem permissão para alterar o seu próprio nível de acesso.");
 
             // Regra: COLAB só pode alterar usuários PAROQ e só pode mantê-los PAROQ.
             if (NIVEL_COLAB.equalsIgnoreCase(requesterNivel)) {
@@ -314,16 +327,51 @@ public class CUsuario implements HttpHandler {
         return response;
     }
 
-    public ResponseObject desativar(Connection conn, String requesterNivel, int id) {
+    public ResponseObject excluir(Connection conn, String requesterEmail, int id) {
         ResponseObject response = new ResponseObject();
         try {
             Usuario u = new Usuario().buscarPorId(conn, id);
             if (u == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
 
+            if (u.getEmail().equalsIgnoreCase(requesterEmail))
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Você não tem permissão para excluir sua própria conta.");
+
+            if (NIVEL_ADM.equalsIgnoreCase(u.getNivel()) && u.getStatus() == 1
+                    && u.contarAdmAtivos(conn) <= 1)
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Não é possível excluir o único administrador ativo.");
+
+            u.excluir(conn);
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.addMessage("Usuário excluído com sucesso.");
+        } catch (Exception e) {
+            erroInterno(response);
+        }
+        return response;
+    }
+
+    public ResponseObject desativar(Connection conn, String requesterNivel, String requesterEmail, int id) {
+        ResponseObject response = new ResponseObject();
+        try {
+            Usuario u = new Usuario().buscarPorId(conn, id);
+            if (u == null)
+                return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
+
+            if (u.getEmail().equalsIgnoreCase(requesterEmail))
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Você não tem permissão para desativar sua própria conta.");
+
             if (NIVEL_COLAB.equalsIgnoreCase(requesterNivel) && !NIVEL_PAROQ.equalsIgnoreCase(u.getNivel()))
                 return falha(response, ResponseObject.CODE_FORBIDDEN,
                         "Colaborador só pode desativar usuários com nível PAROQ.");
+
+            if (NIVEL_ADM.equalsIgnoreCase(u.getNivel()) && u.getStatus() == 1
+                    && u.contarAdmAtivos(conn) <= 1)
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Não é possível desativar o único administrador ativo.");
 
             u.desativar(conn);
             response.setStatus(ResponseObject.STATUS_OK);

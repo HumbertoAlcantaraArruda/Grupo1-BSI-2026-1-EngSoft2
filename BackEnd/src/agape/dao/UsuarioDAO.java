@@ -139,4 +139,21 @@ public class UsuarioDAO {
             }
         }
     }
+
+    public int contarAdmAtivos(Connection conn) throws Exception {
+        String sql = "SELECT COUNT(*) FROM Usuario WHERE nivel = 'ADM' AND status = 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        }
+        return 0;
+    }
+
+    public void excluir(Connection conn, int id) throws Exception {
+        String sql = "DELETE FROM Usuario WHERE idUsuario = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
+    }
 }
