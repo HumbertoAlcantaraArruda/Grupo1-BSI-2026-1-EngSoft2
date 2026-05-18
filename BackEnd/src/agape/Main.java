@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 import agape.control.CCategoriaEvento;
 import agape.control.CCategoriaProduto;
 import agape.control.CCompra;
+import agape.control.CFornecedor;
 import agape.control.CFormaPagamento;
 import agape.control.CInscricao;
 import agape.control.CParametrizacao;
@@ -31,6 +32,7 @@ public class Main {
         server.createContext("/categoriaProduto",  new AuthFilter(CCategoriaProduto.getInstancia(), "ADM", "COLAB"));
         server.createContext("/produto",           new AuthFilter(CProduto.getInstancia(),          "ADM", "COLAB"));
         server.createContext("/categoriaEvento",   new AuthFilter(CCategoriaEvento.getInstancia(),  "ADM", "COLAB"));
+        server.createContext("/fornecedor",        new AuthFilter(CFornecedor.getInstancia(),       "ADM", "COLAB"));
         server.createContext("/comprar",           new AuthFilter(CCompra.getInstancia(),           "ADM", "COLAB"));
         server.createContext("/cancelarInscricao", new AuthFilter(CInscricao.getInstancia(),        "ADM", "COLAB"));
 
