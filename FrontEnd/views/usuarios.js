@@ -183,13 +183,16 @@
     }
 
     btnCadastrar.addEventListener('click', function () {
-        modalTitulo.textContent = 'Cadastrar Usuário';
+        modalTitulo.textContent  = 'Cadastrar Usuário';
         validador.resetar(formUsuario);
         inputIdUsuario.value = '';
         inputNome.value      = '';
         inputCpf.value       = '';
         inputEmail.value     = '';
         selectNivel.value    = '';
+        selectNivel.disabled = false;
+        var aviso = document.getElementById('aviso-nivel-proprio');
+        if (aviso) aviso.remove();
         modalObj.show();
     });
 
