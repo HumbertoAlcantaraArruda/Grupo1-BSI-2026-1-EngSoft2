@@ -86,8 +86,13 @@ window.AGAPE.Utils.Sidebar = (function () {
 
         return (
             '<div class="sidebar-cabecalho">' +
+            '<div class="sidebar-marca">' +
             '<div class="sidebar-logo">AGAPE</div>' +
             '<div class="sidebar-subtitulo">Gestão Paroquial</div>' +
+            '</div>' +
+            '<button class="sidebar-toggle" id="btn-sidebar-toggle" title="Recolher menu">' +
+            '<i class="bi bi-chevron-left"></i>' +
+            '</button>' +
             '</div>' +
             '<nav class="sidebar-nav">' +
             secaoCadastros +
@@ -95,7 +100,8 @@ window.AGAPE.Utils.Sidebar = (function () {
             '</nav>' +
             '<div class="sidebar-rodape p-3">' +
             '<button type="button" class="btn btn-primary w-100" id="btn-sair">' +
-            '<i class="bi bi-box-arrow-left me-1"></i> Sair' +
+            '<i class="bi bi-box-arrow-left"></i>' +
+            '<span class="sidebar-rodape-texto ms-1">Sair</span>' +
             '</button>' +
             '</div>' +
             blocoUsuario
@@ -111,14 +117,87 @@ window.AGAPE.Utils.Sidebar = (function () {
         });
     }
 
+    function _atualizarIconeToggle(sidebar, colapsada) {
+        var icone = sidebar.querySelector('#btn-sidebar-toggle i');
+        var btn   = sidebar.querySelector('#btn-sidebar-toggle');
+        if (icone) icone.className = colapsada ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
+        if (btn)   btn.title       = colapsada ? 'Expandir menu' : 'Recolher menu';
+    }
+
+    function _bindToggleDesktop(sidebar) {
+        // Restaura estado salvo
+        if (localStorage.getItem('agape_sidebar_colapsada') === 'true') {
+            sidebar.classList.add('sidebar-colapsada');
+            _atualizarIconeToggle(sidebar, true);
+        }
+
+        var btn = document.getElementById('btn-sidebar-toggle');
+        if (!btn) return;
+
+        btn.addEventListener('click', function () {
+            var colapsada = sidebar.classList.toggle('sidebar-colapsada');
+            localStorage.setItem('agape_sidebar_colapsada', colapsada ? 'true' : 'false');
+            _atualizarIconeToggle(sidebar, colapsada);
+        });
+    }
+
+    function _injetarHamburger(sidebar) {
+        var topbar = document.querySelector('.topbar');
+        if (!topbar || document.getElementById('btn-sidebar-mobile')) return;
+
+        var overlay = document.getElementById('sidebar-overlay');
+
+        var hamburger = document.createElement('button');
+        hamburger.id        = 'btn-sidebar-mobile';
+        hamburger.className = 'topbar-toggle-mobile';
+        hamburger.title     = 'Menu';
+        hamburger.innerHTML = '<i class="bi bi-list"></i>';
+
+        hamburger.addEventListener('click', function () {
+            sidebar.classList.add('sidebar-aberta');
+            if (overlay) overlay.classList.add('visivel');
+        });
+
+        topbar.insertBefore(hamburger, topbar.firstChild);
+    }
+
+    function _bindExpandOnClick(sidebar) {
+        sidebar.addEventListener('click', function (e) {
+            if (!sidebar.classList.contains('sidebar-colapsada')) return;
+            if (e.target.closest('.sidebar-toggle')) return;
+            if (e.target.closest('.nav-link')) return;
+            sidebar.classList.remove('sidebar-colapsada');
+            localStorage.setItem('agape_sidebar_colapsada', 'false');
+            _atualizarIconeToggle(sidebar, false);
+        });
+    }
+
+    function _injetarOverlay(sidebar) {
+        if (document.getElementById('sidebar-overlay')) return;
+
+        var overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+
+        overlay.addEventListener('click', function () {
+            sidebar.classList.remove('sidebar-aberta');
+            overlay.classList.remove('visivel');
+        });
+
+        document.body.appendChild(overlay);
+    }
+
     function inicializar(seletorAlvo) {
-        var alvo = document.getElementById(seletorAlvo || 'sidebar-wrapper');
-        if (!alvo) {
+        var sidebar = document.getElementById(seletorAlvo || 'sidebar-wrapper');
+        if (!sidebar) {
             console.warn('[Sidebar] Elemento não encontrado: #' + (seletorAlvo || 'sidebar-wrapper'));
             return;
         }
-        alvo.innerHTML = _construirHtml();
+        sidebar.innerHTML = _construirHtml();
         _bindLogout();
+        _injetarOverlay(sidebar);
+        _bindToggleDesktop(sidebar);
+        _bindExpandOnClick(sidebar);
+        _injetarHamburger(sidebar);
     }
 
     // Adiciona item à seção Cadastros sem alterar os existentes.
