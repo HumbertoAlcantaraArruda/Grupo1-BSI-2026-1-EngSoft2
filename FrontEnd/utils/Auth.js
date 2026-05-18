@@ -6,19 +6,29 @@ window.AGAPE.Utils = window.AGAPE.Utils || {};
 window.AGAPE.Utils.Auth = (function () {
 
     var instancia = null;
-    var CHAVE     = 'agape_usuario';
+    var CHAVE     = 'agape_sessao';
 
-    function Auth() {
-        console.log(instancia);
-        console.log(CHAVE);
-        console.log("deu merda aqui");
-    }
+    function Auth() {}
 
-    Auth.prototype.setUsuario = function (usuario) {
-        sessionStorage.setItem(CHAVE, JSON.stringify(usuario));
+    Auth.prototype.setSessao = function (token, usuario) {
+        if (!token) {
+            this.logout(false);
+            return;
+        }
+
+        sessionStorage.setItem(CHAVE, JSON.stringify({
+            token: token,
+            usuario: usuario || null
+        }));
     };
 
-    Auth.prototype.getUsuario = function () {
+    Auth.prototype.setUsuario = function (usuario) {
+        var sessao = this.getSessao() || {};
+        sessao.usuario = usuario || null;
+        sessionStorage.setItem(CHAVE, JSON.stringify(sessao));
+    };
+
+    Auth.prototype.getSessao = function () {
         try {
             return JSON.parse(sessionStorage.getItem(CHAVE));
         } catch (_) {
@@ -26,8 +36,18 @@ window.AGAPE.Utils.Auth = (function () {
         }
     };
 
+    Auth.prototype.getToken = function () {
+        var sessao = this.getSessao();
+        return sessao && sessao.token ? sessao.token : null;
+    };
+
+    Auth.prototype.getUsuario = function () {
+        var sessao = this.getSessao();
+        return sessao && sessao.usuario ? sessao.usuario : null;
+    };
+
     Auth.prototype.estaLogado = function () {
-        return sessionStorage.getItem(CHAVE) !== null;
+        return !!this.getToken();
     };
 
     // Páginas protegidas chamam isso no topo do IIFE.
@@ -42,21 +62,18 @@ window.AGAPE.Utils.Auth = (function () {
         return true;
     };
 
-    Auth.prototype.logout = function () {
+    Auth.prototype.logout = function (redirecionar) {
         sessionStorage.removeItem(CHAVE);
-        window.location.replace('./index.html');
+        if (redirecionar !== false) {
+            window.location.replace('./index.html');
+        }
     };
 
     return {
         getInstance: function () {
             if (!instancia) {
-                console.log("Nao tenho instancia, criando...");
                 instancia = new Auth();
             }
-
-            console.log("pos if !instancia");
-
-            console.log(instancia);
             return instancia;
         }
     };

@@ -336,7 +336,7 @@ public class CUsuario implements HttpHandler {
     }
 
     /** Resultado de /login: usuário + token JWT, serializado via toJson() pelo ResponseObject. */
-    private static class LoginResult {
+    public static class LoginResult {
         private final Usuario usuario;
         private final String token;
 

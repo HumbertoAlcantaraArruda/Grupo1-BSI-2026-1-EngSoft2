@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Forma de Pagamento</title>
+
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../assets/css/agape.css">
+    <style>body { display: none; }</style>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper"></div>
+
+    <!-- Conteúdo principal -->
+    <div id="content-wrapper">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Forma de Pagamento</span>
+        </header>
+
+        <!-- Área de conteúdo -->
+        <div class="area-conteudo">
+
+            <!-- Título + Cadastrar -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="titulo-pagina">
+                    <i class="bi bi-credit-card me-2"></i>Forma de Pagamento
+                </h1>
+                <button class="btn btn-primary" id="btn-cadastrar">
+                    <i class="bi bi-plus-circle me-1"></i> Cadastrar
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card-filtros card">
+                <div class="card-body">
+                    <p class="card-titulo-filtros">
+                        <i class="bi bi-funnel me-1"></i>Filtros
+                    </p>
+                    <div class="row g-3 align-items-end">
+
+                        <!-- Descrição -->
+                        <div class="col-md-5">
+                            <label for="filtro-descricao" class="form-label form-label-sm">Descrição</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="filtro-descricao" placeholder="Buscar por descrição...">
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-md-4">
+                            <label for="filtro-ativo" class="form-label form-label-sm">Status</label>
+                            <select class="form-select form-select-sm" id="filtro-ativo">
+                                <option value="">Todos</option>
+                                <option value="true">Ativo</option>
+                                <option value="false">Inativo</option>
+                            </select>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="col-md-3 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" id="btn-filtrar">
+                                <i class="bi bi-search me-1"></i>Filtrar
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-limpar">
+                                <i class="bi bi-x-lg me-1"></i>Limpar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="tabela-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="text-center">
+                            <tr>
+                                <th scope="col">Descrição</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" style="width: 100px">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-corpo" class="text-center">
+                            <tr>
+                                <td colspan="3" class="tabela-vazia">
+                                    <i class="bi bi-hourglass-split me-1"></i>Carregando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal: Cadastrar / Alterar Forma de Pagamento -->
+<div class="modal fade" id="modal-forma" tabindex="-1"
+     aria-labelledby="modal-titulo" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-titulo">Cadastrar Forma de Pagamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="form-forma" novalidate>
+                    <!-- ID oculto (preenchido apenas na edição) -->
+                    <input type="hidden" id="formaId">
+
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label campo-obrigatorio">Descrição</label>
+                        <input type="text" class="form-control" id="descricao"
+                               placeholder="Descrição da forma de pagamento" required minlength="2">
+                        <div class="invalid-feedback">
+                            Descrição deve ter pelo menos 2 caracteres.
+                        </div>
+                    </div>
+
+                    <!-- Status ocultado no cadastro -->
+                    <div class="mb-3" id="secao-ativo">
+                        <label for="ativo" class="form-label campo-obrigatorio">Status</label>
+                        <select class="form-select" id="ativo">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-salvar">
+                    <i class="bi bi-check-circle me-1"></i>Salvar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmar Exclusão -->
+<div class="modal fade" id="modal-excluir" tabindex="-1"
+     aria-labelledby="modal-excluir-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-excluir-titulo">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-1">Deseja excluir a forma de pagamento:</p>
+                <p class="fw-semibold mb-0" id="excluir-descricao"></p>
+                <p class="text-muted small mt-2">Esta ação não pode ser desfeita.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm"
+                        id="btn-confirmar-excluir">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Scripts -->
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../utils/Auth.js"></script>
+<script src="../utils/HttpClient.js"></script>
+<script src="../utils/Mascaras.js"></script>
+<script src="../utils/Validador.js"></script>
+<script src="../utils/Sidebar.js"></script>
+
+<script src="../models/FormaPagamento.js"></script>
+
+<script src="../services/FormaPagamentoService.js"></script>
+
+<script src="../controllers/FormaPagamentoController.js"></script>
+
+<script src="./formaPagamento.js"></script>
+
+</body>
+</html>

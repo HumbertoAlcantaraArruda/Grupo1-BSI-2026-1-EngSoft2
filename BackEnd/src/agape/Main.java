@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 import agape.control.CCategoriaEvento;
 import agape.control.CCategoriaProduto;
 import agape.control.CCompra;
+import agape.control.CFormaPagamento;
 import agape.control.CInscricao;
 import agape.control.CParametrizacao;
 import agape.control.CUsuario;
@@ -26,6 +27,7 @@ public class Main {
 
         // Rotas operacionais — ADM e COLAB
         server.createContext("/parametrizacao",    new AuthFilter(CParametrizacao.getInstancia(),   "ADM", "COLAB"));
+        server.createContext("/formaPagamento",    new AuthFilter(CFormaPagamento.getInstancia(),   "ADM", "COLAB"));
         server.createContext("/categoriaProduto",  new AuthFilter(CCategoriaProduto.getInstancia(), "ADM", "COLAB"));
         server.createContext("/produto",           new AuthFilter(CProduto.getInstancia(),          "ADM", "COLAB"));
         server.createContext("/categoriaEvento",   new AuthFilter(CCategoriaEvento.getInstancia(),  "ADM", "COLAB"));

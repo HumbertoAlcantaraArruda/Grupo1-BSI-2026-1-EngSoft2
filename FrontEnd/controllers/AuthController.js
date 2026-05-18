@@ -33,6 +33,10 @@ window.AGAPE.Controllers.AuthController = (function () {
         return resultado;
     };
 
+    AuthController.prototype.carregarLogo = async function () {
+        return await window.AGAPE.Services.ParametrizacaoService.getInstance().buscar();
+    };
+
     AuthController.prototype.logout = function () {
         this._auth.logout();
     };

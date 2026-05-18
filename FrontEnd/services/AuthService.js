@@ -12,9 +12,6 @@ window.AGAPE.Services.AuthService = (function () {
     }
 
     AuthService.prototype.login = async function (email, senha) {
-        console.log("Iniciando...");
-        console.log(senha);
-        console.log(email);
         return await this._http.post('/login', { email: email, senha: senha });
     };
 

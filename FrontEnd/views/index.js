@@ -8,8 +8,7 @@
         return;
     }
 
-    var ctrl         = window.AGAPE.Controllers.AuthController.getInstance();
-    var paramService = window.AGAPE.Services.ParametrizacaoService.getInstance();
+    var ctrl = window.AGAPE.Controllers.AuthController.getInstance();
 
     var imgLogo    = document.getElementById('login-logo');
     var form       = document.getElementById('login-form');
@@ -39,7 +38,7 @@
 
     async function _carregarLogo() {
         try {
-            var resultado = await paramService.buscar();
+            var resultado = await ctrl.carregarLogo();
             if (resultado.status === 'ok' && resultado.dados && resultado.dados.logotipoGrande) {
                 imgLogo.src = '../assets/img/' + resultado.dados.logotipoGrande;
             }
@@ -91,14 +90,12 @@
             '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Entrando...';
 
         var resultado = await ctrl.login(email, senha);
-        console.log(resultado);
 
         btnLogin.disabled = false;
         btnLogin.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Entrar';
 
 
         if (resultado.status === 'ok') {
-            window.AGAPE.Utils.Auth.getInstance().setUsuario(resultado.dados);
             window.location.href = './produtos.html';
         } else {
             _mostrarAlerta('Inválido - Revise suas credenciais');

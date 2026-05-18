@@ -70,9 +70,8 @@ window.AGAPE.Utils.HttpClient = (function () {
 
     // Retorna o objeto Auth ou null se ainda não carregado
     HttpClient.prototype._auth = function () {
-        // return (window.AGAPE.Utils.Auth && window.AGAPE.Utils.Auth.getInstance) ?
-        //        window.AGAPE.Utils.Auth.getInstance() : null;
-        return window.AGAPE.Utils.Auth.getInstance();
+        return (window.AGAPE.Utils.Auth && window.AGAPE.Utils.Auth.getInstance) ?
+               window.AGAPE.Utils.Auth.getInstance() : null;
     };
 
     // Monta headers anexando Authorization: Bearer <token> quando houver sessão
@@ -80,10 +79,8 @@ window.AGAPE.Utils.HttpClient = (function () {
         var headers = Object.assign({}, extras || {});
         var auth = this._auth();
 
-        console.log(auth);
-
         if (auth) {
-            var token = auth.getToken(); // erro!!!
+            var token = auth.getToken();
             if (token) headers['Authorization'] = 'Bearer ' + token;
         }
         return headers;
@@ -136,8 +133,6 @@ window.AGAPE.Utils.HttpClient = (function () {
                 body: params.toString()
             });
 
-            console.log("Resposta POST: ", resposta);
-
             if (resposta.status === 401 && this._tratar401()) {
                 return { status: 'error', erro: this._mensagemAmigavel(401) };
             }
@@ -149,7 +144,6 @@ window.AGAPE.Utils.HttpClient = (function () {
             return { status: 'ok', dados: this._extrairDados(dados) };
 
         } catch (erro) {
-            console.log("HttpClient, erro: " + erro);
             return { status: 'error', erro: this._erroConexao() };
         }
     };
@@ -234,8 +228,6 @@ window.AGAPE.Utils.HttpClient = (function () {
     return {
         getInstance: function () {
             if (!instancia) instancia = new HttpClient();
-
-            console.log("instancia de httpCliente", instancia);
             return instancia;
         }
     };

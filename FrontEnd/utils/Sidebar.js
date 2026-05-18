@@ -8,7 +8,8 @@ window.AGAPE.Utils.Sidebar = (function () {
     var _itens = [
         { rotulo: 'Produtos',            href: 'produtos.html',          icone: 'bi-box-seam'      },
         { rotulo: 'Categoria de Produto', href: 'categoriaProduto.html', icone: 'bi-tags'           },
-        { rotulo: 'Categoria de Evento',  href: 'categoriaEvento.html',  icone: 'bi-calendar-event' }
+        { rotulo: 'Categoria de Evento',  href: 'categoriaEvento.html',  icone: 'bi-calendar-event' },
+        { rotulo: 'Forma de Pagamento',   href: 'formaPagamento.html',   icone: 'bi-credit-card'    }
     ];
 
     var _itensConfig = [
@@ -39,10 +40,28 @@ window.AGAPE.Utils.Sidebar = (function () {
             );
         }
 
+        let nivelStr = "";
+
+        switch(nivel){
+            case "PAROQ":
+                nivelStr = "Paroquiano";
+                break;
+            case "COLAB":
+                nivelStr = "Colaborador";
+                break;
+            case "ADM":
+                nivelStr = "Administrador";
+                break;
+
+            default:
+                nivelStr = "Desconhecido";
+                break;
+        }
+
         var blocoUsuario = nomeUsuario ?
             '<div class="sidebar-usuario px-3 py-2 small">' +
-            '<div><i class="bi bi-person-circle me-1"></i>' + nomeUsuario + '</div>' +
-            (nivel ? '<div class="text-muted">Nível: ' + nivel + '</div>' : '') +
+            '<div class="text-white"><i class="bi bi-person-circle me-1"></i>' + nomeUsuario + '</div>' +
+            (nivel ? '<div class="text-white">Perfil: ' + nivelStr + '</div>' : '') +
             '</div>' : '';
 
         return (
@@ -56,12 +75,13 @@ window.AGAPE.Utils.Sidebar = (function () {
             '<p class="nav-secao">Configurações</p>' +
             '<ul class="list-unstyled mb-0">' + _itensConfig.map(_montarItem).join('') + '</ul>' +
             '</nav>' +
-            blocoUsuario +
             '<div class="sidebar-rodape p-3">' +
-            '<button type="button" class="btn btn-outline-light w-100" id="btn-sair">' +
+            '<button type="button" class="btn btn-primary w-100" id="btn-sair">' +
             '<i class="bi bi-box-arrow-left me-1"></i> Sair' +
             '</button>' +
             '</div>'
+            +
+            blocoUsuario
         );
     }
 
