@@ -66,6 +66,7 @@
 
     async function _carregarDados() {
         var resultado = await ctrl.carregar();
+        console.log(resultado);
         if (resultado.status !== 'ok' || !resultado.dados) return;
 
         var d = resultado.dados;
@@ -78,6 +79,12 @@
 
         if (d.logotipoGrande)  { previewGrande.src  = '../assets/img/' + d.logotipoGrande;  previewGrande.classList.remove('d-none');  }
         if (d.logotipoPequeno) { previewPequeno.src = '../assets/img/' + d.logotipoPequeno; previewPequeno.classList.remove('d-none'); }
+
+        if (d.razaoSocial && d.razaoSocial.trim() !== '') {
+            sessionStorage.removeItem('agape_param_pendente');
+            var banner = document.getElementById('banner-param-pendente');
+            if (banner) banner.remove();
+        }
     }
 
     btnSalvar.addEventListener('click', async function () {
