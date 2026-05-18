@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Alterar Senha</title>
+
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../assets/css/agape.css">
+</head>
+<body>
+
+<main class="login-page" role="main">
+    <div class="login-card" role="region" aria-label="Troca de senha obrigatória">
+
+        <!-- Cabeçalho -->
+        <div class="login-header">
+            <img src="../assets/img/logotipogrande_padrao.png" alt="Logo AGAPE" class="login-logo">
+            <p class="login-subtitle">Primeiro acesso — troca de senha obrigatória</p>
+        </div>
+
+        <!-- Corpo -->
+        <div class="login-body">
+
+            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-4"
+                 style="font-size:.875rem;">
+                <i class="bi bi-shield-lock-fill flex-shrink-0 mt-1"></i>
+                <span>Por segurança, você precisa definir uma senha pessoal antes de continuar.
+                      A senha deve ter <strong>pelo menos 8 caracteres</strong>.</span>
+            </div>
+
+            <!-- Alerta de erro -->
+            <div id="troca-alert" class="login-alert" role="alert" aria-live="assertive">
+                <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                <span id="troca-alert-msg"></span>
+            </div>
+
+            <form id="troca-form" novalidate autocomplete="off">
+
+                <!-- Senha atual (padrão) -->
+                <div class="mb-3">
+                    <label for="senhaAtual" class="form-label">Senha atual (padrão)</label>
+                    <div class="input-password-wrapper">
+                        <input type="password" id="senhaAtual" class="form-control"
+                               placeholder="Senha definida pelo administrador"
+                               autocomplete="current-password">
+                        <button type="button" class="toggle-password" data-alvo="senhaAtual"
+                                aria-label="Mostrar/ocultar senha atual">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span id="senhaAtual-error" class="field-error"></span>
+                </div>
+
+                <!-- Nova senha -->
+                <div class="mb-3">
+                    <label for="novaSenha" class="form-label">Nova senha</label>
+                    <div class="input-password-wrapper">
+                        <input type="password" id="novaSenha" class="form-control"
+                               placeholder="Mínimo 8 caracteres"
+                               autocomplete="new-password">
+                        <button type="button" class="toggle-password" data-alvo="novaSenha"
+                                aria-label="Mostrar/ocultar nova senha">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span id="novaSenha-error" class="field-error"></span>
+                </div>
+
+                <!-- Confirmar nova senha -->
+                <div class="mb-4">
+                    <label for="confirmarSenha" class="form-label">Confirmar nova senha</label>
+                    <div class="input-password-wrapper">
+                        <input type="password" id="confirmarSenha" class="form-control"
+                               placeholder="Repita a nova senha"
+                               autocomplete="new-password">
+                        <button type="button" class="toggle-password" data-alvo="confirmarSenha"
+                                aria-label="Mostrar/ocultar confirmação">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span id="confirmarSenha-error" class="field-error"></span>
+                </div>
+
+                <button type="submit" id="btn-trocar" class="btn-login">
+                    <i class="bi bi-check-circle"></i>
+                    Definir nova senha e entrar
+                </button>
+
+            </form>
+        </div>
+
+    </div>
+</main>
+
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../utils/Auth.js"></script>
+<script src="../utils/HttpClient.js"></script>
+
+<script src="../services/AuthService.js"></script>
+<script src="../controllers/AuthController.js"></script>
+
+<script src="./trocarSenha.js"></script>
+
+</body>
+</html>

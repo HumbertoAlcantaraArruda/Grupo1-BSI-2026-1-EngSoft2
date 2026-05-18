@@ -161,15 +161,13 @@
                             <div class="invalid-feedback">Informe um e-mail válido.</div>
                         </div>
 
-                        <!-- Senha (apenas cadastro) -->
-                        <div class="col-md-6" id="campo-senha">
-                            <label for="senha" class="form-label campo-obrigatorio">Senha</label>
-                            <input type="password" class="form-control" id="senha"
-                                   placeholder="Mínimo 6 caracteres" minlength="6">
-                            <div class="invalid-feedback">Senha deve ter pelo menos 6 caracteres.</div>
-                        </div>
-
                         <!-- Nível -->
+                        <div class="col-12">
+                            <div class="alert alert-info py-2 px-3 mb-0" style="font-size:.85rem;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                A senha inicial será definida automaticamente pelo nível escolhido. O usuário deverá alterá-la no primeiro acesso.
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <label for="nivel" class="form-label campo-obrigatorio">Nível</label>
                             <select class="form-select" id="nivel" required>

@@ -92,8 +92,12 @@ public class CUsuario implements HttpHandler {
                                             param(body, "nome"),
                                             param(body, "cpf"),
                                             param(body, "email"),
-                                            param(body, "senha"),
                                             param(body, "nivel"));
+            case "/trocarSenha"       -> trocarSenha(
+                                            conn,
+                                            param(body, "email"),
+                                            param(body, "senhaAtual"),
+                                            param(body, "novaSenha"));
             case "/usuario/ativar"    -> ativar(conn, requesterNivel, parseSafeInt(param(combined, "id")));
             case "/usuario/desativar" -> desativar(conn, requesterNivel, requesterEmail, parseSafeInt(param(combined, "id")));
             default -> naoEncontrado();
@@ -122,18 +126,26 @@ public class CUsuario implements HttpHandler {
         return naoEncontrado();
     }
 
-    public ResponseObject cadastrar(Connection conn, String requesterNivel, String nome, String cpf, String email, String senha, String nivel) {
+    private static final java.util.Map<String, String> SENHA_PADRAO = java.util.Map.of(
+        NIVEL_ADM,   "Admin123",
+        NIVEL_COLAB, "Colab123",
+        NIVEL_PAROQ, "Paroq123"
+    );
+
+    public ResponseObject cadastrar(Connection conn, String requesterNivel, String nome, String cpf, String email, String nivel) {
         ResponseObject response = new ResponseObject();
         try {
-            if (vazio(nome) || vazio(cpf) || vazio(email) || vazio(senha) || vazio(nivel))
+            if (vazio(nome) || vazio(cpf) || vazio(email) || vazio(nivel))
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Todos os campos são obrigatórios.");
 
             String nivelNovo = nivel.trim().toUpperCase();
 
-            // Regra: COLAB só pode cadastrar usuários com nível PAROQ.
             if (NIVEL_COLAB.equalsIgnoreCase(requesterNivel) && !NIVEL_PAROQ.equals(nivelNovo))
                 return falha(response, ResponseObject.CODE_FORBIDDEN,
                         "Colaborador só pode cadastrar usuários com nível PAROQ.");
+
+            if (!SENHA_PADRAO.containsKey(nivelNovo))
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nível de acesso inválido.");
 
             Usuario u = new Usuario();
             if (u.existeCpf(conn, cpf.trim(), 0))
@@ -144,9 +156,10 @@ public class CUsuario implements HttpHandler {
             u.setNome(nome.trim());
             u.setCpf(cpf.trim());
             u.setEmail(email.trim());
-            u.setSenha(Criptografia.hashSenha(senha));
+            u.setSenha(Criptografia.hashSenha(SENHA_PADRAO.get(nivelNovo)));
             u.setNivel(nivelNovo);
             u.setStatus(1);
+            u.setPrimeiroAcesso(1);
             u.setDataAtivacao(LocalDateTime.now());
 
             u.inserir(conn);
@@ -156,6 +169,42 @@ public class CUsuario implements HttpHandler {
             response.setCode(ResponseObject.CODE_CREATED);
             response.addMessage("Usuário cadastrado com sucesso.");
             response.setResult(u);
+
+        } catch (Exception e) {
+            erroInterno(response);
+        }
+        return response;
+    }
+
+    public ResponseObject trocarSenha(Connection conn, String email, String senhaAtual, String novaSenha) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (vazio(email) || vazio(senhaAtual) || vazio(novaSenha))
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Todos os campos são obrigatórios.");
+
+            if (novaSenha.trim().length() < 8)
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "A nova senha deve ter pelo menos 8 caracteres.");
+
+            Usuario u = new Usuario().buscarPorEmail(conn, email.trim());
+            if (u == null)
+                return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
+
+            if (!Criptografia.verificarSenha(senhaAtual, u.getSenha()))
+                return falha(response, ResponseObject.CODE_UNAUTHORIZED, "Senha atual incorreta.");
+
+            if (Criptografia.verificarSenha(novaSenha.trim(), u.getSenha()))
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "A nova senha deve ser diferente da senha atual.");
+
+            u.alterarSenha(conn, Criptografia.hashSenha(novaSenha.trim()));
+
+            String token = JWTTokenProvider.createToken(u.getEmail(), u.getNivel());
+            u.setSenha(null);
+            u.setPrimeiroAcesso(0);
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.addMessage("Senha alterada com sucesso.");
+            response.setResult(new LoginResult(u, token));
 
         } catch (Exception e) {
             erroInterno(response);
@@ -176,6 +225,14 @@ public class CUsuario implements HttpHandler {
                 return falha(response, ResponseObject.CODE_FORBIDDEN, "Usuário inativo.");
             if (!Criptografia.verificarSenha(senha, u.getSenha()))
                 return falha(response, ResponseObject.CODE_UNAUTHORIZED, "Credenciais inválidas.");
+
+            if (u.getPrimeiroAcesso() == 1) {
+                response.setStatus(ResponseObject.STATUS_OK);
+                response.setCode(ResponseObject.CODE_OK);
+                response.addMessage("Primeiro acesso: troca de senha obrigatória.");
+                response.setResult(new PrimeiroAcessoResult(u.getEmail()));
+                return response;
+            }
 
             String token = JWTTokenProvider.createToken(u.getEmail(), u.getNivel());
 
@@ -381,6 +438,19 @@ public class CUsuario implements HttpHandler {
             erroInterno(response);
         }
         return response;
+    }
+
+    /** Retornado pelo login quando primeiroAcesso == 1: sem token, apenas o e-mail. */
+    public static class PrimeiroAcessoResult {
+        private final String email;
+
+        PrimeiroAcessoResult(String email) {
+            this.email = email;
+        }
+
+        public String toJson() {
+            return "{\"primeiroAcesso\":1,\"email\":\"" + email + "\"}";
+        }
     }
 
     /** Resultado de /login: usuário + token JWT, serializado via toJson() pelo ResponseObject. */

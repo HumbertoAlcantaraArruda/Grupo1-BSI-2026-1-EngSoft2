@@ -113,9 +113,66 @@ window.AGAPE.Utils.Sidebar = (function () {
         var btn = document.getElementById('btn-sair');
         if (!btn) return;
         btn.addEventListener('click', function () {
-            var auth = window.AGAPE.Utils.Auth ? window.AGAPE.Utils.Auth.getInstance() : null;
+            var auth    = window.AGAPE.Utils.Auth ? window.AGAPE.Utils.Auth.getInstance() : null;
+            var usuario = auth ? auth.getUsuario() : null;
+
+            if (usuario && usuario.nivel === 'ADM' &&
+                sessionStorage.getItem('agape_param_pendente') === '1') {
+                _mostrarModalParamPendente(auth);
+                return;
+            }
+
             if (auth) auth.logout();
         });
+    }
+
+    function _mostrarModalParamPendente(auth) {
+        var id = 'modal-param-pendente';
+        if (!document.getElementById(id)) {
+            var el = document.createElement('div');
+            el.id = id;
+            el.style.cssText =
+                'position:fixed;inset:0;background:rgba(0,0,0,.55);' +
+                'z-index:10000;display:flex;align-items:center;justify-content:center;';
+            el.innerHTML =
+                '<div style="background:#fff;border-radius:.75rem;max-width:440px;width:90%;' +
+                'box-shadow:0 8px 32px rgba(0,0,0,.2);padding:2rem;text-align:center;">' +
+                '<i class="bi bi-exclamation-triangle-fill" style="font-size:2.75rem;color:#f59e0b;"></i>' +
+                '<h5 style="margin:.75rem 0 .5rem;font-weight:700;">Parametrização incompleta</h5>' +
+                '<p style="color:#6c757d;font-size:.9rem;margin-bottom:1.5rem;">' +
+                'Os dados referentes à empresa ainda não foram preenchidos.<br>' +
+                'Deseja sair do sistema mesmo assim?' +
+                '</p>' +
+                '<div style="display:flex;gap:.75rem;justify-content:center;">' +
+                '<button id="btn-param-cancelar" class="btn btn-outline-secondary">' +
+                '<i class="bi bi-arrow-left me-1"></i>Voltar</button>' +
+                '<button id="btn-param-confirmar" class="btn btn-danger">' +
+                '<i class="bi bi-box-arrow-right me-1"></i>Confirmar saída</button>' +
+                '</div></div>';
+            document.body.appendChild(el);
+        }
+
+        var overlay = document.getElementById(id);
+        overlay.style.display = 'flex';
+
+        document.getElementById('btn-param-confirmar').onclick = function () {
+            if (auth) auth.logout();
+        };
+        document.getElementById('btn-param-cancelar').onclick = function () {
+            overlay.style.display = 'none';
+        };
+    }
+
+    function _verificarParametrizacaoPendente() {
+        var auth    = window.AGAPE.Utils.Auth ? window.AGAPE.Utils.Auth.getInstance() : null;
+        var usuario = auth ? auth.getUsuario() : null;
+        if (!usuario || usuario.nivel !== 'ADM') return;
+        if (sessionStorage.getItem('agape_param_pendente') !== '1') return;
+
+        var paginaAtual = _paginaAtual();
+        if (paginaAtual !== 'parametrizacao.html') {
+            window.location.replace('./parametrizacao.html');
+        }
     }
 
     function _atualizarIconeToggle(sidebar, colapsada) {
@@ -188,6 +245,8 @@ window.AGAPE.Utils.Sidebar = (function () {
     }
 
     function inicializar(seletorAlvo) {
+        _verificarParametrizacaoPendente();
+
         var sidebar = document.getElementById(seletorAlvo || 'sidebar-wrapper');
         if (!sidebar) {
             console.warn('[Sidebar] Elemento não encontrado: #' + (seletorAlvo || 'sidebar-wrapper'));

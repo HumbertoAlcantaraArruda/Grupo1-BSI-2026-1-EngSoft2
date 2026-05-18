@@ -40,11 +40,28 @@
 
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
+        _exibirBannerPendente();
         mascaras.aplicar('#cnpj',      'cnpj');
         mascaras.aplicar('#cep',       'cep');
         mascaras.aplicar('#telefone1', 'telefone');
         mascaras.aplicar('#telefone2', 'telefone');
         await _carregarDados();
+    }
+
+    function _exibirBannerPendente() {
+        if (sessionStorage.getItem('agape_param_pendente') !== '1') return;
+
+        var banner = document.createElement('div');
+        banner.id  = 'banner-param-pendente';
+        banner.className = 'alert alert-warning d-flex align-items-center gap-2 mb-0 rounded-0';
+        banner.style.cssText = 'position:sticky;top:0;z-index:90;border-left:none;border-right:none;border-top:none;';
+        banner.innerHTML =
+            '<i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>' +
+            '<span><strong>Atenção:</strong> Os dados da empresa ainda não foram preenchidos. ' +
+            'Preencha e salve as informações abaixo para liberar o acesso ao sistema.</span>';
+
+        var areaConteudo = document.querySelector('.area-conteudo');
+        if (areaConteudo) areaConteudo.insertBefore(banner, areaConteudo.firstChild);
     }
 
     async function _carregarDados() {
@@ -76,6 +93,9 @@
 
         var resultado = await ctrl.salvar(dados);
         if (resultado.status === 'ok') {
+            sessionStorage.removeItem('agape_param_pendente');
+            var banner = document.getElementById('banner-param-pendente');
+            if (banner) banner.remove();
             validador.mostrarAlerta('Parametrização salva com sucesso!', 'sucesso');
             form.classList.remove('was-validated');
         } else {

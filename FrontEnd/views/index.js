@@ -97,6 +97,10 @@
 
         if (resultado.status === 'ok') {
             window.location.href = './produtos.html';
+        } else if (resultado.status === 'primeiroAcesso') {
+            window.location.href = './trocarSenha.html';
+        } else if (resultado.status === 'parametrizacaoPendente') {
+            window.location.href = './parametrizacao.html';
         } else {
             _mostrarAlerta('Inválido - Revise suas credenciais');
         }

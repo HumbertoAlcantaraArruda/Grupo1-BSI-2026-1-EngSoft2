@@ -23,9 +23,7 @@
     var inputNome            = document.getElementById('nome');
     var inputCpf             = document.getElementById('cpf');
     var inputEmail           = document.getElementById('email');
-    var inputSenha           = document.getElementById('senha');
     var selectNivel          = document.getElementById('nivel');
-    var campSenha            = document.getElementById('campo-senha');
     var modalTitulo          = document.getElementById('modal-titulo');
     var filtrNome            = document.getElementById('filtro-nome');
     var filtrNivel           = document.getElementById('filtro-nivel');
@@ -191,10 +189,7 @@
         inputNome.value      = '';
         inputCpf.value       = '';
         inputEmail.value     = '';
-        inputSenha.value     = '';
         selectNivel.value    = '';
-        campSenha.style.display   = '';
-        inputSenha.required       = true;
         modalObj.show();
     });
 
@@ -205,10 +200,7 @@
         inputNome.value           = dados.nome  || '';
         inputCpf.value            = _formatarCpf(dados.cpf);
         inputEmail.value          = dados.email || '';
-        inputSenha.value          = '';
         selectNivel.value         = dados.nivel || '';
-        campSenha.style.display   = 'none';
-        inputSenha.required       = false;
 
         var editandoSiMesmo = Number(dados.id) === idUsuarioLogado;
         selectNivel.disabled = editandoSiMesmo;
@@ -238,7 +230,6 @@
             nome:      inputNome.value.trim(),
             cpf:       inputCpf.value,
             email:     inputEmail.value.trim(),
-            senha:     inputSenha.value,
             nivel:     selectNivel.value
         };
 

@@ -15,6 +15,14 @@ window.AGAPE.Services.AuthService = (function () {
         return await this._http.post('/login', { email: email, senha: senha });
     };
 
+    AuthService.prototype.trocarSenha = async function (email, senhaAtual, novaSenha) {
+        return await this._http.post('/trocarSenha', {
+            email:      email,
+            senhaAtual: senhaAtual,
+            novaSenha:  novaSenha
+        });
+    };
+
     return {
         getInstance: function () {
             if (!instancia) instancia = new AuthService();

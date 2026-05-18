@@ -17,6 +17,7 @@ public class Usuario {
     private String senha;
     private int status;
     private String nivel;
+    private int primeiroAcesso;
     private LocalDateTime dataAtivacao;
     private LocalDateTime dataDesativacao;
 
@@ -74,6 +75,14 @@ public class Usuario {
 
     public void setNivel(String nivel) {
         this.nivel = nivel;
+    }
+
+    public int getPrimeiroAcesso() {
+        return primeiroAcesso;
+    }
+
+    public void setPrimeiroAcesso(int primeiroAcesso) {
+        this.primeiroAcesso = primeiroAcesso;
     }
 
     public LocalDateTime getDataAtivacao() {
@@ -142,6 +151,10 @@ public class Usuario {
         dao.excluir(conn, this.idUsuario);
     }
 
+    public void alterarSenha(Connection conn, String novaSenhaHash) throws Exception {
+        dao.alterarSenha(conn, this.idUsuario, novaSenhaHash);
+    }
+
     public String toJson() {
         return "{" +
             "\"idUsuario\":"   + idUsuario + "," +
@@ -150,6 +163,7 @@ public class Usuario {
             "\"email\":\""     + esc(email) + "\"," +
             "\"status\":"      + status     + "," +
             "\"nivel\":\""     + esc(nivel) + "\"," +
+            "\"primeiroAcesso\":" + primeiroAcesso + "," +
             "\"dataAtivacao\":"    + (dataAtivacao    != null ? "\"" + dataAtivacao    + "\"" : "null") + "," +
             "\"dataDesativacao\":" + (dataDesativacao != null ? "\"" + dataDesativacao + "\"" : "null") +
         "}";

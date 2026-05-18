@@ -23,8 +23,9 @@ public class Main {
 
         // == Rotas ==
 
-        // Pública (única que pode ser acessada sem token)
-        server.createContext("/login", CUsuario.getInstancia());
+        // Públicas (acessadas sem token)
+        server.createContext("/login",       CUsuario.getInstancia());
+        server.createContext("/trocarSenha", CUsuario.getInstancia());
 
         // Rotas operacionais — ADM e COLAB
         server.createContext("/parametrizacao",    new AuthFilter(CParametrizacao.getInstancia(),   "ADM", "COLAB"));

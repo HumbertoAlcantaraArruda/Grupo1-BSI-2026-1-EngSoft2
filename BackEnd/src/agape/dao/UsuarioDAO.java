@@ -18,6 +18,7 @@ public class UsuarioDAO {
         u.setSenha(rs.getString("senha"));
         u.setStatus(rs.getInt("status"));
         u.setNivel(rs.getString("nivel"));
+        u.setPrimeiroAcesso(rs.getInt("primeiroAcesso"));
 
         Timestamp ativacao    = rs.getTimestamp("dataAtivacao");
         Timestamp desativacao = rs.getTimestamp("dataDesativacao");
@@ -28,7 +29,7 @@ public class UsuarioDAO {
     }
 
     public void inserir(Connection conn, Usuario u) throws Exception {
-        String sql = "INSERT INTO Usuario (nome, cpf, email, senha, status, nivel, dataAtivacao) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Usuario (nome, cpf, email, senha, status, nivel, primeiroAcesso, dataAtivacao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getCpf());
@@ -36,7 +37,8 @@ public class UsuarioDAO {
             stmt.setString(4, u.getSenha());
             stmt.setInt(5, u.getStatus());
             stmt.setString(6, u.getNivel());
-            stmt.setObject(7, u.getDataAtivacao());
+            stmt.setInt(7,    u.getPrimeiroAcesso());
+            stmt.setObject(8, u.getDataAtivacao());
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) u.setIdUsuario(rs.getInt(1));
@@ -137,6 +139,15 @@ public class UsuarioDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
             }
+        }
+    }
+
+    public void alterarSenha(Connection conn, int id, String novaSenhaHash) throws Exception {
+        String sql = "UPDATE Usuario SET senha = ?, primeiroAcesso = 0 WHERE idUsuario = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, novaSenhaHash);
+            stmt.setInt(2, id);
+            stmt.executeUpdate();
         }
     }
 
