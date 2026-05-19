@@ -119,16 +119,6 @@
                 inputNome.value = (d.nome_fantasia && d.nome_fantasia.trim())
                     ? d.nome_fantasia.trim()
                     : (d.razao_social || '').trim();
-                inputEmail.value      = d.email      || '';
-                inputLogradouro.value = d.logradouro || '';
-                inputCidade.value     = d.municipio  || '';
-                if (d.uf) selectUf.value = d.uf;
-                if (d.ddd_telefone_1) {
-                    $(inputTelefone1).val(String(d.ddd_telefone_1).replace(/\D/g, '')).trigger('input');
-                }
-                if (d.cep) {
-                    $(inputCep).val(String(d.cep).replace(/\D/g, '')).trigger('input');
-                }
                 validador.destacarCampo(inputCnpj, true);
             } else {
                 validador.destacarCampo(inputCnpj, false, resultado.mensagem);
@@ -137,14 +127,7 @@
     }
 
     function _limparCamposCnpj() {
-        inputNome.value       = '';
-        inputEmail.value      = '';
-        inputTelefone1.value  = '';
-        inputLogradouro.value = '';
-        inputCidade.value     = '';
-        selectUf.value        = '';
-        $(inputCep).val('');
-        inputCep.classList.remove('is-invalid', 'is-valid');
+        inputNome.value = '';
     }
 
     async function _carregarLista() {
