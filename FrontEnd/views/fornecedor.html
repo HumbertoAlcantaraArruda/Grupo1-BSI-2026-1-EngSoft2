@@ -195,6 +195,7 @@
                             <label for="cep" class="form-label">CEP</label>
                             <input type="text" class="form-control" id="cep"
                                    placeholder="00000-000" inputmode="numeric">
+                            <div class="invalid-feedback" id="cep-feedback">CEP não encontrado.</div>
                         </div>
 
                         <!-- Logradouro -->
@@ -304,6 +305,7 @@
 
 <script src="../controllers/FornecedorController.js"></script>
 
+<script src="../utils/ViaCep.js"></script>
 <script src="./fornecedor.js"></script>
 
 </body>

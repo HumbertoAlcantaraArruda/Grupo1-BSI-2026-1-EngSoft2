@@ -145,6 +145,7 @@
                             <label for="cep" class="form-label">CEP</label>
                             <input type="text" class="form-control" id="cep"
                                    placeholder="00000-000" inputmode="numeric">
+                            <div class="invalid-feedback" id="cep-feedback">CEP não encontrado.</div>
                         </div>
 
                         <div class="col-md-5">
@@ -344,6 +345,7 @@
 
 <script src="../controllers/ParametrizacaoController.js"></script>
 
+<script src="../utils/ViaCep.js"></script>
 <script src="./parametrizacao.js"></script>
 
 <script>

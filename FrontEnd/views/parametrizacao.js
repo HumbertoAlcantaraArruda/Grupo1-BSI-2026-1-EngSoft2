@@ -45,7 +45,51 @@
         mascaras.aplicar('#cep',       'cep');
         mascaras.aplicar('#telefone1', 'telefone');
         mascaras.aplicar('#telefone2', 'telefone');
+        _bindCepLookup();
         await _carregarDados();
+    }
+
+    function _bindCepLookup() {
+        var viaCep = window.AGAPE.Utils.ViaCep.getInstance();
+        var camposEndereco = [campos.logradouro, campos.bairro, campos.cidade, campos.uf];
+
+        campos.cep.addEventListener('blur', async function () {
+            var digits = mascaras.apenasDigitos(campos.cep.value);
+            campos.cep.classList.remove('is-invalid', 'is-valid');
+
+            if (digits.length === 0) return;
+
+            if (digits.length !== 8) {
+                _limparCamposEndereco();
+                validador.destacarCampo(campos.cep, false, 'CEP inválido. Informe 8 dígitos.');
+                return;
+            }
+
+            _limparCamposEndereco();
+            camposEndereco.forEach(function (el) { el.disabled = true; });
+
+            var resultado = await viaCep.buscar(digits);
+            camposEndereco.forEach(function (el) { el.disabled = false; });
+
+            if (resultado.status === 'ok') {
+                var d = resultado.dados;
+                campos.logradouro.value = d.logradouro || '';
+                campos.bairro.value     = d.bairro     || '';
+                campos.cidade.value     = d.localidade || '';
+                campos.uf.value         = d.uf         || '';
+                validador.destacarCampo(campos.cep, true);
+                campos.numEndereco.focus();
+            } else {
+                validador.destacarCampo(campos.cep, false, resultado.mensagem);
+            }
+        });
+    }
+
+    function _limparCamposEndereco() {
+        campos.logradouro.value = '';
+        campos.bairro.value     = '';
+        campos.cidade.value     = '';
+        campos.uf.value         = '';
     }
 
     function _exibirBannerPendente() {
