@@ -11,6 +11,7 @@ import agape.control.CInscricao;
 import agape.control.CParametrizacao;
 import agape.control.CUsuario;
 import agape.control.CProduto;
+import agape.control.CVenda;
 import agape.security.AuthFilter;
 
 import java.net.InetSocketAddress;
@@ -36,6 +37,10 @@ public class Main {
         server.createContext("/fornecedor",        new AuthFilter(CFornecedor.getInstancia(),       "ADM", "COLAB"));
         server.createContext("/comprar",           new AuthFilter(CCompra.getInstancia(),           "ADM", "COLAB"));
         server.createContext("/cancelarInscricao", new AuthFilter(CInscricao.getInstancia(),        "ADM", "COLAB"));
+
+        // Venda de produtos — ADM e COLAB
+        server.createContext("/paroquiano", new AuthFilter(CVenda.getInstancia(), "ADM", "COLAB"));
+        server.createContext("/venda",      new AuthFilter(CVenda.getInstancia(), "ADM", "COLAB"));
 
         // Gestão de usuários — ADM e COLAB (COLAB só consegue criar/alterar PAROQ; regra dentro do controller)
         server.createContext("/cadastrar", new AuthFilter(CUsuario.getInstancia(), "ADM", "COLAB"));

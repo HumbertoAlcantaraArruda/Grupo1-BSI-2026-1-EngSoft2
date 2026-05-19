@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Vendas</title>
+
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../assets/css/agape.css">
+    <style>
+        body { display: none; }
+
+        /* ── PDV layout ── */
+        .pdv-painel-esq  { border-right: 1px solid #dee2e6; }
+        .pdv-tabela-itens { max-height: 280px; overflow-y: auto; }
+        .pdv-tabela-pag   { max-height: 140px; overflow-y: auto; }
+
+        .pdv-resumo-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: .25rem 0;
+        }
+        .pdv-total-final {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--cor-estrutural, #024040);
+        }
+        .pdv-restante-badge {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        /* Seção divisória dentro do modal */
+        .pdv-secao-titulo {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #6c757d;
+            margin-bottom: .5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <div id="sidebar-wrapper"></div>
+
+    <div id="content-wrapper">
+
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Vendas</span>
+        </header>
+
+        <div class="area-conteudo">
+
+            <!-- Título + botão Nova Venda -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="titulo-pagina">
+                    <i class="bi bi-cart3 me-2"></i>Vendas
+                </h1>
+                <button class="btn btn-primary" id="btn-nova-venda">
+                    <i class="bi bi-plus-circle me-1"></i>Nova Venda
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card-filtros card">
+                <div class="card-body">
+                    <p class="card-titulo-filtros">
+                        <i class="bi bi-funnel me-1"></i>Filtros
+                    </p>
+                    <div class="row g-3 align-items-end">
+
+                        <div class="col-md-3">
+                            <label for="filtro-data-ini" class="form-label form-label-sm">Data inicial</label>
+                            <input type="date" class="form-control form-control-sm" id="filtro-data-ini">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="filtro-data-fim" class="form-label form-label-sm">Data final</label>
+                            <input type="date" class="form-control form-control-sm" id="filtro-data-fim">
+                        </div>
+
+                        <div class="col-md-3 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" id="btn-filtrar">
+                                <i class="bi bi-search me-1"></i>Filtrar
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-limpar">
+                                <i class="bi bi-x-lg me-1"></i>Limpar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de vendas -->
+            <div class="tabela-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="text-center">
+                            <tr>
+                                <th scope="col">Nº</th>
+                                <th scope="col">Data / Hora</th>
+                                <th scope="col" class="text-start">Paroquiano</th>
+                                <th scope="col" class="text-start">Colaborador</th>
+                                <th scope="col">Forma Pag.</th>
+                                <th scope="col">Total Bruto</th>
+                                <th scope="col">Crédito</th>
+                                <th scope="col">Total Final</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-corpo" class="text-center">
+                            <tr>
+                                <td colspan="8" class="tabela-vazia">
+                                    <i class="bi bi-hourglass-split me-1"></i>Carregando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /area-conteudo -->
+    </div><!-- /content-wrapper -->
+</div><!-- /wrapper -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL PDV — Realizar Venda
+════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-pdv" tabindex="-1"
+     aria-labelledby="pdv-titulo" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="pdv-titulo">
+                    <i class="bi bi-cart3 me-2"></i>Nova Venda — PDV
+                </h5>
+                <button type="button" class="btn-close" id="pdv-btn-fechar"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body p-0">
+                <div class="row g-0 h-100">
+
+                    <!-- ── Painel esquerdo: Paroquiano + Produtos ── -->
+                    <div class="col-lg-7 pdv-painel-esq p-3">
+
+                        <!-- CPF -->
+                        <p class="pdv-secao-titulo">
+                            <i class="bi bi-person-check me-1"></i>Identificação do Paroquiano
+                        </p>
+                        <div class="row g-2 mb-2">
+                            <div class="col-5">
+                                <input type="text" class="form-control form-control-sm" id="pdv-cpf"
+                                       placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
+                                <div class="invalid-feedback" id="pdv-cpf-feedback">Paroquiano não encontrado.</div>
+                            </div>
+                            <div class="col-7" id="pdv-bloco-par" style="display:none;">
+                                <div class="alert alert-success py-1 px-2 mb-0 small">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <strong id="pdv-par-nome"></strong>
+                                    &nbsp;—&nbsp;
+                                    Crédito: <strong id="pdv-par-saldo" class="text-success"></strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-2">
+
+                        <!-- Busca de produtos -->
+                        <p class="pdv-secao-titulo">
+                            <i class="bi bi-box-seam me-1"></i>Adicionar Produto
+                        </p>
+                        <div class="row g-2 mb-2">
+                            <div class="col-5">
+                                <input type="text" class="form-control form-control-sm" id="pdv-busca-prod"
+                                       placeholder="Buscar pelo nome..." autocomplete="off">
+                            </div>
+                            <div class="col-4">
+                                <select class="form-select form-select-sm" id="pdv-select-prod">
+                                    <option value="">— selecione —</option>
+                                </select>
+                            </div>
+                            <div class="col-1">
+                                <input type="number" class="form-control form-control-sm" id="pdv-qtd"
+                                       min="1" value="1" style="min-width:56px;">
+                            </div>
+                            <div class="col-2">
+                                <button type="button" class="btn btn-primary btn-sm w-100" id="pdv-btn-add-item">
+                                    <i class="bi bi-plus-circle"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabela de itens -->
+                        <div class="pdv-tabela-itens">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="text-center sticky-top bg-white">
+                                    <tr>
+                                        <th class="text-start">Produto</th>
+                                        <th>Qtd</th>
+                                        <th>Unit.</th>
+                                        <th>Total</th>
+                                        <th style="width:32px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pdv-tbody-itens" class="text-center">
+                                    <tr id="pdv-linha-vazia-itens">
+                                        <td colspan="5" class="tabela-vazia text-muted small">
+                                            Nenhum produto adicionado.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div><!-- /painel esq -->
+
+                    <!-- ── Painel direito: Resumo + Crédito + Pagamento ── -->
+                    <div class="col-lg-5 p-3 d-flex flex-column gap-3">
+
+                        <!-- Resumo financeiro -->
+                        <div>
+                            <p class="pdv-secao-titulo">
+                                <i class="bi bi-receipt me-1"></i>Resumo
+                            </p>
+                            <div class="pdv-resumo-linha">
+                                <span class="text-muted small">Total Bruto</span>
+                                <strong id="pdv-r-bruto">R$ 0,00</strong>
+                            </div>
+                            <div class="pdv-resumo-linha">
+                                <span class="text-muted small">Saldo de crédito</span>
+                                <span class="text-success" id="pdv-r-saldo">R$ 0,00</span>
+                            </div>
+
+                            <!-- Crédito -->
+                            <div class="input-group input-group-sm mt-1">
+                                <span class="input-group-text">Usar crédito R$</span>
+                                <input type="number" class="form-control" id="pdv-input-cred"
+                                       min="0" step="0.01" value="0">
+                                <button class="btn btn-outline-secondary" type="button" id="pdv-btn-cred">
+                                    Aplicar
+                                </button>
+                            </div>
+                            <div class="invalid-feedback d-block" id="pdv-cred-feedback" style="display:none!important;"></div>
+
+                            <hr class="my-2">
+                            <div class="pdv-resumo-linha">
+                                <span class="fw-semibold">Total Final</span>
+                                <span class="pdv-total-final" id="pdv-total-final">R$ 0,00</span>
+                            </div>
+                        </div>
+
+                        <!-- Formas de pagamento -->
+                        <div>
+                            <p class="pdv-secao-titulo">
+                                <i class="bi bi-credit-card me-1"></i>Pagamento
+                            </p>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-7">
+                                    <select class="form-select form-select-sm" id="pdv-select-forma">
+                                        <option value="">— forma —</option>
+                                    </select>
+                                </div>
+                                <div class="col-3">
+                                    <input type="number" class="form-control form-control-sm" id="pdv-input-valor-pag"
+                                           min="0.01" step="0.01" placeholder="Valor">
+                                </div>
+                                <div class="col-2">
+                                    <button type="button" class="btn btn-primary btn-sm w-100" id="pdv-btn-add-pag">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback d-block" id="pdv-pag-feedback" style="display:none!important;"></div>
+
+                            <!-- Tabela de pagamentos -->
+                            <div class="pdv-tabela-pag">
+                                <table class="table table-sm mb-0">
+                                    <tbody id="pdv-tbody-pag">
+                                        <tr id="pdv-linha-vazia-pag">
+                                            <td colspan="3" class="text-muted small text-center tabela-vazia">
+                                                Nenhum pagamento registrado.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2 p-2 rounded"
+                                 style="background:#fff3cd;">
+                                <span class="small fw-semibold">Restante a pagar:</span>
+                                <span class="pdv-restante-badge text-warning" id="pdv-restante">R$ 0,00</span>
+                            </div>
+                            <div class="pdv-resumo-linha mt-1">
+                                <span class="text-muted small">Total pago</span>
+                                <strong id="pdv-total-pago">R$ 0,00</strong>
+                            </div>
+                        </div>
+
+                    </div><!-- /painel dir -->
+                </div><!-- /row -->
+            </div><!-- /modal-body -->
+
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        id="pdv-btn-cancelar">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="pdv-btn-finalizar" disabled>
+                    <i class="bi bi-check2-circle me-1"></i>Finalizar Venda
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal: Comprovante -->
+<div class="modal fade" id="modal-comprovante" tabindex="-1"
+     aria-labelledby="comp-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="comp-titulo">
+                    <i class="bi bi-receipt me-2"></i>Comprovante de Venda
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="comp-corpo"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-check-circle me-1"></i>Concluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Scripts -->
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../utils/Auth.js"></script>
+<script src="../utils/HttpClient.js"></script>
+<script src="../utils/Mascaras.js"></script>
+<script src="../utils/Validador.js"></script>
+<script src="../utils/Sidebar.js"></script>
+
+<script src="../services/VendaService.js"></script>
+<script src="../controllers/VendaController.js"></script>
+
+<script src="./venda.js"></script>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ window.AGAPE.Utils = window.AGAPE.Utils || {};
 window.AGAPE.Utils.Sidebar = (function () {
 
     var _itens = [
+        { rotulo: 'Realizar Venda',       href: 'venda.html',            icone: 'bi-cart3',         niveis: ['ADM', 'COLAB'] },
         { rotulo: 'Produtos',             href: 'produtos.html',         icone: 'bi-box-seam',      niveis: ['ADM', 'COLAB'] },
         { rotulo: 'Categoria de Produto', href: 'categoriaProduto.html', icone: 'bi-tags',           niveis: ['ADM', 'COLAB'] },
         { rotulo: 'Categoria de Evento',  href: 'categoriaEvento.html',  icone: 'bi-calendar-event', niveis: ['ADM', 'COLAB'] },

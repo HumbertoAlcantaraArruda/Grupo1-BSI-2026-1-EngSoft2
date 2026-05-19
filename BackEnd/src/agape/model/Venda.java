@@ -1,8 +1,12 @@
 package agape.model;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 
+import agape.dao.VendaDAO;
+
 public class Venda {
+    private final VendaDAO dao = new VendaDAO();
     private int idVenda;
     private int idColaborador;
     private int idUsuario;
@@ -74,5 +78,50 @@ public class Venda {
 
     public void setValorFinal(float valorFinal) {
         this.valorFinal = valorFinal;
+    }
+
+    // ── Campos de exibição (preenchidos por JOIN no DAO, não persistidos) ─────
+
+    private String nomeParoquiano;
+    private String nomeColaborador;
+    private String descFormaPag;
+
+    public String getNomeParoquiano() { return nomeParoquiano; }
+    public String getNomeColaborador() { return nomeColaborador; }
+    public String getDescFormaPag()    { return descFormaPag;    }
+
+    public void setNomeParoquiano(String v) { this.nomeParoquiano = v; }
+    public void setNomeColaborador(String v) { this.nomeColaborador = v; }
+    public void setDescFormaPag(String v)    { this.descFormaPag    = v; }
+
+    // ── Persistência ──────────────────────────────────────────────────────────
+
+    public int inserir(Connection conn) throws Exception {
+        return dao.inserir(conn, this);
+    }
+
+    public java.util.List<Venda> listar(Connection conn, String dataInicio, String dataFim) throws Exception {
+        return dao.listar(conn, dataInicio, dataFim);
+    }
+
+    public String toJson() {
+        return "{" +
+            "\"idVenda\":"         + idVenda         + "," +
+            "\"idColaborador\":"   + idColaborador   + "," +
+            "\"idUsuario\":"       + idUsuario       + "," +
+            "\"idFormaPag\":"      + idFormaPag      + "," +
+            "\"dataHora\":"        + (dataHora != null ? "\"" + dataHora + "\"" : "null") + "," +
+            "\"totBruto\":"        + totBruto        + "," +
+            "\"credUtilizado\":"   + credUtilizado   + "," +
+            "\"valorFinal\":"      + valorFinal      + "," +
+            "\"nomeParoquiano\":"  + jsonStr(nomeParoquiano)  + "," +
+            "\"nomeColaborador\":" + jsonStr(nomeColaborador) + "," +
+            "\"descFormaPag\":"    + jsonStr(descFormaPag) +
+        "}";
+    }
+
+    private String jsonStr(String s) {
+        if (s == null) return "null";
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 }
