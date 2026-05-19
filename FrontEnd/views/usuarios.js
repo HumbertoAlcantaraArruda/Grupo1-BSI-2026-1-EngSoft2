@@ -50,7 +50,20 @@
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
         mascaras.aplicar('#cpf', 'cpf');
+        _bindCpfValidacao();
         await _carregarLista();
+    }
+
+    function _bindCpfValidacao() {
+        inputCpf.addEventListener('blur', function () {
+            var digits = mascaras.apenasDigitos(inputCpf.value);
+            if (digits.length === 0) {
+                inputCpf.classList.remove('is-invalid', 'is-valid');
+                return;
+            }
+            var resultado = window.AGAPE.Utils.ValidadorCpf.validar(digits);
+            validador.destacarCampo(inputCpf, resultado.valido, resultado.mensagem);
+        });
     }
 
     async function _carregarLista() {
@@ -225,7 +238,15 @@
     }
 
     btnSalvar.addEventListener('click', async function () {
-        if (!validador.validarFormulario(formUsuario)) return;
+        var _cpfDigits     = mascaras.apenasDigitos(inputCpf.value);
+        var _cpfAlgoValido = true;
+        if (_cpfDigits.length > 0) {
+            var _cpfResult = window.AGAPE.Utils.ValidadorCpf.validar(_cpfDigits);
+            validador.destacarCampo(inputCpf, _cpfResult.valido, _cpfResult.mensagem);
+            _cpfAlgoValido = _cpfResult.valido;
+        }
+
+        if (!validador.validarFormulario(formUsuario) || !_cpfAlgoValido) return;
 
         var novoCadastro = !inputIdUsuario.value;
         var dados = {

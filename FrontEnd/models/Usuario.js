@@ -33,7 +33,7 @@ window.AGAPE.Models.Usuario = (function () {
         return typeof this._nome === 'string' && this._nome.trim().length >= 2;
     };
     Usuario.prototype.validarCpf   = function () {
-        return /^\d{11}$/.test(this._cpf.replace(/\D/g, ''));
+        return window.AGAPE.Utils.ValidadorCpf.validar(this._cpf).valido;
     };
     Usuario.prototype.validarEmail = function () {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this._email.trim());

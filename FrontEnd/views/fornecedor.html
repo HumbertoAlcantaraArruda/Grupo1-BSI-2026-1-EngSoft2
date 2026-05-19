@@ -179,6 +179,7 @@
                             <label for="cnpj" class="form-label">CNPJ</label>
                             <input type="text" class="form-control" id="cnpj"
                                    placeholder="00.000.000/0000-00" inputmode="numeric">
+                            <div class="invalid-feedback" id="cnpj-feedback">CNPJ inválido ou não encontrado.</div>
                         </div>
 
                         <!-- Status -->
@@ -306,6 +307,7 @@
 <script src="../controllers/FornecedorController.js"></script>
 
 <script src="../utils/ViaCep.js"></script>
+<script src="../utils/BrasilApiCnpj.js"></script>
 <script src="./fornecedor.js"></script>
 
 </body>

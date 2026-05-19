@@ -94,7 +94,7 @@
                             <label for="cnpj" class="form-label campo-obrigatorio">CNPJ</label>
                             <input type="text" class="form-control" id="cnpj"
                                    placeholder="00.000.000/0000-00" required inputmode="numeric">
-                            <div class="invalid-feedback">CNPJ obrigatório (14 dígitos).</div>
+                            <div class="invalid-feedback" id="cnpj-feedback">CNPJ obrigatório (14 dígitos).</div>
                         </div>
 
                         <div class="col-md-5">
@@ -346,6 +346,7 @@
 <script src="../controllers/ParametrizacaoController.js"></script>
 
 <script src="../utils/ViaCep.js"></script>
+<script src="../utils/BrasilApiCnpj.js"></script>
 <script src="./parametrizacao.js"></script>
 
 <script>

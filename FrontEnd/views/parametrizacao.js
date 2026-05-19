@@ -46,6 +46,7 @@
         mascaras.aplicar('#telefone1', 'telefone');
         mascaras.aplicar('#telefone2', 'telefone');
         _bindCepLookup();
+        _bindCnpjLookup();
         await _carregarDados();
     }
 
@@ -90,6 +91,66 @@
         campos.bairro.value     = '';
         campos.cidade.value     = '';
         campos.uf.value         = '';
+    }
+
+    function _bindCnpjLookup() {
+        var brasilApi = window.AGAPE.Utils.BrasilApiCnpj.getInstance();
+
+        campos.cnpj.addEventListener('blur', async function () {
+            var digits = mascaras.apenasDigitos(campos.cnpj.value);
+            campos.cnpj.classList.remove('is-invalid', 'is-valid');
+
+            if (digits.length === 0) return;
+
+            if (digits.length !== 14) {
+                _limparCamposCnpj();
+                validador.destacarCampo(campos.cnpj, false, 'CNPJ inválido. Informe 14 dígitos.');
+                return;
+            }
+
+            _limparCamposCnpj();
+            campos.cnpj.disabled = true;
+
+            var resultado = await brasilApi.buscar(digits);
+            campos.cnpj.disabled = false;
+
+            if (resultado.status === 'ok') {
+                var d = resultado.dados;
+                campos.razaoSocial.value  = d.razao_social  || '';
+                campos.nomeFantasia.value = d.nome_fantasia || '';
+                campos.email.value        = d.email         || '';
+                campos.logradouro.value   = d.logradouro    || '';
+                campos.numEndereco.value  = d.numero        || '';
+                campos.complemento.value  = d.complemento   || '';
+                campos.bairro.value       = d.bairro        || '';
+                campos.cidade.value       = d.municipio     || '';
+                campos.uf.value           = d.uf            || '';
+                if (d.ddd_telefone_1) {
+                    $(campos.telefone1).val(String(d.ddd_telefone_1).replace(/\D/g, '')).trigger('input');
+                }
+                if (d.cep) {
+                    $(campos.cep).val(String(d.cep).replace(/\D/g, '')).trigger('input');
+                }
+                validador.destacarCampo(campos.cnpj, true);
+            } else {
+                validador.destacarCampo(campos.cnpj, false, resultado.mensagem);
+            }
+        });
+    }
+
+    function _limparCamposCnpj() {
+        campos.razaoSocial.value  = '';
+        campos.nomeFantasia.value = '';
+        campos.email.value        = '';
+        campos.telefone1.value    = '';
+        campos.logradouro.value   = '';
+        campos.numEndereco.value  = '';
+        campos.complemento.value  = '';
+        campos.bairro.value       = '';
+        campos.cidade.value       = '';
+        campos.uf.value           = '';
+        $(campos.cep).val('');
+        campos.cep.classList.remove('is-invalid', 'is-valid');
     }
 
     function _exibirBannerPendente() {
