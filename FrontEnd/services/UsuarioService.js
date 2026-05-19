@@ -35,6 +35,10 @@ window.AGAPE.Services.UsuarioService = (function () {
         return await this._http.delete('/usuario', { id: id });
     };
 
+    UsuarioService.prototype.resetarSenha = async function (id) {
+        return await this._http.post('/usuario/resetarSenha', { id: id });
+    };
+
     return {
         getInstance: function () {
             if (!instancia) instancia = new UsuarioService();

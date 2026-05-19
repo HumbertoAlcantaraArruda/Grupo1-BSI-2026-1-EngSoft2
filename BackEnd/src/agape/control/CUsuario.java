@@ -98,8 +98,9 @@ public class CUsuario implements HttpHandler {
                                             param(body, "email"),
                                             param(body, "senhaAtual"),
                                             param(body, "novaSenha"));
-            case "/usuario/ativar"    -> ativar(conn, requesterNivel, parseSafeInt(param(combined, "id")));
-            case "/usuario/desativar" -> desativar(conn, requesterNivel, requesterEmail, parseSafeInt(param(combined, "id")));
+            case "/usuario/ativar"       -> ativar(conn, requesterNivel, parseSafeInt(param(combined, "id")));
+            case "/usuario/desativar"    -> desativar(conn, requesterNivel, requesterEmail, parseSafeInt(param(combined, "id")));
+            case "/usuario/resetarSenha" -> resetarSenha(conn, requesterNivel, parseSafeInt(param(combined, "id")));
             default -> naoEncontrado();
         };
     }
@@ -434,6 +435,32 @@ public class CUsuario implements HttpHandler {
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.addMessage("Usuário desativado com sucesso.");
+        } catch (Exception e) {
+            erroInterno(response);
+        }
+        return response;
+    }
+
+    public ResponseObject resetarSenha(Connection conn, String requesterNivel, int id) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (!NIVEL_ADM.equalsIgnoreCase(requesterNivel))
+                return falha(response, ResponseObject.CODE_FORBIDDEN,
+                        "Apenas administradores podem resetar senhas.");
+
+            Usuario u = new Usuario().buscarPorId(conn, id);
+            if (u == null)
+                return falha(response, ResponseObject.CODE_NOT_FOUND, "Usuário não encontrado.");
+
+            String senhaPadrao = SENHA_PADRAO.get(u.getNivel());
+            if (senhaPadrao == null)
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nível de acesso inválido.");
+
+            u.resetarSenha(conn, Criptografia.hashSenha(senhaPadrao));
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.addMessage("Senha resetada para o padrão do perfil com sucesso.");
         } catch (Exception e) {
             erroInterno(response);
         }

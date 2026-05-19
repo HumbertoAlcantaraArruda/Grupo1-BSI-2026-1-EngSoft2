@@ -155,6 +155,10 @@ public class Usuario {
         dao.alterarSenha(conn, this.idUsuario, novaSenhaHash);
     }
 
+    public void resetarSenha(Connection conn, String senhaHash) throws Exception {
+        dao.resetarSenha(conn, this.idUsuario, senhaHash);
+    }
+
     public String toJson() {
         return "{" +
             "\"idUsuario\":"   + idUsuario + "," +

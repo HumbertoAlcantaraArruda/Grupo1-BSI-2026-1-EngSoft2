@@ -77,6 +77,14 @@
             <span id="senha-error" class="field-error" role="alert"></span>
           </div>
 
+          <!-- Esqueci minha senha -->
+          <div class="text-end mb-3" style="margin-top: -0.75rem;">
+            <a href="#" class="text-muted small text-decoration-none"
+               data-bs-toggle="modal" data-bs-target="#modal-esqueci-senha">
+              <i class="bi bi-question-circle me-1"></i>Esqueci minha senha
+            </a>
+          </div>
+
           <!-- Botão de login -->
           <button type="submit" id="btn-login" class="btn-login">
             <i class="bi bi-box-arrow-in-right"></i>
@@ -88,6 +96,32 @@
 
     </div>
   </main>
+
+  <!-- Modal: Esqueci minha senha -->
+  <div class="modal fade" id="modal-esqueci-senha" tabindex="-1"
+       aria-labelledby="modal-esqueci-titulo" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modal-esqueci-titulo">
+            <i class="bi bi-key me-2"></i>Recuperação de Acesso
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">Para recuperar o seu acesso, por favor, entre em contato com o
+            <strong>Administrador do sistema</strong> ou dirija-se à
+            <strong>Secretaria da Paróquia</strong> para solicitar o reset da sua senha.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+            <i class="bi bi-check-circle me-1"></i>Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="../assets/libs/jquery/jquery.min.js"></script>
   <script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>

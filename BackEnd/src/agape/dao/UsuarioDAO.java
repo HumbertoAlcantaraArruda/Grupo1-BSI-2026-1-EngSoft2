@@ -151,6 +151,15 @@ public class UsuarioDAO {
         }
     }
 
+    public void resetarSenha(Connection conn, int id, String senhaHash) throws Exception {
+        String sql = "UPDATE Usuario SET senha = ?, primeiroAcesso = 1 WHERE idUsuario = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, senhaHash);
+            stmt.setInt(2, id);
+            stmt.executeUpdate();
+        }
+    }
+
     public int contarAdmAtivos(Connection conn) throws Exception {
         String sql = "SELECT COUNT(*) FROM Usuario WHERE nivel = 'ADM' AND status = 1";
         try (PreparedStatement stmt = conn.prepareStatement(sql);

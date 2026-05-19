@@ -72,6 +72,11 @@ window.AGAPE.Controllers.UsuarioController = (function () {
         return await this._service.excluir(id);
     };
 
+    UsuarioController.prototype.resetarSenha = async function (id) {
+        if (!id) return { status: 'error', erro: 'ID do usuário não informado.' };
+        return await this._service.resetarSenha(id);
+    };
+
     return {
         getInstance: function () {
             if (!instancia) instancia = new UsuarioController();

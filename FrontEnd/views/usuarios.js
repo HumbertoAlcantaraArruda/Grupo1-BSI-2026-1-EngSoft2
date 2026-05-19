@@ -34,16 +34,19 @@
     var btnSalvar            = document.getElementById('btn-salvar');
     var btnConfirmarStatus   = document.getElementById('btn-confirmar-status');
     var btnConfirmarExcluir  = document.getElementById('btn-confirmar-excluir');
+    var btnConfirmarReset    = document.getElementById('btn-confirmar-reset');
 
     var modalObj        = new bootstrap.Modal(modalEl);
     var modalStatusObj  = new bootstrap.Modal(document.getElementById('modal-status'));
     var modalExcluirObj = new bootstrap.Modal(document.getElementById('modal-excluir'));
+    var modalResetObj   = new bootstrap.Modal(document.getElementById('modal-reset-senha'));
 
     var idUsuarioLogado = usuarioLogado ? Number(usuarioLogado.idUsuario) : null;
 
     var idParaStatus  = null;
     var acaoStatus    = null; // 'ativar' | 'desativar'
     var idParaExcluir = null;
+    var idParaReset   = null;
 
     var _NIVEIS = { ADM: 'Administrador', COLAB: 'Colaborador', PAROQ: 'Paroquiano' };
 
@@ -123,6 +126,10 @@
                 'data-nivel="' + _escapar(u.nivel) + '" ' +
                 'title="Editar"><i class="bi bi-pencil"></i></button>' +
                 btnToggle +
+                '<button class="btn-acao btn-reset-senha me-1" ' +
+                'data-id="'   + u.idUsuario      + '" ' +
+                'data-nome="' + _escapar(u.nome) + '" ' +
+                'title="Resetar Senha"><i class="bi bi-key"></i></button>' +
                 '<button class="btn-acao btn-excluir" ' +
                 'data-id="' + u.idUsuario + '" data-nome="' + _escapar(u.nome) + '" ' +
                 'title="Excluir"><i class="bi bi-trash"></i></button>' +
@@ -191,6 +198,13 @@
                 idParaExcluir = this.dataset.id;
                 document.getElementById('excluir-nome').textContent = this.dataset.nome;
                 modalExcluirObj.show();
+            });
+        });
+        document.querySelectorAll('.btn-reset-senha').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                idParaReset = this.dataset.id;
+                document.getElementById('reset-nome').textContent = this.dataset.nome;
+                modalResetObj.show();
             });
         });
     }
@@ -302,6 +316,18 @@
             await _carregarLista();
         } else {
             validador.mostrarAlerta(resultado.erro || 'Erro ao excluir usuário.', 'erro');
+        }
+    });
+
+    btnConfirmarReset.addEventListener('click', async function () {
+        if (!idParaReset) return;
+        var resultado = await ctrl.resetarSenha(idParaReset);
+        modalResetObj.hide();
+        idParaReset = null;
+        if (resultado.status === 'ok') {
+            validador.mostrarAlerta('Senha resetada para o padrão do perfil com sucesso!', 'sucesso');
+        } else {
+            validador.mostrarAlerta(resultado.erro || 'Erro ao resetar senha.', 'erro');
         }
     });
 
