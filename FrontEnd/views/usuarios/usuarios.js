@@ -60,6 +60,7 @@
     function _bindCpfValidacao() {
         inputCpf.addEventListener('blur', function () {
             var digits = mascaras.apenasDigitos(inputCpf.value);
+
             if (digits.length === 0) {
                 inputCpf.classList.remove('is-invalid', 'is-valid');
                 return;

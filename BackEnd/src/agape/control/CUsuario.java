@@ -32,9 +32,9 @@ public class CUsuario implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path   = exchange.getRequestURI().getPath();
-        String query  = exchange.getRequestURI().getQuery();
+        String method = exchange.getRequestMethod(); // Exp: "POST"
+        String path   = exchange.getRequestURI().getPath(); // Exp: "/login"
+        String query  = exchange.getRequestURI().getQuery(); // Exp: null - Post nao usa query
 
         if (method.equalsIgnoreCase("OPTIONS")) {
             enviarResposta(exchange, new ResponseObject());
@@ -42,8 +42,8 @@ public class CUsuario implements HttpHandler {
         }
 
         try {
-            Connection conn = ConexaoBD.getInstance().getConexao();
-            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            Connection conn = ConexaoBD.getInstance().getConexao(); // Obtém a conexão MYSQL
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8); // Corpo da requisição
 
             // Nível do solicitante: preenchido pelo AuthFilter (null em /login, que é pública).
             String requesterNivel = (String) exchange.getAttribute("usuarioNivel");

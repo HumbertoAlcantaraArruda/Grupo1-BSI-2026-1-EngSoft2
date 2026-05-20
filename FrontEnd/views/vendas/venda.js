@@ -229,6 +229,8 @@
 
         var resultado = await ctrl.buscarParoquiano(cpf);
 
+        console.log("O resultado foi: ",resultado);
+
         if (resultado.status === 'ok') {
             var p = resultado.dados;
             validador.destacarCampo(pdvCpf, true);
