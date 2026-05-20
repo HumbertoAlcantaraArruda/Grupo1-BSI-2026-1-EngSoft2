@@ -1,24 +1,13 @@
 package agape.model;
 
 import java.sql.Connection;
-import java.time.LocalDateTime;
 
 import agape.dao.ParoquianoDAO;
 
 public class Paroquiano extends Usuario {
     private final ParoquianoDAO dao = new ParoquianoDAO();
 
-    private LocalDateTime dataInscricao;
     private float saldoCredito;
-
-    // GETTERS E SETTERS
-    public LocalDateTime getDataInscricao() {
-        return dataInscricao;
-    }
-
-    public void setDataInscricao(LocalDateTime dataInscricao) {
-        this.dataInscricao = dataInscricao;
-    }
 
     public float getSaldoCredito() {
         return saldoCredito;
@@ -49,10 +38,7 @@ public class Paroquiano extends Usuario {
             "\"cpf\":\""        + esc(getCpf())    + "\"," +
             "\"email\":\""      + esc(getEmail())  + "\"," +
             "\"status\":"       + getStatus()      + "," +
-            "\"saldoCredito\":" + saldoCredito     + "," +
-            "\"dataInscricao\":" + (dataInscricao != null
-                ? "\"" + dataInscricao + "\""
-                : "null") +
+            "\"saldoCredito\":" + saldoCredito     +
         "}";
     }
 

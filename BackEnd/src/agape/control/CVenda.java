@@ -11,11 +11,21 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import agape.dao.*;
+import agape.facade.VendaFacade;
 import agape.model.*;
 import agape.util.ResponseObject;
 
+/**
+ * CVenda — Controller da rota /venda e /paroquiano.
+ *
+ * SRP (SOLID)      — trata apenas o protocolo HTTP; delega lógica ao VendaFacade.
+ * GOF Singleton    — instância única via getInstancia().
+ * GOF Facade       — toda a orquestração transacional fica em VendaFacade.finalizarVenda().
+ * Controller (GRASP) — recebe a requisição, valida entrada e aciona os casos de uso.
+ */
 public class CVenda implements HttpHandler {
 
+    // Singleton (GOF)
     private static CVenda instancia;
 
     private CVenda() {}
@@ -39,9 +49,9 @@ public class CVenda implements HttpHandler {
         }
 
         try {
-            Connection conn          = ConexaoBD.getInstance().getConexao();
-            String body              = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-            String requesterEmail    = (String) exchange.getAttribute("usuarioEmail");
+            Connection conn        = ConexaoBD.getInstance().getConexao();
+            String body            = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            String requesterEmail  = (String) exchange.getAttribute("usuarioEmail");
 
             ResponseObject response = switch (method.toUpperCase()) {
                 case "GET"  -> handleGet(conn, path, query);
@@ -61,12 +71,8 @@ public class CVenda implements HttpHandler {
     }
 
     private ResponseObject handleGet(Connection conn, String path, String query) {
-        if (path.equals("/paroquiano")) {
-            return buscarParoquiano(conn, param(query, "cpf"));
-        }
-        if (path.equals("/venda")) {
-            return listar(conn, param(query, "dataInicio"), param(query, "dataFim"));
-        }
+        if (path.equals("/paroquiano")) return buscarParoquiano(conn, param(query, "cpf"));
+        if (path.equals("/venda"))      return listar(conn, param(query, "dataInicio"), param(query, "dataFim"));
         return naoEncontrado();
     }
 
@@ -86,17 +92,15 @@ public class CVenda implements HttpHandler {
     }
 
     private ResponseObject handlePost(Connection conn, String path, String body, String requesterEmail) {
-        if (path.equals("/venda")) {
-            return efetuarVenda(conn, body, requesterEmail);
-        }
+        if (path.equals("/venda")) return efetuarVenda(conn, body, requesterEmail);
         return naoEncontrado();
     }
 
-    // ── Casos de uso ─────────────────────────────────────────────────────────
+    // ── Casos de uso ──────────────────────────────────────────────────────────
 
     /**
-     * Passo 2.1.1 — Busca paroquiano por CPF (apenas dígitos).
-     * Fluxo alternativo: retorna 404 se não encontrado ou 403 se inativo.
+     * Passo 2-3 — Busca paroquiano por CPF.
+     * Controller (GRASP) — valida entrada; Information Expert (Paroquiano) resolve a busca.
      */
     public ResponseObject buscarParoquiano(Connection conn, String cpf) {
         ResponseObject response = new ResponseObject();
@@ -119,53 +123,67 @@ public class CVenda implements HttpHandler {
             response.setResult(p);
 
         } catch (Exception e) {
-            erroInterno(response);
+            // Propaga a mensagem real para o frontend conseguir exibir a causa raiz
+            response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_ERROR);
+            response.addMessage("Erro ao buscar paroquiano: " +
+                    (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
         }
         return response;
     }
 
     /**
-     * Passos 19-21.1 — Registra a venda com transação:
-     * Venda → ItemVenda[] → decrementar estoque → atualizar crédito → Caixa → MovimentacaoCaixa[].
+     * Passo 13 — Registra a venda delegando ao VendaFacade (GOF Facade).
+     *
+     * SRP (SOLID)  — CVenda gerencia transação e parsing HTTP; VendaFacade orquestra negócio.
+     * OCP (SOLID)  — ao adicionar novos passos de finalização, modifica-se só o Facade.
+     *
+     * Parâmetros do body (form-urlencoded):
+     *   idParoquiano, totBruto, credUtilizado, valorFinal,
+     *   idsProdutos   (csv),  quantidades    (csv), valoresUnitarios (csv),
+     *   idFormasPag   (csv),  valoresPag     (csv), numeroParcelas   (csv)
      */
     public ResponseObject efetuarVenda(Connection conn, String body, String requesterEmail) {
         ResponseObject response = new ResponseObject();
         try {
             conn.setAutoCommit(false);
 
-            // ── 1. Colaborador ────────────────────────────────────────────────
+            // ── Colaborador ───────────────────────────────────────────────────
+            // Information Expert — UsuarioDAO/model é expert em buscar por email
             Usuario colab = new Usuario().buscarPorEmail(conn, requesterEmail);
             if (colab == null) {
                 conn.rollback();
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Colaborador não encontrado.");
             }
 
-            // ── 2. Parâmetros da venda ────────────────────────────────────────
+            // ── Parsing dos parâmetros da venda ───────────────────────────────
             int   idParoquiano  = parseSafeInt(param(body, "idParoquiano"));
             float totBruto      = parseSafeFloat(param(body, "totBruto"));
             float credUtilizado = parseSafeFloat(param(body, "credUtilizado"));
             float valorFinal    = parseSafeFloat(param(body, "valorFinal"));
 
-            String[] idsProdStr  = param(body, "idsProdutos").split(",");
-            String[] qtdsStr     = param(body, "quantidades").split(",");
-            String[] vlrsUniStr  = param(body, "valoresUnitarios").split(",");
-            String[] idFormasStr = param(body, "idFormasPag").split(",");
-            String[] vlrsPagStr  = param(body, "valoresPag").split(",");
+            String[] idsProdStr    = param(body, "idsProdutos").split(",");
+            String[] qtdsStr       = param(body, "quantidades").split(",");
+            String[] vlrsUniStr    = param(body, "valoresUnitarios").split(",");
+            String[] idFormasStr   = param(body, "idFormasPag").split(",");
+            String[] vlrsPagStr    = param(body, "valoresPag").split(",");
+            String[] numParcelStr  = param(body, "numeroParcelas").split(",");
 
             if (idsProdStr.length == 0 || idsProdStr[0].isBlank()) {
                 conn.rollback();
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nenhum produto informado.");
             }
 
-            // ── 3. Paroquiano ─────────────────────────────────────────────────
+            // ── Paroquiano ────────────────────────────────────────────────────
             Paroquiano par = new Paroquiano().buscarPorId(conn, idParoquiano);
             if (par == null) {
                 conn.rollback();
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Paroquiano não encontrado.");
             }
 
-            // ── 4. Valida estoque e monta itens ───────────────────────────────
-            int     n         = idsProdStr.length;
+            // ── Valida estoque e monta arrays ─────────────────────────────────
+            // RN07 — Estoque não pode ficar negativo (validado aqui antes de delegar)
+            int     n          = idsProdStr.length;
             Produto[] produtos = new Produto[n];
             int[]   quantidades = new int[n];
             float[] vlrsUni    = new float[n];
@@ -175,13 +193,13 @@ public class CVenda implements HttpHandler {
                 int   qtd    = parseSafeInt(qtdsStr[i].trim());
                 float vlrUni = parseSafeFloat(vlrsUniStr[i].trim());
 
+                // Information Expert — Produto (via DAO) conhece seu próprio estoque
                 Produto p = new Produto().buscarPorId(conn, idProd);
                 if (p == null) {
                     conn.rollback();
                     return falha(response, ResponseObject.CODE_NOT_FOUND,
                             "Produto ID " + idProd + " não encontrado.");
                 }
-                // Passo 4 — verifEstoque
                 if (p.getQtdeAtual() < qtd) {
                     conn.rollback();
                     return falha(response, ResponseObject.CODE_BAD_REQUEST,
@@ -193,68 +211,46 @@ public class CVenda implements HttpHandler {
                 vlrsUni[i]     = vlrUni;
             }
 
-            // ── 5-6. Define idFormaPag principal (primeiro da lista) ───────────
-            int idFormaPagPrincipal = idFormasStr.length > 0
-                    ? parseSafeInt(idFormasStr[0].trim()) : 0;
+            // ── Arrays de pagamento ───────────────────────────────────────────
+            int   np = idFormasStr.length;
+            int[] idFormas    = new int[np];
+            float[] vlrsPag   = new float[np];
+            int[] numParcelas = new int[np];
 
-            // ── 19. Insere Venda ──────────────────────────────────────────────
+            for (int i = 0; i < np; i++) {
+                idFormas[i]    = parseSafeInt(idFormasStr[i].trim());
+                vlrsPag[i]     = parseSafeFloat(vlrsPagStr[i].trim());
+                // numParcelas: 1 = à vista; >1 = parcelado (gera ContasReceber)
+                numParcelas[i] = (numParcelStr.length > i)
+                        ? Math.max(1, parseSafeInt(numParcelStr[i].trim()))
+                        : 1;
+            }
+
+            // ── Monta objeto Venda ────────────────────────────────────────────
             Venda venda = new Venda();
             venda.setIdColaborador(colab.getIdUsuario());
             venda.setIdUsuario(idParoquiano);
-            venda.setIdFormaPag(idFormaPagPrincipal);
+            venda.setIdFormaPag(np > 0 ? idFormas[0] : 0);
             venda.setDataHora(LocalDateTime.now());
             venda.setTotBruto(totBruto);
             venda.setCredUtilizado(credUtilizado);
             venda.setValorFinal(valorFinal);
-            int idVenda = venda.inserir(conn);
-            venda.setIdVenda(idVenda);
 
-            // ── Insere ItemVenda + passo 20 (atualizar estoque) ──────────────
-            ItemVendaDAO itemDAO = new ItemVendaDAO();
-            ProdutoDAO   prodDAO = new ProdutoDAO();
-
-            for (int i = 0; i < n; i++) {
-                ItemVenda item = new ItemVenda();
-                item.setIdVenda(idVenda);
-                item.setIdProd(produtos[i].getIdProd());
-                item.setQuantidade(quantidades[i]);
-                item.setValorUnitario(vlrsUni[i]);
-                itemDAO.inserir(conn, item);
-
-                prodDAO.decrementarEstoque(conn, produtos[i].getIdProd(), quantidades[i]);
-            }
-
-            // ── Atualiza crédito do paroquiano ────────────────────────────────
-            if (credUtilizado > 0) {
-                par.atualizarSaldoCredito(conn, par.getSaldoCredito() - credUtilizado);
-            }
-
-            // ── Passo 21 — Caixa e MovimentacaoCaixa ─────────────────────────
-            CaixaDAO caixaDAO = new CaixaDAO();
-            Caixa caixa = caixaDAO.buscarAberto(conn);
-
-            if (caixa != null) {
-                caixaDAO.adicionarAoValorFinal(conn, caixa.getIdCaixa(), valorFinal);
-
-                MovimentacaoCaixaDAO movDAO = new MovimentacaoCaixaDAO();
-                for (int i = 0; i < idFormasStr.length; i++) {
-                    int   idForma = parseSafeInt(idFormasStr[i].trim());
-                    float vlrPag  = parseSafeFloat(vlrsPagStr[i].trim());
-
-                    MovimentacaoCaixa mov = new MovimentacaoCaixa();
-                    mov.setIdCaixa(caixa.getIdCaixa());
-                    mov.setIdUsuario(colab.getIdUsuario());
-                    mov.setDataHora(LocalDateTime.now());
-                    mov.setValor(vlrPag);
-                    mov.setMotivo("Venda #" + idVenda + " | FormaPag: " + idForma);
-                    movDAO.inserir(conn, mov);
-                }
-            }
+            // ── Delegar ao Facade (GOF) ───────────────────────────────────────
+            // GOF Facade — VendaFacade.finalizarVenda() orquestra toda a persistência
+            VendaFacade facade = VendaFacade.getInstance();
+            int idVenda = facade.finalizarVenda(
+                    conn, venda, produtos, quantidades, vlrsUni,
+                    par, credUtilizado,
+                    idFormas, vlrsPag, numParcelas,
+                    colab
+            );
 
             conn.commit();
+
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            response.addMessage("Venda realizada com sucesso!");
+            response.addMessage("Venda #" + idVenda + " realizada com sucesso!");
             response.setResult(venda);
 
         } catch (Exception e) {

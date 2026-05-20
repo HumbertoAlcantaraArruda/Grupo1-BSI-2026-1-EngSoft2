@@ -97,6 +97,18 @@ window.AGAPE.Utils.HttpClient = (function () {
         return false;
     };
 
+    // Extrai a mensagem de erro do corpo JSON do backend quando disponível.
+    // O backend sempre retorna { messages: [...] } mesmo para respostas de erro.
+    HttpClient.prototype._erroDoBackend = async function (resposta) {
+        try {
+            var corpo = await this._parsearResposta(resposta);
+            if (corpo && Array.isArray(corpo.messages) && corpo.messages.length > 0) {
+                return corpo.messages[0];
+            }
+        } catch (_) { /* resposta não era JSON */ }
+        return this._mensagemAmigavel(resposta.status);
+    };
+
     HttpClient.prototype.get = async function (endpoint, params) {
         try {
             var url = this._montarUrl(endpoint, params);
@@ -106,7 +118,7 @@ window.AGAPE.Utils.HttpClient = (function () {
                 return { status: 'error', erro: this._mensagemAmigavel(401) };
             }
             if (!resposta.ok) {
-                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
+                return { status: 'error', erro: await this._erroDoBackend(resposta) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -137,7 +149,7 @@ window.AGAPE.Utils.HttpClient = (function () {
                 return { status: 'error', erro: this._mensagemAmigavel(401) };
             }
             if (!resposta.ok) {
-                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
+                return { status: 'error', erro: await this._erroDoBackend(resposta) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -167,7 +179,7 @@ window.AGAPE.Utils.HttpClient = (function () {
                 return { status: 'error', erro: this._mensagemAmigavel(401) };
             }
             if (!resposta.ok) {
-                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
+                return { status: 'error', erro: await this._erroDoBackend(resposta) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -191,7 +203,7 @@ window.AGAPE.Utils.HttpClient = (function () {
                 return { status: 'error', erro: this._mensagemAmigavel(401) };
             }
             if (!resposta.ok) {
-                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
+                return { status: 'error', erro: await this._erroDoBackend(resposta) };
             }
 
             var dados = await this._parsearResposta(resposta);
@@ -214,7 +226,7 @@ window.AGAPE.Utils.HttpClient = (function () {
                 return { status: 'error', erro: this._mensagemAmigavel(401) };
             }
             if (!resposta.ok) {
-                return { status: 'error', erro: this._mensagemAmigavel(resposta.status) };
+                return { status: 'error', erro: await this._erroDoBackend(resposta) };
             }
 
             var dados = await this._parsearResposta(resposta);

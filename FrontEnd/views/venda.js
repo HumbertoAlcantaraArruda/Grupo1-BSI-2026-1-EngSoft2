@@ -1,4 +1,16 @@
-/* venda.js — Listagem de vendas + PDV (modal) */
+/**
+ * venda.js — View binding do PDV (Ponto de Venda).
+ *
+ * Responsabilidades (SRP):
+ *   - Captura eventos do DOM e delega ao VendaController.
+ *   - Renderiza o estado retornado pelo Controller.
+ *   - Registra o Guardião de Navegação enquanto há itens na venda.
+ *
+ * Padrões:
+ *   MVC View       — sem lógica de negócio; apenas apresentação e eventos.
+ *   Controller (GRASP) — toda decisão fica em VendaController.
+ *   Low Coupling (GRASP) — comunica com Sidebar via flag global (window.AGAPE_VENDA_GUARDIAO).
+ */
 
 (function () {
 
@@ -17,19 +29,25 @@
     var btnLimpar     = document.getElementById('btn-limpar');
     var btnNovaVenda  = document.getElementById('btn-nova-venda');
 
-    // ── Referências: PDV ──────────────────────────────────────────────────────
+    // ── Referências: PDV — paroquiano ─────────────────────────────────────────
 
     var pdvCpf          = document.getElementById('pdv-cpf');
     var pdvBlocoPar     = document.getElementById('pdv-bloco-par');
     var pdvParNome      = document.getElementById('pdv-par-nome');
     var pdvParSaldo     = document.getElementById('pdv-par-saldo');
 
-    var pdvBuscaProd    = document.getElementById('pdv-busca-prod');
-    var pdvSelectProd   = document.getElementById('pdv-select-prod');
-    var pdvQtd          = document.getElementById('pdv-qtd');
-    var pdvBtnAddItem   = document.getElementById('pdv-btn-add-item');
-    var pdvTbodyItens   = document.getElementById('pdv-tbody-itens');
-    var pdvLinhaVaziaIt = document.getElementById('pdv-linha-vazia-itens');
+    // ── Referências: PDV — produto (dropdown estilo Select2) ──────────────────
+
+    var pdvBuscaProd      = document.getElementById('pdv-busca-prod');
+    var pdvDropdownProd   = document.getElementById('pdv-dropdown-prod');
+    var pdvQtd            = document.getElementById('pdv-qtd');
+    var pdvBtnAddItem     = document.getElementById('pdv-btn-add-item');
+    var pdvTbodyItens     = document.getElementById('pdv-tbody-itens');
+    var pdvLinhaVaziaIt   = document.getElementById('pdv-linha-vazia-itens');
+    var pdvProdSel        = document.getElementById('pdv-prod-selecionado');
+    var pdvProdSelTexto   = document.getElementById('pdv-prod-selecionado-texto');
+
+    // ── Referências: PDV — resumo / crédito ──────────────────────────────────
 
     var pdvRBruto       = document.getElementById('pdv-r-bruto');
     var pdvRSaldo       = document.getElementById('pdv-r-saldo');
@@ -38,28 +56,48 @@
     var pdvCredFeedback = document.getElementById('pdv-cred-feedback');
     var pdvTotalFinal   = document.getElementById('pdv-total-final');
 
-    var pdvSelectForma  = document.getElementById('pdv-select-forma');
-    var pdvInputValPag  = document.getElementById('pdv-input-valor-pag');
-    var pdvBtnAddPag    = document.getElementById('pdv-btn-add-pag');
-    var pdvPagFeedback  = document.getElementById('pdv-pag-feedback');
-    var pdvTbodyPag     = document.getElementById('pdv-tbody-pag');
-    var pdvLinhaVaziaPag= document.getElementById('pdv-linha-vazia-pag');
-    var pdvRestante     = document.getElementById('pdv-restante');
-    var pdvTotalPago    = document.getElementById('pdv-total-pago');
+    // ── Referências: PDV — pagamento ─────────────────────────────────────────
 
-    var pdvBtnFinalizar = document.getElementById('pdv-btn-finalizar');
-    var pdvBtnCancelar  = document.getElementById('pdv-btn-cancelar');
-    var pdvBtnFechar    = document.getElementById('pdv-btn-fechar');
+    var pdvSelectForma   = document.getElementById('pdv-select-forma');
+    var pdvInputValPag   = document.getElementById('pdv-input-valor-pag');
+    var pdvInputParcelas = document.getElementById('pdv-input-parcelas');
+    var pdvBtnAddPag     = document.getElementById('pdv-btn-add-pag');
+    var pdvPagFeedback   = document.getElementById('pdv-pag-feedback');
+    var pdvTbodyPag      = document.getElementById('pdv-tbody-pag');
+    var pdvLinhaVaziaPag = document.getElementById('pdv-linha-vazia-pag');
+    var pdvRestante      = document.getElementById('pdv-restante');
+    var pdvTotalPago     = document.getElementById('pdv-total-pago');
 
-    var modalPdvEl      = document.getElementById('modal-pdv');
-    var modalPdvObj     = new bootstrap.Modal(modalPdvEl);
-    var modalCompObj    = new bootstrap.Modal(document.getElementById('modal-comprovante'));
-    var compCorpo       = document.getElementById('comp-corpo');
+    // ── Referências: botões ───────────────────────────────────────────────────
+
+    var pdvBtnFinalizar  = document.getElementById('pdv-btn-finalizar');
+    var pdvBtnCancelar   = document.getElementById('pdv-btn-cancelar');
+    var pdvBtnFechar     = document.getElementById('pdv-btn-fechar');
+
+    var modalPdvEl   = document.getElementById('modal-pdv');
+    var modalPdvObj  = new bootstrap.Modal(modalPdvEl);
+    var modalCompObj = new bootstrap.Modal(document.getElementById('modal-comprovante'));
+    var compCorpo    = document.getElementById('comp-corpo');
 
     var _produtoSelecionado = null;
     var _buscaTimer         = null;
 
-    // ── Inicialização ─────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    // GUARDIÃO DE NAVEGAÇÃO
+    // Registra função global consultada pelo Sidebar antes de navegar.
+    // Low Coupling (GRASP) — Sidebar não importa venda.js; usa contrato global.
+    // ══════════════════════════════════════════════════════════════════════════
+
+    function _atualizarGuardiao() {
+        // Sidebar.js verifica window.AGAPE_VENDA_GUARDIAO antes de cada navegação
+        window.AGAPE_VENDA_GUARDIAO = ctrl.temItens()
+            ? function () { return true; }
+            : null;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // INICIALIZAÇÃO
+    // ══════════════════════════════════════════════════════════════════════════
 
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
@@ -69,7 +107,7 @@
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // LISTAGEM
+    // LISTAGEM DE VENDAS
     // ══════════════════════════════════════════════════════════════════════════
 
     async function _carregarLista() {
@@ -95,7 +133,6 @@
         }
 
         var lista = Array.isArray(resultado.dados) ? resultado.dados : [];
-
         if (lista.length === 0) {
             tabelaCorpo.innerHTML =
                 '<tr><td colspan="8" class="tabela-vazia">' +
@@ -110,7 +147,7 @@
                 '<td class="text-start">' + _esc(v.nomeParoquiano  || '—') + '</td>' +
                 '<td class="text-start">' + _esc(v.nomeColaborador || '—') + '</td>' +
                 '<td>' + _esc(v.descFormaPag || '—') + '</td>' +
-                '<td>R$ ' + _moeda(v.totBruto)      + '</td>' +
+                '<td>R$ ' + _moeda(v.totBruto) + '</td>' +
                 '<td>' + (v.credUtilizado > 0
                     ? '<span class="text-success">- R$ ' + _moeda(v.credUtilizado) + '</span>'
                     : '—') + '</td>' +
@@ -120,7 +157,6 @@
     }
 
     btnFiltrar.addEventListener('click', _carregarLista);
-
     btnLimpar.addEventListener('click', async function () {
         filtroDataIni.value = '';
         filtroDataFim.value = '';
@@ -141,38 +177,44 @@
         ctrl.resetar();
         _produtoSelecionado = null;
 
-        pdvCpf.value  = '';
+        pdvCpf.value = '';
         pdvCpf.classList.remove('is-invalid', 'is-valid');
         pdvBlocoPar.style.display = 'none';
 
-        pdvBuscaProd.value    = '';
-        pdvSelectProd.innerHTML = '<option value="">— selecione —</option>';
-        pdvQtd.value          = '1';
+        pdvBuscaProd.value = '';
+        pdvDropdownProd.classList.remove('aberto');
+        pdvDropdownProd.innerHTML = '<div class="pdv-dropdown-item text-muted"><em>Aguardando busca...</em></div>';
+        pdvQtd.value = '1';
+        pdvProdSel.style.display = 'none';
 
-        pdvInputCred.value    = '0';
+        pdvInputCred.value = '0';
         pdvInputCred.classList.remove('is-invalid', 'is-valid');
         _feedback(pdvCredFeedback, '');
 
-        pdvInputValPag.value  = '';
-        pdvSelectForma.value  = '';
+        pdvSelectForma.value = '';
+        pdvInputValPag.value = '';
+        pdvInputParcelas.value = '1';
         pdvInputValPag.classList.remove('is-invalid', 'is-valid');
+        pdvSelectForma.classList.remove('is-invalid');
         _feedback(pdvPagFeedback, '');
 
         _renderizarItensPdv();
         _renderizarPagamentosPdv();
         _atualizarResumoPdv();
+        _atualizarGuardiao(); // Limpa o guardião ao resetar
     }
 
-    // Cancelar / fechar zera estado
+    // Cancelar / fechar: reseta e remove guardião
     [pdvBtnCancelar, pdvBtnFechar].forEach(function (btn) {
         btn.addEventListener('click', function () {
             ctrl.resetar();
+            _atualizarGuardiao();
             modalPdvObj.hide();
         });
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // PDV — PASSO 2: CPF / PAROQUIANO
+    // PDV — PASSO 2-3: CPF / PAROQUIANO
     // ══════════════════════════════════════════════════════════════════════════
 
     pdvCpf.addEventListener('blur', async function () {
@@ -180,7 +222,6 @@
         pdvCpf.classList.remove('is-invalid', 'is-valid');
 
         if (cpf.length === 0) return;
-
         if (cpf.length !== 11) {
             validador.destacarCampo(pdvCpf, false, 'CPF deve ter 11 dígitos.');
             return;
@@ -194,7 +235,6 @@
             pdvParNome.textContent  = p.nome;
             pdvParSaldo.textContent = 'R$ ' + _moeda(p.saldoCredito);
             pdvBlocoPar.style.display = '';
-            // Garante que o estado interno do controller tem o paroquiano
             ctrl.getEstado().paroquiano = p;
             _atualizarResumoPdv();
         } else {
@@ -203,45 +243,85 @@
             pdvBlocoPar.style.display = 'none';
             ctrl.resetar();
             _atualizarResumoPdv();
+            _atualizarGuardiao();
         }
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // PDV — PASSO 3-8: PRODUTO / ITENS
+    // PDV — PASSOS 4-7: BUSCA DE PRODUTO (dropdown estilo Select2)
+    // Implementa comportamento equivalente ao Select2 com debounce e dropdown
+    // dinâmico, usando apenas as libs locais do projeto (jQuery + nativo).
     // ══════════════════════════════════════════════════════════════════════════
 
     pdvBuscaProd.addEventListener('input', function () {
         clearTimeout(_buscaTimer);
         var nome = pdvBuscaProd.value.trim();
-        pdvSelectProd.innerHTML = '<option value="">— buscando... —</option>';
+
         _produtoSelecionado = null;
+        pdvProdSel.style.display = 'none';
 
         if (nome.length < 2) {
-            pdvSelectProd.innerHTML = '<option value="">— selecione —</option>';
+            pdvDropdownProd.classList.remove('aberto');
+            pdvDropdownProd.innerHTML =
+                '<div class="pdv-dropdown-item text-muted"><em>Digite ao menos 2 letras...</em></div>';
             return;
         }
 
+        pdvDropdownProd.innerHTML =
+            '<div class="pdv-dropdown-item text-muted"><em>Buscando...</em></div>';
+        pdvDropdownProd.classList.add('aberto');
+
+        // Debounce de 350ms (evita requisição a cada tecla — equivalente ao Select2)
         _buscaTimer = setTimeout(async function () {
             var res = await ctrl.buscarProdutos(nome);
-            pdvSelectProd.innerHTML = '<option value="">— selecione —</option>';
-            if (res.status !== 'ok' || !Array.isArray(res.dados)) return;
+
+            if (res.status !== 'ok' || !Array.isArray(res.dados) || res.dados.length === 0) {
+                pdvDropdownProd.innerHTML =
+                    '<div class="pdv-dropdown-item text-muted"><em>Nenhum produto encontrado.</em></div>';
+                return;
+            }
+
+            pdvDropdownProd.innerHTML = '';
             res.dados.forEach(function (p) {
-                var opt = document.createElement('option');
-                opt.value       = JSON.stringify(p);
-                opt.textContent = p.nome +
-                    ' — R$ ' + _moeda(p.valorUni) +
-                    '  (est: ' + p.qtdeAtual + ')';
-                pdvSelectProd.appendChild(opt);
+                var div = document.createElement('div');
+                div.className = 'pdv-dropdown-item';
+                div.innerHTML =
+                    '<div class="prod-nome">' + _esc(p.nome) + '</div>' +
+                    '<div class="prod-info">R$ ' + _moeda(p.valorUni) +
+                    ' &nbsp;|&nbsp; Estoque: ' + p.qtdeAtual + '</div>';
+                div.addEventListener('click', function () {
+                    _selecionarProduto(p);
+                });
+                pdvDropdownProd.appendChild(div);
             });
         }, 350);
     });
 
-    pdvSelectProd.addEventListener('change', function () {
-        _produtoSelecionado = null;
-        if (!this.value) return;
-        try { _produtoSelecionado = JSON.parse(this.value); } catch (_) {}
+    function _selecionarProduto(p) {
+        _produtoSelecionado = p;
+        pdvBuscaProd.value  = p.nome;
+        pdvDropdownProd.classList.remove('aberto');
+        pdvProdSel.style.display = '';
+        pdvProdSelTexto.textContent =
+            p.nome + ' — R$ ' + _moeda(p.valorUni) + ' (estoque: ' + p.qtdeAtual + ')';
+        pdvQtd.focus();
+    }
+
+    // Fecha dropdown ao clicar fora
+    document.addEventListener('click', function (e) {
+        if (!pdvBuscaProd.contains(e.target) && !pdvDropdownProd.contains(e.target)) {
+            pdvDropdownProd.classList.remove('aberto');
+        }
     });
 
+    pdvBuscaProd.addEventListener('focus', function () {
+        if (pdvDropdownProd.children.length > 0 &&
+            pdvDropdownProd.innerHTML.indexOf('Aguardando') === -1) {
+            pdvDropdownProd.classList.add('aberto');
+        }
+    });
+
+    // Passo 6-7: Adicionar item à venda
     pdvBtnAddItem.addEventListener('click', function () {
         if (!ctrl.getEstado().paroquiano) {
             validador.mostrarAlerta('Identifique o paroquiano antes de adicionar produtos.', 'aviso');
@@ -257,20 +337,24 @@
 
         _renderizarItensPdv();
         _atualizarResumoPdv();
+        _atualizarGuardiao(); // Ativa guardião quando o primeiro item é adicionado
 
         // Limpa para próxima busca
-        pdvBuscaProd.value      = '';
-        pdvSelectProd.innerHTML = '<option value="">— selecione —</option>';
-        pdvQtd.value            = '1';
-        _produtoSelecionado     = null;
+        pdvBuscaProd.value = '';
+        pdvProdSel.style.display = 'none';
+        pdvDropdownProd.classList.remove('aberto');
+        pdvDropdownProd.innerHTML =
+            '<div class="pdv-dropdown-item text-muted"><em>Aguardando busca...</em></div>';
+        pdvQtd.value = '1';
+        _produtoSelecionado = null;
         pdvBuscaProd.focus();
     });
 
+    // Passo 7: Renderizar tabela de itens
     function _renderizarItensPdv() {
         var itens = ctrl.getEstado().itens;
         pdvLinhaVaziaIt.style.display = itens.length === 0 ? '' : 'none';
 
-        // Remove linhas de itens (não a linha vazia)
         Array.from(pdvTbodyItens.querySelectorAll('tr.pdv-item-row')).forEach(function (tr) {
             tr.remove();
         });
@@ -295,12 +379,13 @@
                 if (item) ctrl.removerItem(item.idProd);
                 _renderizarItensPdv();
                 _atualizarResumoPdv();
+                _atualizarGuardiao(); // Recalcula guardião ao remover item
             });
         });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // PDV — PASSOS 9-14: CRÉDITO E TOTAL FINAL
+    // PDV — PASSOS 9-11: CRÉDITO
     // ══════════════════════════════════════════════════════════════════════════
 
     pdvBtnCred.addEventListener('click', function () {
@@ -319,7 +404,7 @@
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // PDV — PASSOS 17-17.1.3: PAGAMENTO
+    // PDV — PASSO 12: PAGAMENTOS (com suporte a parcelas)
     // ══════════════════════════════════════════════════════════════════════════
 
     pdvBtnAddPag.addEventListener('click', function () {
@@ -334,8 +419,9 @@
             return;
         }
 
-        var descricao = pdvSelectForma.options[pdvSelectForma.selectedIndex].textContent;
-        var res = ctrl.adicionarPagamento(idFormaPag, descricao, pdvInputValPag.value);
+        var descricao    = pdvSelectForma.options[pdvSelectForma.selectedIndex].textContent;
+        var numeroParcelas = parseInt(pdvInputParcelas.value, 10) || 1;
+        var res = ctrl.adicionarPagamento(idFormaPag, descricao, pdvInputValPag.value, numeroParcelas);
 
         if (!res.ok) {
             pdvInputValPag.classList.add('is-invalid');
@@ -347,12 +433,13 @@
         _renderizarPagamentosPdv();
         _atualizarResumoPdv();
 
-        // Pré-preenche com o restante para facilitar o próximo lançamento
-        pdvSelectForma.value  = '';
-        pdvInputValPag.value  = res.restante > 0 ? res.restante.toFixed(2) : '';
+        pdvSelectForma.value     = '';
+        pdvInputParcelas.value   = '1';
+        pdvInputValPag.value     = res.restante > 0 ? res.restante.toFixed(2) : '';
         pdvInputValPag.classList.remove('is-valid');
     });
 
+    // Renderizar tabela de pagamentos
     function _renderizarPagamentosPdv() {
         var pags = ctrl.getEstado().pagamentos;
         pdvLinhaVaziaPag.style.display = pags.length === 0 ? '' : 'none';
@@ -362,10 +449,14 @@
         });
 
         pags.forEach(function (p, idx) {
+            var parcelaLabel = p.numeroParcelas > 1
+                ? '<span class="badge-parcela ms-1">' + p.numeroParcelas + 'x</span>'
+                : '<span class="badge-parcela ms-1 bg-secondary">à vista</span>';
+
             var tr = document.createElement('tr');
             tr.className = 'pdv-pag-row text-center';
             tr.innerHTML =
-                '<td class="text-start small">' + _esc(p.descricao) + '</td>' +
+                '<td class="text-start small">' + _esc(p.descricao) + parcelaLabel + '</td>' +
                 '<td>R$ ' + _moeda(p.valor) + '</td>' +
                 '<td>' +
                 '<button class="btn-acao btn-excluir" data-idx="' + idx + '" title="Remover">' +
@@ -383,7 +474,7 @@
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // PDV — PASSO 19: FINALIZAR VENDA
+    // PDV — PASSO 13: FINALIZAR VENDA
     // ══════════════════════════════════════════════════════════════════════════
 
     pdvBtnFinalizar.addEventListener('click', async function () {
@@ -396,17 +487,17 @@
         pdvBtnFinalizar.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Finalizar Venda';
 
         if (resultado.status === 'ok') {
-            // Passo 22 — emitirComprovante
             _exibirComprovante(resultado.dados);
+            _atualizarGuardiao(); // Remove guardião após venda concluída
             modalPdvObj.hide();
-            await _carregarLista();   // atualiza a listagem
+            await _carregarLista();
         } else {
             validador.mostrarAlerta(resultado.erro || 'Erro ao finalizar a venda.', 'erro');
         }
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // PDV — PASSO 22: COMPROVANTE
+    // PDV — COMPROVANTE NÃO FISCAL
     // ══════════════════════════════════════════════════════════════════════════
 
     function _exibirComprovante(venda) {
@@ -416,25 +507,38 @@
             return '<tr>' +
                 '<td class="text-start">' + _esc(it.nome) + '</td>' +
                 '<td class="text-center">' + it.qtd + '</td>' +
-                '<td class="text-center">R$ ' + _moeda(it.valorUni) + '</td>' +
-                '<td class="text-center">R$ ' + _moeda(it.totalItem) + '</td>' +
+                '<td class="text-end">R$ ' + _moeda(it.valorUni) + '</td>' +
+                '<td class="text-end">R$ ' + _moeda(it.totalItem) + '</td>' +
                 '</tr>';
         }).join('');
 
         var pagHtml = e.pagamentos.map(function (p) {
+            var parcInfo = p.numeroParcelas > 1
+                ? ' (' + p.numeroParcelas + 'x de R$ ' +
+                  _moeda(p.valor / p.numeroParcelas) + ')'
+                : ' (à vista)';
             return '<tr>' +
-                '<td class="text-start">' + _esc(p.descricao) + '</td>' +
-                '<td class="text-center">R$ ' + _moeda(p.valor) + '</td>' +
+                '<td class="text-start">' + _esc(p.descricao) + parcInfo + '</td>' +
+                '<td class="text-end">R$ ' + _moeda(p.valor) + '</td>' +
                 '</tr>';
         }).join('');
 
+        var temParcelado = e.pagamentos.some(function (p) { return p.numeroParcelas > 1; });
+
         compCorpo.innerHTML =
+            '<div class="text-center mb-3">' +
+            '<h6 class="fw-bold">AGAPE — Gestão Paroquial</h6>' +
+            '<small class="text-muted">Comprovante Não Fiscal</small>' +
+            '</div>' +
             '<p class="mb-1"><strong>Paroquiano:</strong> ' + _esc(e.paroquiano.nome) + '</p>' +
-            '<p class="mb-3"><strong>Venda nº:</strong> ' + (venda && venda.idVenda ? venda.idVenda : '—') + '</p>' +
+            '<p class="mb-3"><strong>Venda nº:</strong> ' +
+            (venda && venda.idVenda ? venda.idVenda : '—') + '</p>' +
 
             '<table class="table table-sm mb-3"><thead><tr>' +
-            '<th class="text-start">Produto</th><th class="text-center">Qtd</th>' +
-            '<th class="text-center">Unitário</th><th class="text-center">Total</th>' +
+            '<th class="text-start">Produto</th>' +
+            '<th class="text-center">Qtd</th>' +
+            '<th class="text-end">Unit.</th>' +
+            '<th class="text-end">Total</th>' +
             '</tr></thead><tbody>' + itensHtml + '</tbody></table>' +
 
             '<div class="d-flex justify-content-between mb-1">' +
@@ -442,38 +546,73 @@
 
             (e.credUtilizado > 0
                 ? '<div class="d-flex justify-content-between mb-1 text-success">' +
-                  '<span>Crédito utilizado:</span><strong>- R$ ' + _moeda(e.credUtilizado) + '</strong></div>'
+                  '<span>Crédito utilizado:</span><strong>- R$ ' +
+                  _moeda(e.credUtilizado) + '</strong></div>'
                 : '') +
 
             '<div class="d-flex justify-content-between fw-bold fs-6 mb-3">' +
             '<span>Total Final:</span><span>R$ ' + _moeda(e.totalFinal) + '</span></div>' +
             '<hr>' +
             '<p class="mb-1"><strong>Pagamentos:</strong></p>' +
-            '<table class="table table-sm"><tbody>' + pagHtml + '</tbody></table>';
+            '<table class="table table-sm"><tbody>' + pagHtml + '</tbody></table>' +
+
+            (temParcelado
+                ? '<div class="alert alert-info py-1 small mt-2">' +
+                  '<i class="bi bi-info-circle me-1"></i>' +
+                  'Esta venda possui parcelas. Consulte o financeiro para o calendário de vencimentos.' +
+                  '</div>'
+                : '');
 
         modalCompObj.show();
     }
 
-    // ── Atualiza displays do painel direito ───────────────────────────────────
+    // Botão imprimir comprovante
+    document.getElementById('comp-btn-imprimir').addEventListener('click', function () {
+        window.print();
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PDV — ATUALIZAR PAINEL DIREITO
+    // ══════════════════════════════════════════════════════════════════════════
 
     function _atualizarResumoPdv() {
         var e = ctrl.getEstado();
-        pdvRBruto.textContent       = 'R$ ' + _moeda(e.totBruto);
-        pdvRSaldo.textContent       = 'R$ ' + _moeda(e.paroquiano ? e.paroquiano.saldoCredito : 0);
-        pdvTotalFinal.textContent   = 'R$ ' + _moeda(e.totalFinal);
-        pdvRestante.textContent     = 'R$ ' + _moeda(ctrl.getRestante());
-        pdvTotalPago.textContent    = 'R$ ' + _moeda(e.totalPago);
-        pdvBtnFinalizar.disabled    = !ctrl.podeFinalizar();
+        pdvRBruto.textContent     = 'R$ ' + _moeda(e.totBruto);
+        pdvRSaldo.textContent     = 'R$ ' + _moeda(e.paroquiano ? e.paroquiano.saldoCredito : 0);
+        pdvTotalFinal.textContent = 'R$ ' + _moeda(e.totalFinal);
+        pdvRestante.textContent   = 'R$ ' + _moeda(ctrl.getRestante());
+        pdvTotalPago.textContent  = 'R$ ' + _moeda(e.totalPago);
+        pdvBtnFinalizar.disabled  = !ctrl.podeFinalizar();
     }
 
-    // ── Passo 15: Carrega formas de pagamento ─────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    // CARREGAMENTO DAS FORMAS DE PAGAMENTO (consultadas do banco a cada carregamento)
+    // ══════════════════════════════════════════════════════════════════════════
 
     async function _carregarFormasPag() {
         var resultado = await ctrl.listarFormasPag();
-        if (resultado.status !== 'ok') return;
+
+        pdvSelectForma.innerHTML = '<option value="">— selecione —</option>';
+
+        if (resultado.status !== 'ok') {
+            // Informa o usuário que as formas não puderam ser carregadas
+            var opt = document.createElement('option');
+            opt.disabled     = true;
+            opt.textContent  = '⚠ Erro ao carregar formas de pagamento';
+            pdvSelectForma.appendChild(opt);
+            console.warn('[PDV] Formas de pagamento:', resultado.erro);
+            return;
+        }
 
         var formas = ctrl.getEstado().formasPag;
-        pdvSelectForma.innerHTML = '<option value="">— forma —</option>';
+        if (formas.length === 0) {
+            var opt = document.createElement('option');
+            opt.disabled    = true;
+            opt.textContent = 'Nenhuma forma de pagamento ativa cadastrada';
+            pdvSelectForma.appendChild(opt);
+            return;
+        }
+
         formas.forEach(function (f) {
             var opt = document.createElement('option');
             opt.value       = f.idFormaPag;
@@ -482,7 +621,9 @@
         });
     }
 
-    // ── Utilitários ───────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    // UTILITÁRIOS
+    // ══════════════════════════════════════════════════════════════════════════
 
     function _moeda(valor) {
         return parseFloat(valor || 0)

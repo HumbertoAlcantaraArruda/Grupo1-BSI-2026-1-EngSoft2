@@ -1,4 +1,12 @@
-/* VendaController — fachada do caso de uso "Realizar Venda de Produtos" */
+/**
+ * VendaController — Facade frontend do caso de uso "Realizar Venda de Produtos".
+ *
+ * GOF Facade      — interface única para busca de paroquiano, produtos, itens,
+ *                   crédito, pagamentos e finalização.
+ * GOF Singleton   — uma única instância compartilhada durante a sessão.
+ * Controller (GRASP) — coordena a view e os serviços sem conhecer HTML.
+ * DIP (SOLID)     — depende de VendaService (abstração), não de fetch diretamente.
+ */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Controllers = window.AGAPE.Controllers || {};
@@ -7,11 +15,35 @@ window.AGAPE.Controllers.VendaController = (function () {
 
     var instancia = null;
 
+    // ── Construtor ────────────────────────────────────────────────────────────
+
     function VendaController() {
-        this._service     = window.AGAPE.Services.VendaService.getInstance();
-        this._estado      = _estadoInicial();
-        this._listaCache  = [];
+        // DIP (SOLID) — Controller depende de abstração (Service), não de HTTP diretamente
+        this._service    = window.AGAPE.Services.VendaService.getInstance();
+        this._estado     = _estadoInicial();
+        this._listaCache = [];
     }
+
+    // ── Estado inicial ────────────────────────────────────────────────────────
+
+    /**
+     * Information Expert (GRASP) — VendaController conhece a estrutura do estado
+     * de uma venda em andamento; nenhuma outra classe precisa saber disso.
+     */
+    function _estadoInicial() {
+        return {
+            paroquiano:    null,   // { idUsuario, nome, cpf, saldoCredito }
+            itens:         [],     // [{ idProd, nome, valorUni, qtd, totalItem }]
+            totBruto:      0,
+            credUtilizado: 0,
+            totalFinal:    0,
+            formasPag:     [],     // [{ idFormaPag, descricao }] — carregadas da API
+            pagamentos:    [],     // [{ idFormaPag, descricao, valor, numeroParcelas }]
+            totalPago:     0
+        };
+    }
+
+    // ── Listagem ──────────────────────────────────────────────────────────────
 
     VendaController.prototype.listar = async function (filtros) {
         var resultado = await this._service.listar(filtros || {});
@@ -21,21 +53,12 @@ window.AGAPE.Controllers.VendaController = (function () {
         return resultado;
     };
 
-    function _estadoInicial() {
-        return {
-            paroquiano:    null,   // { idUsuario, nome, cpf, saldoCredito }
-            itens:         [],     // [{ idProd, nome, valorUni, qtd, totalItem }]
-            totBruto:      0,
-            credUtilizado: 0,
-            totalFinal:    0,
-            formasPag:     [],     // [{ idFormaPag, descricao }] — carregadas da API
-            pagamentos:    [],     // [{ idFormaPag, descricao, valor }]
-            totalPago:     0
-        };
-    }
+    // ── Passo 2-3: Paroquiano ─────────────────────────────────────────────────
 
-    // ── Passo 2.1 ─────────────────────────────────────────────────────────────
-
+    /**
+     * buscarParoquiano — Controller (GRASP): valida CPF e chama o serviço.
+     * Retorna { status, dados } para a view reagir sem conhecer HTTP.
+     */
     VendaController.prototype.buscarParoquiano = async function (cpf) {
         var digits = cpf.replace(/\D/g, '');
         if (digits.length !== 11) {
@@ -48,7 +71,7 @@ window.AGAPE.Controllers.VendaController = (function () {
         return resultado;
     };
 
-    // ── Passo 3.1 ─────────────────────────────────────────────────────────────
+    // ── Passo 4-5: Produto ────────────────────────────────────────────────────
 
     VendaController.prototype.buscarProdutos = async function (nome) {
         if (!nome || nome.trim().length < 2) {
@@ -57,15 +80,19 @@ window.AGAPE.Controllers.VendaController = (function () {
         return await this._service.buscarProdutos(nome.trim());
     };
 
-    // ── Passos 4-8 ────────────────────────────────────────────────────────────
+    // ── Passos 6-8: Item de Venda ─────────────────────────────────────────────
 
-    /** Passo 4 — verifEstoque; passos 5-8 — criarItemVenda, addItem, calcTotalItemVenda, dadosItem. */
+    /**
+     * adicionarItem — Information Expert (GRASP): o Controller conhece os itens
+     * e sabe calcular totalItem = valorUni × qtd.
+     * RN07 — Não permite adicionar se qtd > estoque disponível.
+     */
     VendaController.prototype.adicionarItem = function (produto, qtd) {
         qtd = parseInt(qtd, 10);
         if (isNaN(qtd) || qtd <= 0) {
             return { ok: false, erro: 'Quantidade inválida.' };
         }
-        // Passo 4 — verifEstoque
+        // RN07 — verificação de estoque (client-side; backend também valida)
         if (produto.qtdeAtual < qtd) {
             return {
                 ok: false,
@@ -90,9 +117,10 @@ window.AGAPE.Controllers.VendaController = (function () {
                 };
             }
             existente.qtd       = novaQtd;
+            // Information Expert — o próprio item calcula seu totalItem
             existente.totalItem = +(existente.valorUni * novaQtd).toFixed(2);
         } else {
-            // Passo 5 — criarItemVenda
+            // Passo 8 — calcTotalItemVenda (Information Expert: produto × qtd)
             var totalItem = +(produto.valorUni * qtd).toFixed(2);
             e.itens.push({
                 idProd:    produto.idProd,
@@ -114,9 +142,13 @@ window.AGAPE.Controllers.VendaController = (function () {
         this._recalcularTotais();
     };
 
-    // ── Passos 9-14 ───────────────────────────────────────────────────────────
+    // ── Passos 9-11: Crédito ──────────────────────────────────────────────────
 
-    /** Passos 12.1.1 / 13 — aplicarCred, calcTotalFinal. */
+    /**
+     * aplicarCredito — RN05 (sem troco): crédito limitado ao saldo disponível
+     * OU ao total da venda (o que for menor).
+     * Information Expert (GRASP) — Controller conhece saldo e totBruto.
+     */
     VendaController.prototype.aplicarCredito = function (valorCred) {
         valorCred = parseFloat(valorCred) || 0;
         var e = this._estado;
@@ -127,16 +159,17 @@ window.AGAPE.Controllers.VendaController = (function () {
         if (!e.paroquiano) {
             return { ok: false, erro: 'Nenhum paroquiano selecionado.' };
         }
-        if (valorCred > e.paroquiano.saldoCredito) {
+        // RN05 — limite inferior entre saldo disponível e total bruto
+        var limiteCredito = Math.min(
+            parseFloat(e.paroquiano.saldoCredito) || 0,
+            e.totBruto
+        );
+        if (valorCred > limiteCredito + 0.005) {
             return {
                 ok: false,
-                erro: 'Crédito solicitado (R$ ' + valorCred.toFixed(2) +
-                      ') supera o saldo disponível (R$ ' +
-                      parseFloat(e.paroquiano.saldoCredito).toFixed(2) + ').'
+                erro: 'Crédito máximo aplicável: R$ ' +
+                      limiteCredito.toFixed(2).replace('.', ',') + '.'
             };
-        }
-        if (valorCred > e.totBruto) {
-            return { ok: false, erro: 'O crédito não pode superar o total da venda.' };
         }
 
         e.credUtilizado = +valorCred.toFixed(2);
@@ -144,7 +177,7 @@ window.AGAPE.Controllers.VendaController = (function () {
         return { ok: true };
     };
 
-    // ── Passo 15 ─────────────────────────────────────────────────────────────
+    // ── Passo 15: Formas de Pagamento ─────────────────────────────────────────
 
     VendaController.prototype.listarFormasPag = async function () {
         var resultado = await this._service.listarFormasPag();
@@ -156,17 +189,26 @@ window.AGAPE.Controllers.VendaController = (function () {
         return resultado;
     };
 
-    // ── Passos 17-17.1.3 ─────────────────────────────────────────────────────
+    // ── Passos 12-13: Pagamentos ──────────────────────────────────────────────
 
-    /** Passo 17.1 — processarPagamento + 17.1.1 atualizarTotalPago. */
-    VendaController.prototype.adicionarPagamento = function (idFormaPag, descricao, valor) {
-        valor = parseFloat(valor) || 0;
-        var e = this._estado;
+    /**
+     * adicionarPagamento — RN05 (sem troco): não permite valor > restante.
+     * Registra numeroParcelas: 1 = à vista; >1 = parcelado (gera ContasReceber).
+     *
+     * Information Expert (GRASP) — Controller sabe calcular restante e totalPago.
+     */
+    VendaController.prototype.adicionarPagamento = function (idFormaPag, descricao, valor, numeroParcelas) {
+        valor         = parseFloat(valor) || 0;
+        numeroParcelas = parseInt(numeroParcelas, 10) || 1;
+        if (numeroParcelas < 1) numeroParcelas = 1;
+
+        var e        = this._estado;
         var restante = +(e.totalFinal - e.totalPago).toFixed(2);
 
         if (valor <= 0) {
             return { ok: false, erro: 'O valor deve ser maior que zero.' };
         }
+        // RN05 — sem troco: não aceita valor acima do restante
         if (valor > restante + 0.005) {
             return {
                 ok: false,
@@ -175,7 +217,12 @@ window.AGAPE.Controllers.VendaController = (function () {
             };
         }
 
-        e.pagamentos.push({ idFormaPag: idFormaPag, descricao: descricao, valor: +valor.toFixed(2) });
+        e.pagamentos.push({
+            idFormaPag:     idFormaPag,
+            descricao:      descricao,
+            valor:          +valor.toFixed(2),
+            numeroParcelas: numeroParcelas
+        });
         e.totalPago = +(e.totalPago + valor).toFixed(2);
         return { ok: true, restante: +(e.totalFinal - e.totalPago).toFixed(2) };
     };
@@ -188,8 +235,12 @@ window.AGAPE.Controllers.VendaController = (function () {
         e.pagamentos.splice(indice, 1);
     };
 
-    // ── Passo 19 — Finalizar ─────────────────────────────────────────────────
+    // ── Passo 13: Finalizar ───────────────────────────────────────────────────
 
+    /**
+     * podeFinalizar — Pure Fabrication (GRASP): validação centralizada sem
+     * conhecimento de UI; permite que qualquer botão consulte este estado.
+     */
     VendaController.prototype.podeFinalizar = function () {
         var e = this._estado;
         return e.paroquiano !== null &&
@@ -198,6 +249,10 @@ window.AGAPE.Controllers.VendaController = (function () {
                Math.abs(e.totalFinal - e.totalPago) < 0.01;
     };
 
+    /**
+     * efetuarVenda — monta o payload e delega ao VendaService.
+     * Inclui numeroParcelas por pagamento para o backend gerar ContasReceber.
+     */
     VendaController.prototype.efetuarVenda = async function () {
         if (!this.podeFinalizar()) {
             return { status: 'error', erro: 'Venda incompleta. Verifique os dados antes de finalizar.' };
@@ -213,7 +268,9 @@ window.AGAPE.Controllers.VendaController = (function () {
             quantidades:      e.itens.map(function (i) { return i.qtd; }).join(','),
             valoresUnitarios: e.itens.map(function (i) { return i.valorUni.toFixed(2); }).join(','),
             idFormasPag:      e.pagamentos.map(function (p) { return p.idFormaPag; }).join(','),
-            valoresPag:       e.pagamentos.map(function (p) { return p.valor.toFixed(2); }).join(',')
+            valoresPag:       e.pagamentos.map(function (p) { return p.valor.toFixed(2); }).join(','),
+            // RN02/RN03 — parcelas: 1=à vista, 2+=parcelado → gera ContasReceber no backend
+            numeroParcelas:   e.pagamentos.map(function (p) { return p.numeroParcelas; }).join(',')
         };
 
         return await this._service.efetuarVenda(dados);
@@ -221,9 +278,12 @@ window.AGAPE.Controllers.VendaController = (function () {
 
     // ── Acesso ao estado ──────────────────────────────────────────────────────
 
-    VendaController.prototype.getEstado    = function () { return this._estado; };
-    VendaController.prototype.getRestante  = function () {
+    VendaController.prototype.getEstado   = function () { return this._estado; };
+    VendaController.prototype.getRestante = function () {
         return Math.max(0, +(this._estado.totalFinal - this._estado.totalPago).toFixed(2));
+    };
+    VendaController.prototype.temItens    = function () {
+        return this._estado.itens.length > 0;
     };
 
     VendaController.prototype.resetar = function () {
@@ -232,11 +292,17 @@ window.AGAPE.Controllers.VendaController = (function () {
 
     // ── Utilitário interno ────────────────────────────────────────────────────
 
+    /**
+     * _recalcularTotais — Information Expert (GRASP): o Controller é o expert
+     * em calcular totBruto e totalFinal a partir dos itens e crédito.
+     */
     VendaController.prototype._recalcularTotais = function () {
         var e = this._estado;
-        e.totBruto    = +e.itens.reduce(function (s, i) { return s + i.totalItem; }, 0).toFixed(2);
-        e.totalFinal  = +Math.max(0, e.totBruto - e.credUtilizado).toFixed(2);
+        e.totBruto   = +e.itens.reduce(function (s, i) { return s + i.totalItem; }, 0).toFixed(2);
+        e.totalFinal = +Math.max(0, e.totBruto - e.credUtilizado).toFixed(2);
     };
+
+    // ── Singleton ─────────────────────────────────────────────────────────────
 
     return {
         getInstance: function () {

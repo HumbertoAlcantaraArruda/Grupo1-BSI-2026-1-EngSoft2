@@ -15,14 +15,12 @@ public class ParoquianoDAO {
         p.setStatus(rs.getInt("status"));
         p.setNivel(rs.getString("nivel"));
         p.setSaldoCredito(rs.getFloat("saldoCredito"));
-        Timestamp ts = rs.getTimestamp("dataInscricao");
-        if (ts != null) p.setDataInscricao(ts.toLocalDateTime());
         return p;
     }
 
     private static final String SQL_BASE =
         "SELECT u.idUsuario, u.nome, u.cpf, u.email, u.status, u.nivel, " +
-        "p.dataInscricao, p.saldoCredito " +
+        "p.saldoCredito " +
         "FROM Usuario u JOIN Paroquiano p ON u.idUsuario = p.idUsuario ";
 
     public Paroquiano buscarPorCpf(Connection conn, String cpf) throws Exception {

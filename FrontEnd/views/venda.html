@@ -14,7 +14,7 @@
         /* ── PDV layout ── */
         .pdv-painel-esq  { border-right: 1px solid #dee2e6; }
         .pdv-tabela-itens { max-height: 280px; overflow-y: auto; }
-        .pdv-tabela-pag   { max-height: 140px; overflow-y: auto; }
+        .pdv-tabela-pag   { max-height: 160px; overflow-y: auto; }
 
         .pdv-resumo-linha {
             display: flex;
@@ -31,8 +31,6 @@
             font-size: 1rem;
             font-weight: 600;
         }
-
-        /* Seção divisória dentro do modal */
         .pdv-secao-titulo {
             font-size: .7rem;
             font-weight: 700;
@@ -40,6 +38,45 @@
             letter-spacing: .06em;
             color: #6c757d;
             margin-bottom: .5rem;
+        }
+
+        /* ── Busca de produto estilo Select2 ── */
+        .pdv-busca-wrapper { position: relative; }
+        .pdv-dropdown-prod {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            background: #fff;
+            border: 1px solid #ced4da;
+            border-top: none;
+            border-radius: 0 0 .375rem .375rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
+        }
+        .pdv-dropdown-prod.aberto { display: block; }
+        .pdv-dropdown-item {
+            padding: .45rem .75rem;
+            cursor: pointer;
+            font-size: .85rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .pdv-dropdown-item:last-child { border-bottom: none; }
+        .pdv-dropdown-item:hover,
+        .pdv-dropdown-item.selecionado { background: #f2f8ff; }
+        .pdv-dropdown-item .prod-nome  { font-weight: 600; }
+        .pdv-dropdown-item .prod-info  { color: #6c757d; font-size: .78rem; }
+
+        /* ── Badge de parcela no pagamento ── */
+        .badge-parcela {
+            font-size: .7rem;
+            background: var(--cor-estrutural, #024040);
+            color: #fff;
+            border-radius: .25rem;
+            padding: .1rem .4rem;
         }
     </style>
 </head>
@@ -58,7 +95,6 @@
 
         <div class="area-conteudo">
 
-            <!-- Título + botão Nova Venda -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="titulo-pagina">
                     <i class="bi bi-cart3 me-2"></i>Vendas
@@ -75,17 +111,14 @@
                         <i class="bi bi-funnel me-1"></i>Filtros
                     </p>
                     <div class="row g-3 align-items-end">
-
                         <div class="col-md-3">
                             <label for="filtro-data-ini" class="form-label form-label-sm">Data inicial</label>
                             <input type="date" class="form-control form-control-sm" id="filtro-data-ini">
                         </div>
-
                         <div class="col-md-3">
                             <label for="filtro-data-fim" class="form-label form-label-sm">Data final</label>
                             <input type="date" class="form-control form-control-sm" id="filtro-data-fim">
                         </div>
-
                         <div class="col-md-3 d-flex gap-2">
                             <button class="btn btn-primary btn-sm" id="btn-filtrar">
                                 <i class="bi bi-search me-1"></i>Filtrar
@@ -94,7 +127,6 @@
                                 <i class="bi bi-x-lg me-1"></i>Limpar
                             </button>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -132,12 +164,12 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════
-     MODAL PDV — Realizar Venda
+     MODAL PDV — Realizar Venda (Passo 1-13 do Fluxo de Venda)
 ════════════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="modal-pdv" tabindex="-1"
      aria-labelledby="pdv-titulo" aria-hidden="true"
      data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
 
             <div class="modal-header py-2">
@@ -154,7 +186,7 @@
                     <!-- ── Painel esquerdo: Paroquiano + Produtos ── -->
                     <div class="col-lg-7 pdv-painel-esq p-3">
 
-                        <!-- CPF -->
+                        <!-- Passo 2-3: CPF do Paroquiano -->
                         <p class="pdv-secao-titulo">
                             <i class="bi bi-person-check me-1"></i>Identificação do Paroquiano
                         </p>
@@ -176,32 +208,43 @@
 
                         <hr class="my-2">
 
-                        <!-- Busca de produtos -->
+                        <!-- Passos 4-7: Busca de produto (estilo Select2 com dropdown) -->
                         <p class="pdv-secao-titulo">
                             <i class="bi bi-box-seam me-1"></i>Adicionar Produto
                         </p>
-                        <div class="row g-2 mb-2">
-                            <div class="col-5">
-                                <input type="text" class="form-control form-control-sm" id="pdv-busca-prod"
-                                       placeholder="Buscar pelo nome..." autocomplete="off">
-                            </div>
-                            <div class="col-4">
-                                <select class="form-select form-select-sm" id="pdv-select-prod">
-                                    <option value="">— selecione —</option>
-                                </select>
-                            </div>
-                            <div class="col-1">
-                                <input type="number" class="form-control form-control-sm" id="pdv-qtd"
-                                       min="1" value="1" style="min-width:56px;">
+                        <div class="row g-2 mb-2 align-items-end">
+                            <div class="col-6">
+                                <!-- Select2-like: input + dropdown dinâmico -->
+                                <label class="form-label form-label-sm mb-1">Buscar produto</label>
+                                <div class="pdv-busca-wrapper">
+                                    <input type="text" class="form-control form-control-sm" id="pdv-busca-prod"
+                                           placeholder="Digite o nome..." autocomplete="off">
+                                    <div id="pdv-dropdown-prod" class="pdv-dropdown-prod">
+                                        <div class="pdv-dropdown-item text-muted">
+                                            <em>Aguardando busca...</em>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-2">
+                                <label class="form-label form-label-sm mb-1">Qtd.</label>
+                                <input type="number" class="form-control form-control-sm" id="pdv-qtd"
+                                       min="1" value="1">
+                            </div>
+                            <div class="col-4">
                                 <button type="button" class="btn btn-primary btn-sm w-100" id="pdv-btn-add-item">
-                                    <i class="bi bi-plus-circle"></i> Add
+                                    <i class="bi bi-plus-circle me-1"></i>Adicionar
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Tabela de itens -->
+                        <!-- Produto selecionado (exibição) -->
+                        <div id="pdv-prod-selecionado" class="alert alert-info py-1 px-2 mb-2 small" style="display:none;">
+                            <i class="bi bi-check-circle me-1"></i>
+                            <span id="pdv-prod-selecionado-texto"></span>
+                        </div>
+
+                        <!-- Passo 7: Tabela de itens da venda -->
                         <div class="pdv-tabela-itens">
                             <table class="table table-sm table-hover mb-0">
                                 <thead class="text-center sticky-top bg-white">
@@ -209,7 +252,7 @@
                                         <th class="text-start">Produto</th>
                                         <th>Qtd</th>
                                         <th>Unit.</th>
-                                        <th>Total</th>
+                                        <th>Total Item</th>
                                         <th style="width:32px;"></th>
                                     </tr>
                                 </thead>
@@ -228,21 +271,21 @@
                     <!-- ── Painel direito: Resumo + Crédito + Pagamento ── -->
                     <div class="col-lg-5 p-3 d-flex flex-column gap-3">
 
-                        <!-- Resumo financeiro -->
+                        <!-- Passos 8-11: Resumo financeiro e crédito -->
                         <div>
                             <p class="pdv-secao-titulo">
-                                <i class="bi bi-receipt me-1"></i>Resumo
+                                <i class="bi bi-receipt me-1"></i>Resumo da Venda
                             </p>
                             <div class="pdv-resumo-linha">
                                 <span class="text-muted small">Total Bruto</span>
                                 <strong id="pdv-r-bruto">R$ 0,00</strong>
                             </div>
                             <div class="pdv-resumo-linha">
-                                <span class="text-muted small">Saldo de crédito</span>
+                                <span class="text-muted small">Saldo de crédito disponível</span>
                                 <span class="text-success" id="pdv-r-saldo">R$ 0,00</span>
                             </div>
 
-                            <!-- Crédito -->
+                            <!-- Passo 11: Aplicar crédito (RN05 — sem troco) -->
                             <div class="input-group input-group-sm mt-1">
                                 <span class="input-group-text">Usar crédito R$</span>
                                 <input type="number" class="form-control" id="pdv-input-cred"
@@ -260,31 +303,36 @@
                             </div>
                         </div>
 
-                        <!-- Formas de pagamento -->
+                        <!-- Passos 12-13: Formas de pagamento com suporte a parcelas -->
                         <div>
                             <p class="pdv-secao-titulo">
                                 <i class="bi bi-credit-card me-1"></i>Pagamento
                             </p>
 
-                            <div class="row g-2 mb-2">
+                            <div class="row g-2 mb-1">
                                 <div class="col-7">
+                                    <label class="form-label form-label-sm mb-1">Forma de pagamento</label>
                                     <select class="form-select form-select-sm" id="pdv-select-forma">
-                                        <option value="">— forma —</option>
+                                        <option value="">— selecione —</option>
                                     </select>
                                 </div>
                                 <div class="col-3">
+                                    <label class="form-label form-label-sm mb-1">Valor (R$)</label>
                                     <input type="number" class="form-control form-control-sm" id="pdv-input-valor-pag"
-                                           min="0.01" step="0.01" placeholder="Valor">
+                                           min="0.01" step="0.01" placeholder="0,00">
                                 </div>
                                 <div class="col-2">
-                                    <button type="button" class="btn btn-primary btn-sm w-100" id="pdv-btn-add-pag">
-                                        <i class="bi bi-plus"></i>
-                                    </button>
+                                    <label class="form-label form-label-sm mb-1">Parcelas</label>
+                                    <input type="number" class="form-control form-control-sm" id="pdv-input-parcelas"
+                                           min="1" max="24" value="1" title="1 = à vista; 2+ = parcelado">
                                 </div>
                             </div>
+                            <button type="button" class="btn btn-primary btn-sm w-100 mb-1" id="pdv-btn-add-pag">
+                                <i class="bi bi-plus me-1"></i>Adicionar Pagamento
+                            </button>
                             <div class="invalid-feedback d-block" id="pdv-pag-feedback" style="display:none!important;"></div>
 
-                            <!-- Tabela de pagamentos -->
+                            <!-- Tabela de pagamentos registrados -->
                             <div class="pdv-tabela-pag">
                                 <table class="table table-sm mb-0">
                                     <tbody id="pdv-tbody-pag">
@@ -327,7 +375,7 @@
 </div>
 
 
-<!-- Modal: Comprovante -->
+<!-- Modal: Comprovante de Venda (não fiscal) -->
 <div class="modal fade" id="modal-comprovante" tabindex="-1"
      aria-labelledby="comp-titulo" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -341,6 +389,10 @@
             </div>
             <div class="modal-body" id="comp-corpo"></div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        id="comp-btn-imprimir">
+                    <i class="bi bi-printer me-1"></i>Imprimir
+                </button>
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
                     <i class="bi bi-check-circle me-1"></i>Concluir
                 </button>
