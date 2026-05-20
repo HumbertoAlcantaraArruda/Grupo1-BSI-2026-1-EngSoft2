@@ -72,6 +72,7 @@ public class CUsuario implements HttpHandler {
         String id    = param(query, "id");
         String cpf   = param(query, "cpf");
         String email = param(query, "email");
+        String nivel = param(query, "nivel");
 
         if (!id.isEmpty())    return buscarPorId(conn, parseSafeInt(id));
         if (!cpf.isEmpty())   return buscarPorCpf(conn, cpf);
