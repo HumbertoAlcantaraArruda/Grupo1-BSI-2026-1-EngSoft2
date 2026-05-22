@@ -63,11 +63,15 @@ window.AGAPE.Models.Evento = (function () {
         if (!this._idUsuarioResponsavel)
             erros.push('Selecione o responsável.');
         if (!this._dataInicio)
-            erros.push('Informe a data de início.');
+            erros.push('Informe o início das inscrições.');
         if (!this._dataFim)
-            erros.push('Informe a data de término.');
+            erros.push('Informe o término das inscrições.');
+        if (this._dataInicio && this._dataFim && this._dataFim <= this._dataInicio)
+            erros.push('O término das inscrições deve ser posterior ao início.');
         if (!this._dataEvento)
             erros.push('Informe a data do evento.');
+        if (this._dataFim && this._dataEvento && this._dataEvento <= this._dataFim)
+            erros.push('A data do evento deve ser posterior ao término das inscrições.');
         if (this._totVagas === null || this._totVagas <= 0)
             erros.push('Total de vagas deve ser maior que zero.');
         return erros;

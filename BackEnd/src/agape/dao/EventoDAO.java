@@ -145,6 +145,15 @@ public class EventoDAO {
         }
     }
 
+    /** Decrementa vagasDisp em 1, nunca abaixo de zero. */
+    public void decrementarVagas(Connection conn, int idEvento) throws Exception {
+        String sql = "UPDATE Evento SET vagasDisp = GREATEST(0, vagasDisp - 1) WHERE idEvento=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idEvento);
+            stmt.executeUpdate();
+        }
+    }
+
     /**
      * Finaliza automaticamente todos os eventos cuja dataEvento já passou
      * e que não estejam Cancelados (2) ou já Finalizados (4).

@@ -1,7 +1,7 @@
 (function ($) {
 
     if (window.AGAPE.Utils.Auth.getInstance().estaLogado()) {
-        window.location.href = './produtos/produtos.html';
+        window.location.href = './inscricoes/inscricao.html';
         return;
     }
 
@@ -119,7 +119,7 @@
 
         // Trata resultado
         if (resultado.status === 'ok') {
-            window.location.href = './produtos/produtos.html';
+            window.location.href = './inscricoes/inscricao.html';
         } else if (resultado.status === 'primeiroAcesso') {
             window.location.href = './usuarios/trocarSenha.html';
         } else if (resultado.status === 'parametrizacaoPendente') {

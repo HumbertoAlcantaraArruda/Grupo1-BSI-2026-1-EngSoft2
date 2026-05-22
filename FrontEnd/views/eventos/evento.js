@@ -70,16 +70,17 @@
     // ── Select2 — seletor avançado de categoria (RF_F1 UX) ───────────────────
 
     function _inicializarSelect2() {
-        // Select2 inicializado dentro do modal para não perder o contexto
-        $selectCategoria.select2({
-            placeholder:  'Selecione...',
-            allowClear:   true,
-            dropdownParent: $modalEl,   // ancora o dropdown ao modal (z-index correto)
+        var opcoesComuns = {
+            allowClear:     true,
+            dropdownParent: $modalEl,
             language: {
-                noResults:    function () { return 'Nenhuma categoria encontrada.'; },
-                searching:    function () { return 'Buscando...'; }
+                noResults: function () { return 'Nenhum resultado encontrado.'; },
+                searching: function () { return 'Buscando...'; }
             }
-        });
+        };
+
+        $selectCategoria.select2($.extend({ placeholder: 'Selecione a categoria...' }, opcoesComuns));
+        $selectResponsavel.select2($.extend({ placeholder: 'Selecione o responsável...' }, opcoesComuns));
     }
 
     // ── Combos auxiliares ─────────────────────────────────────────────────────
@@ -104,12 +105,17 @@
         if (resultado.status !== 'ok' || !Array.isArray(resultado.dados)) return;
 
         var opcoes = resultado.dados
-            .filter(function (u) { return u.status === 1 || u.status === '1'; })
+            .filter(function (u) {
+                var ativo = u.status === 1 || u.status === '1';
+                var nivel = u.nivel === 'COLAB' || u.nivel === 'ADM';
+                return ativo && nivel;
+            })
             .map(function (u) {
-                return '<option value="' + u.idUsuario + '">' + _esc(u.nome) + '</option>';
+                var prefixo = u.nivel === 'ADM' ? '[ADM] ' : '';
+                return '<option value="' + u.idUsuario + '">' + prefixo + _esc(u.nome) + '</option>';
             }).join('');
 
-        $selectResponsavel.append(opcoes);
+        $selectResponsavel.append(opcoes).trigger('change'); // notifica Select2
     }
 
     // ── Listagem e DataTable ──────────────────────────────────────────────────
@@ -375,7 +381,7 @@
         $inputNome.val('');
         // Select2: reset via trigger
         $selectCategoria.val('').trigger('change');
-        $selectResponsavel.val('');
+        $selectResponsavel.val('').trigger('change');
         $selectStatus.val('1');
         $inputDataInicio.val('');
         $inputDataFim.val('');
@@ -401,7 +407,7 @@
         $inputNome.val(e.nome || '');
         // Select2: val + trigger para atualizar widget
         $selectCategoria.val(e.idCatEvento || '').trigger('change');
-        $selectResponsavel.val(e.idUsuarioResponsavel || '');
+        $selectResponsavel.val(e.idUsuarioResponsavel || '').trigger('change');
         $selectStatus.val(e.idEventoStatus || 1);
         $inputDataInicio.val(_isoParaLocal(e.dataInicio));
         $inputDataFim.val(_isoParaLocal(e.dataFim));

@@ -124,6 +124,26 @@ public class Evento {
     // A entidade conhece suas próprias regras de negócio e as concentra aqui,
     // liberando o Controller de lógica de domínio.
 
+    // ── Validação de disponibilidade para inscrição (RF_F3) ────────────────
+
+    /**
+     * GRASP Information Expert: a entidade Evento conhece seu próprio status
+     * e determina se aceita novas inscrições.
+     */
+    public List<String> validarDisponibilidade() {
+        List<String> erros = new ArrayList<>();
+        if (idEventoStatus == null || idEventoStatus != 1)
+            erros.add("Evento não está ativo para inscrições.");
+        return erros;
+    }
+
+    /** Retorna true se ainda há vagas disponíveis. */
+    public boolean temVagasDisponiveis() {
+        return vagasDisp != null && vagasDisp > 0;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+
     /** Valida campos obrigatórios para criar ou alterar um evento (Fluxo 7.1). */
     public List<String> validarParaCriar() {
         List<String> erros = new ArrayList<>();
@@ -134,11 +154,13 @@ public class Evento {
         if (idUsuarioResponsavel <= 0)
             erros.add("Responsável pelo evento é obrigatório.");
         if (dataInicio == null)
-            erros.add("Data de início é obrigatória.");
+            erros.add("Data de início das inscrições é obrigatória.");
         if (dataFim == null)
-            erros.add("Data de término é obrigatória.");
+            erros.add("Data de término das inscrições é obrigatória.");
         if (dataInicio != null && dataFim != null && !dataFim.isAfter(dataInicio))
-            erros.add("Data de término deve ser posterior à data de início.");
+            erros.add("O término das inscrições deve ser posterior ao início.");
+        if (dataFim != null && dataEvento != null && !dataEvento.isAfter(dataFim))
+            erros.add("A data do evento deve ser posterior ao término das inscrições.");
         if (totVagas <= 0)
             erros.add("Total de vagas deve ser maior que zero.");
         return erros;

@@ -204,25 +204,25 @@
                             </select>
                         </div>
 
-                        <!-- Data Início -->
+                        <!-- Período de Inscrições -->
                         <div class="col-md-4">
-                            <label for="dataInicio" class="form-label campo-obrigatorio">Data de Início</label>
+                            <label for="dataInicio" class="form-label campo-obrigatorio">Início das Inscrições</label>
                             <input type="datetime-local" class="form-control" id="dataInicio" required>
-                            <div class="invalid-feedback">Informe a data de início.</div>
+                            <div class="invalid-feedback">Informe o início das inscrições.</div>
                         </div>
 
-                        <!-- Data Fim -->
                         <div class="col-md-4">
-                            <label for="dataFim" class="form-label campo-obrigatorio">Data de Término</label>
+                            <label for="dataFim" class="form-label campo-obrigatorio">Término das Inscrições</label>
                             <input type="datetime-local" class="form-control" id="dataFim" required>
-                            <div class="invalid-feedback">Informe a data de término.</div>
+                            <div class="invalid-feedback">Informe o término das inscrições.</div>
                         </div>
 
-                        <!-- Data do Evento -->
+                        <!-- Data do Evento (deve ser após o término das inscrições) -->
                         <div class="col-md-4">
                             <label for="dataEvento" class="form-label campo-obrigatorio">Data do Evento</label>
                             <input type="datetime-local" class="form-control" id="dataEvento" required>
                             <div class="invalid-feedback">Informe a data do evento.</div>
+                            <div class="form-text">Deve ser posterior ao término das inscrições.</div>
                         </div>
 
                         <!-- Total de Vagas -->

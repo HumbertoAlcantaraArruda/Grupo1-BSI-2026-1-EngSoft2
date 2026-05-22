@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import agape.control.CCategoriaEvento;
 import agape.control.CControlarEventos;
+import agape.control.CRealizarInscricao;
 import agape.control.CEvento;
 import agape.control.CEventoStatus;
 import agape.control.CCategoriaProduto;
@@ -41,6 +42,8 @@ public class Main {
         server.createContext("/evento",            new AuthFilter(CEvento.getInstancia(),           "ADM", "COLAB"));
         // RF_F1 — Controlar Eventos (CRUD completo + abrir/fechar/lista de espera, com transações)
         server.createContext("/controlarEvento",  new AuthFilter(CControlarEventos.getInstancia(), "ADM", "COLAB"));
+        // RF_F3 — Realizar Inscrição (GOF Facade + transação atômica)
+        server.createContext("/realizarInscricao", new AuthFilter(CRealizarInscricao.getInstancia(), "ADM", "COLAB"));
         server.createContext("/fornecedor",        new AuthFilter(CFornecedor.getInstancia(),       "ADM", "COLAB"));
         server.createContext("/comprar",           new AuthFilter(CCompra.getInstancia(),           "ADM", "COLAB"));
 

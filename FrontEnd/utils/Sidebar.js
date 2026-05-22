@@ -16,6 +16,12 @@ window.AGAPE.Utils.Sidebar = (function ($) {
             icone:  'bi-cart3',
             niveis: ['ADM', 'COLAB']
         },
+        {
+            rotulo: 'Realizar Inscrição',
+            href:   '../inscricoes/inscricao.html',
+            icone:  'bi-person-check',
+            niveis: ['ADM', 'COLAB']
+        },
         // Grupo "Cadastros" com expansão inteligente por chevron (RF_F1 UX)
         {
             rotulo: 'Cadastros',

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Realizar Inscrição</title>
+
+    <link rel="stylesheet" href="../../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../assets/libs/icons/bootstrap-icons.min.css">
+    <!-- Select2 — seleção avançada do evento (RF_F3 UX) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="../../assets/css/agape.css">
+
+    <style>
+        body { display: none; }
+
+        /* ── Select2 integrado ao visual AGAPE ── */
+        .select2-container--default .select2-selection--single {
+            height: calc(1.5em + .75rem + 2px);
+            border: 1px solid #ced4da;
+            border-radius: .375rem;
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 1.5; padding: 0; color: #212529;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; }
+        .select2-container { width: 100% !important; }
+        .select2-dropdown { border-color: #ced4da; border-radius: .375rem; }
+        .select2-search--dropdown .select2-search__field { border-color: #ced4da; border-radius: .25rem; }
+        .select2-container--default .select2-results__option--highlighted { background-color: var(--cor-primaria, #8C142A); }
+
+        /* ── Passos do fluxo ── */
+        .step-card {
+            border-left: 4px solid var(--cor-primaria, #8C142A);
+            border-radius: .5rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.08);
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            transition: opacity .3s;
+        }
+        .step-card.disabled { opacity: .45; pointer-events: none; }
+
+        .step-numero {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem; height: 2rem;
+            border-radius: 50%;
+            background: var(--cor-primaria, #8C142A);
+            color: #fff;
+            font-weight: 700;
+            font-size: .85rem;
+            margin-right: .6rem;
+        }
+        .step-titulo { font-weight: 600; font-size: 1rem; }
+
+        /* ── Card de evento selecionado ── */
+        #card-evento-detalhes {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: .5rem;
+            padding: 1rem 1.25rem;
+        }
+        .detalhe-label { font-size: .75rem; color: #6c757d; text-transform: uppercase; letter-spacing: .04em; }
+        .detalhe-valor { font-size: .95rem; font-weight: 500; }
+
+        /* ── Badge de vagas ── */
+        .badge-vagas-ok   { background: #41733F; color: #fff; }
+        .badge-vagas-zero { background: #cc6600; color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper"></div>
+
+    <!-- Conteúdo principal -->
+    <div id="content-wrapper">
+
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Realizar Inscrição</span>
+        </header>
+
+        <div class="area-conteudo">
+
+            <div class="d-flex align-items-center mb-4">
+                <h1 class="titulo-pagina mb-0">
+                    <i class="bi bi-person-check me-2"></i>Realizar Inscrição
+                </h1>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-7 col-xl-6">
+
+                    <!-- ══ Passo 1: Identificação do Paroquiano ══ -->
+                    <div class="step-card" id="step1">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-numero">1</span>
+                            <span class="step-titulo">Identificação do Paroquiano</span>
+                        </div>
+
+                        <label for="input-cpf" class="form-label campo-obrigatorio">CPF</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="input-cpf"
+                                   placeholder="000.000.000-00" maxlength="14"
+                                   autocomplete="off">
+                            <button class="btn btn-primary" id="btn-verificar">
+                                <i class="bi bi-search me-1"></i>Verificar
+                            </button>
+                        </div>
+
+                        <!-- Resultado da verificação -->
+                        <div id="paroquiano-card" class="mt-3 p-3 rounded d-none"
+                             style="background:#e8f5e9;border:1px solid #81c784">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <strong id="paroquiano-nome"></strong>
+                            <span class="text-muted small ms-2" id="paroquiano-email"></span>
+                        </div>
+                    </div>
+
+                    <!-- ══ Passo 2: Categoria e Evento ══ -->
+                    <div class="step-card disabled" id="step2">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-numero">2</span>
+                            <span class="step-titulo">Seleção de Evento</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sel-categoria" class="form-label campo-obrigatorio">Categoria</label>
+                            <select class="form-select" id="sel-categoria">
+                                <option value="">Selecione uma categoria...</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="sel-evento" class="form-label campo-obrigatorio">Evento</label>
+                            <!-- Select2 aplicado via JS -->
+                            <select class="form-select" id="sel-evento">
+                                <option value="">Selecione primeiro uma categoria...</option>
+                            </select>
+                            <div class="form-text" id="hint-evento">
+                                Apenas eventos ativos são exibidos.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ Passo 3: Detalhes e Confirmação ══ -->
+                    <div class="step-card disabled" id="step3">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-numero">3</span>
+                            <span class="step-titulo">Confirmação da Inscrição</span>
+                        </div>
+
+                        <div id="card-evento-detalhes" class="mb-4 d-none">
+                            <div class="row g-3">
+                                <!-- Imagem do evento -->
+                                <div class="col-12 text-center">
+                                    <img id="det-imagem" src=""
+                                         alt="Imagem do evento"
+                                         style="max-height:200px;max-width:100%;border-radius:.5rem;object-fit:cover;">
+                                </div>
+                                <div class="col-12">
+                                    <div class="detalhe-label">Evento</div>
+                                    <div class="detalhe-valor fw-bold fs-5" id="det-nome"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detalhe-label">Data do Evento</div>
+                                    <div class="detalhe-valor" id="det-data"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detalhe-label">Inscrições</div>
+                                    <div class="detalhe-valor">
+                                        <span id="det-vagas" class="badge rounded-pill fs-6 badge-vagas-ok">—</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detalhe-label">Valor</div>
+                                    <div class="detalhe-valor" id="det-valor"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detalhe-label">Início</div>
+                                    <div class="detalhe-valor" id="det-inicio"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detalhe-label">Término</div>
+                                    <div class="detalhe-valor" id="det-fim"></div>
+                                </div>
+                            </div>
+
+                            <!-- Aviso lista de espera -->
+                            <div id="aviso-espera" class="alert alert-warning mt-3 mb-0 d-none" role="alert">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                <strong>Sem vagas disponíveis.</strong>
+                                O paroquiano será adicionado à lista de espera.
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary" id="btn-reiniciar">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Recomeçar
+                            </button>
+                            <button class="btn btn-primary flex-grow-1" id="btn-confirmar" disabled>
+                                <i class="bi bi-check-circle me-1"></i>Confirmar Inscrição
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../../assets/libs/jquery/jquery.min.js"></script>
+<script src="../../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script src="../../utils/Auth.js"></script>
+<script src="../../utils/HttpClient.js"></script>
+<script src="../../utils/Mascaras.js"></script>
+<script src="../../utils/Validador.js"></script>
+<script src="../../utils/Sidebar.js"></script>
+
+<script src="../../models/Inscricao.js"></script>
+<script src="../../models/CategoriaEvento.js"></script>
+
+<script src="../../services/InscricaoService.js"></script>
+<script src="../../services/CategoriaEventoService.js"></script>
+<script src="../../services/EventoService.js"></script>
+
+<script src="../../controllers/InscricaoController.js"></script>
+<script src="../../controllers/CategoriaEventoController.js"></script>
+
+<script src="inscricao.js"></script>
+
+</body>
+</html>
