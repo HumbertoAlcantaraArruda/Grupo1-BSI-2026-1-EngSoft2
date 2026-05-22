@@ -72,16 +72,26 @@ public class CVenda implements HttpHandler {
 
     private ResponseObject handleGet(Connection conn, String path, String query) {
         if (path.equals("/paroquiano")) return buscarParoquiano(conn, param(query, "cpf"));
-        if (path.equals("/venda"))      return listar(conn, param(query, "dataInicio"), param(query, "dataFim"));
+        if (path.equals("/venda"))      return listar(conn,
+                param(query, "dataInicio"), param(query, "dataFim"),
+                param(query, "nomeColaborador"), param(query, "nomeParoquiano"),
+                param(query, "idFormaPag"), param(query, "usouCredito"));
         return naoEncontrado();
     }
 
-    public ResponseObject listar(Connection conn, String dataInicio, String dataFim) {
+    public ResponseObject listar(Connection conn, String dataInicio, String dataFim,
+                                    String nomeColaborador, String nomeParoquiano,
+                                    String idFormaPagStr, String usouCreditoStr) {
         ResponseObject response = new ResponseObject();
         try {
+            Integer idFormaPag  = idFormaPagStr.isEmpty()  ? null : parseSafeInt(idFormaPagStr);
+            Boolean usouCredito = usouCreditoStr.isEmpty() ? null : "sim".equalsIgnoreCase(usouCreditoStr);
             var lista = new Venda().listar(conn,
-                dataInicio.isEmpty() ? null : dataInicio,
-                dataFim.isEmpty()    ? null : dataFim);
+                dataInicio.isEmpty()      ? null : dataInicio,
+                dataFim.isEmpty()         ? null : dataFim,
+                nomeColaborador.isEmpty() ? null : nomeColaborador,
+                nomeParoquiano.isEmpty()  ? null : nomeParoquiano,
+                idFormaPag, usouCredito);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.setResult(lista);

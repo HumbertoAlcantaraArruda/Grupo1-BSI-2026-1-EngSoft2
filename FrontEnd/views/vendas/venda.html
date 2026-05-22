@@ -111,21 +111,43 @@
                     <p class="card-titulo-filtros">
                         <i class="bi bi-funnel me-1"></i>Filtros
                     </p>
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-2">
                             <label for="filtro-data-ini" class="form-label form-label-sm">Data inicial</label>
                             <input type="date" class="form-control form-control-sm" id="filtro-data-ini">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="filtro-data-fim" class="form-label form-label-sm">Data final</label>
                             <input type="date" class="form-control form-control-sm" id="filtro-data-fim">
                         </div>
-                        <div class="col-md-3 d-flex gap-2">
-                            <button class="btn btn-primary btn-sm" id="btn-filtrar">
-                                <i class="bi bi-search me-1"></i>Filtrar
+                        <div class="col-md-2">
+                            <label for="filtro-colaborador" class="form-label form-label-sm">Colaborador</label>
+                            <input type="text" class="form-control form-control-sm" id="filtro-colaborador" placeholder="Nome...">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filtro-paroquiano" class="form-label form-label-sm">Paroquiano</label>
+                            <input type="text" class="form-control form-control-sm" id="filtro-paroquiano" placeholder="Nome...">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filtro-forma-pag" class="form-label form-label-sm">Forma de Pagamento</label>
+                            <select class="form-select form-select-sm" id="filtro-forma-pag">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label for="filtro-credito" class="form-label form-label-sm">Crédito?</label>
+                            <select class="form-select form-select-sm" id="filtro-credito">
+                                <option value="">Todos</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex gap-1">
+                            <button class="btn btn-primary btn-sm" id="btn-filtrar" title="Filtrar">
+                                <i class="bi bi-search"></i>
                             </button>
-                            <button class="btn btn-outline-secondary btn-sm" id="btn-limpar">
-                                <i class="bi bi-x-lg me-1"></i>Limpar
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-limpar" title="Limpar">
+                                <i class="bi bi-x-lg"></i>
                             </button>
                         </div>
                     </div>
@@ -138,7 +160,6 @@
                     <table class="table table-hover mb-0">
                         <thead class="text-center">
                             <tr>
-                                <th scope="col">Nº</th>
                                 <th scope="col">Data / Hora</th>
                                 <th scope="col" class="text-start">Paroquiano</th>
                                 <th scope="col" class="text-start">Colaborador</th>
@@ -146,6 +167,7 @@
                                 <th scope="col">Total Bruto</th>
                                 <th scope="col">Crédito</th>
                                 <th scope="col">Total Final</th>
+                                <th scope="col">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-corpo" class="text-center">
@@ -402,6 +424,24 @@
     </div>
 </div>
 
+
+<!-- Modal: Detalhes da Venda -->
+<div class="modal fade" id="modal-venda-detalhe" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="det-titulo">Detalhes da Venda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="det-corpo"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Scripts -->
 <script src="../../assets/libs/jquery/jquery.min.js"></script>

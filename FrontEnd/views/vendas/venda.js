@@ -11,10 +11,14 @@
     // ── Referências: listagem ─────────────────────────────────────────────────
 
     var $tabelaCorpo   = $('#tabela-corpo');
-    var $filtroDataIni = $('#filtro-data-ini');
-    var $filtroDataFim = $('#filtro-data-fim');
-    var $btnFiltrar    = $('#btn-filtrar');
-    var $btnLimpar     = $('#btn-limpar');
+    var $filtroDataIni    = $('#filtro-data-ini');
+    var $filtroDataFim    = $('#filtro-data-fim');
+    var $filtroColaborador= $('#filtro-colaborador');
+    var $filtroParoquiano = $('#filtro-paroquiano');
+    var $filtroFormaPag   = $('#filtro-forma-pag');
+    var $filtroCredito    = $('#filtro-credito');
+    var $btnFiltrar       = $('#btn-filtrar');
+    var $btnLimpar        = $('#btn-limpar');
     var $btnNovaVenda  = $('#btn-nova-venda');
 
     // ── Referências: PDV — paroquiano ─────────────────────────────────────────
@@ -62,10 +66,11 @@
     var $pdvBtnCancelar  = $('#pdv-btn-cancelar');
     var $pdvBtnFechar    = $('#pdv-btn-fechar');
 
-    var modalPdvObj  = new bootstrap.Modal($('#modal-pdv')[0]);
-    var modalCompObj = new bootstrap.Modal($('#modal-comprovante')[0]);
-    var $compCorpo   = $('#comp-corpo');
-    var _dt          = null;
+    var modalPdvObj     = new bootstrap.Modal($('#modal-pdv')[0]);
+    var modalCompObj    = new bootstrap.Modal($('#modal-comprovante')[0]);
+    var modalDetalheObj = new bootstrap.Modal($('#modal-venda-detalhe')[0]);
+    var $compCorpo      = $('#comp-corpo');
+    var _dt             = null;
 
     var _produtoSelecionado = null;
     var _buscaTimer         = null;
@@ -102,8 +107,12 @@
         );
 
         var filtros = {};
-        if ($filtroDataIni.val()) filtros.dataInicio = $filtroDataIni.val();
-        if ($filtroDataFim.val()) filtros.dataFim    = $filtroDataFim.val();
+        if ($filtroDataIni.val())         filtros.dataInicio      = $filtroDataIni.val();
+        if ($filtroDataFim.val())         filtros.dataFim         = $filtroDataFim.val();
+        if ($filtroColaborador.val().trim()) filtros.nomeColaborador = $filtroColaborador.val().trim();
+        if ($filtroParoquiano.val().trim())  filtros.nomeParoquiano  = $filtroParoquiano.val().trim();
+        if ($filtroFormaPag.val())        filtros.idFormaPag      = $filtroFormaPag.val();
+        if ($filtroCredito.val())         filtros.usouCredito     = $filtroCredito.val();
 
         _renderizarTabela(await ctrl.listar(filtros));
     }
@@ -147,16 +156,26 @@
                 { className: 'text-center', targets: '_all' }
             ],
             columns: [
-                { data: 'idVenda' },
                 { data: 'dataHora',        render: function (d) { return _formatarDataHora(d); } },
-                { data: 'nomeParoquiano',  render: function (d) { return _esc(d); } },
-                { data: 'nomeColaborador', render: function (d) { return _esc(d); } },
-                { data: 'descFormaPag',    render: function (d) { return _esc(d); } },
-                { data: 'totBruto',        render: function (d) { return 'R$ ' + _moeda(d); } },
-                { data: 'credUtilizado',   render: function (d) {
+                { data: 'nomeParoquiano',  className: 'text-start', render: function (d) { return _esc(d); } },
+                { data: 'nomeColaborador', className: 'text-start', render: function (d) { return _esc(d); } },
+                { data: 'descFormaPag',    render: function (d) {
+                    var pags = _parsePagamentos(d);
+                    if (!pags.length) return '—';
+                    if (pags.length > 1)
+                        return '<span class="badge bg-secondary">Múltiplas formas</span>';
+                    return _esc(pags[0].forma);
+                }},
+                { data: 'totBruto',      render: function (d) { return 'R$ ' + _moeda(d); } },
+                { data: 'credUtilizado', render: function (d) {
                     return d > 0 ? '<span class="text-success">- R$ ' + _moeda(d) + '</span>' : '—';
                 }},
-                { data: 'valorFinal', render: function (d) { return '<strong>R$ ' + _moeda(d) + '</strong>'; } }
+                { data: 'valorFinal', render: function (d) { return '<strong>R$ ' + _moeda(d) + '</strong>'; } },
+                { data: null, orderable: false, render: function (d, t, row) {
+                    return '<button class="btn btn-sm btn-outline-primary btn-visualizar" ' +
+                           'title="Visualizar venda">' +
+                           '<i class="bi bi-eye me-1"></i>Visualizar</button>';
+                }}
             ],
             language: {
                 decimal: ',', thousands: '.',
@@ -180,11 +199,90 @@
         });
     }
 
+    $tabelaCorpo.on('click', '.btn-visualizar', function () {
+        var d = _dt.row($(this).closest('tr')).data();
+        _abrirModalVenda(d);
+    });
+
+    function _parsePagamentos(descFormaPag) {
+        if (!descFormaPag || descFormaPag === '—' || descFormaPag === '') return [];
+        return descFormaPag.split(',').map(function (f) {
+            var parts = f.split('~~');
+            return {
+                forma: parts[0].trim(),
+                valor: parts.length > 1 ? parseFloat(parts[1]) : null
+            };
+        }).filter(function (p) { return p.forma; });
+    }
+
+    function _abrirModalVenda(d) {
+        $('#det-titulo').html(
+            '<i class="bi bi-receipt me-2"></i>Venda #' + d.idVenda +
+            ' <span class="text-muted fw-normal fs-6 ms-2">' + _formatarDataHora(d.dataHora) + '</span>'
+        );
+
+        var pags     = _parsePagamentos(d.descFormaPag);
+        var pagHtml  = pags.length
+            ? pags.map(function (p) {
+                return '<div class="d-flex justify-content-between align-items-center py-1 border-bottom">' +
+                    '<span>' + _esc(p.forma) + '</span>' +
+                    (p.valor !== null
+                        ? '<strong>R$ ' + _moeda(p.valor) + '</strong>'
+                        : '') +
+                '</div>';
+              }).join('')
+            : '<span class="text-muted">Sem registro de pagamento</span>';
+
+        var credHtml = d.credUtilizado > 0
+            ? '<span class="text-success fw-semibold">- R$ ' + _moeda(d.credUtilizado) + '</span>'
+            : '<span class="text-muted">—</span>';
+
+        $('#det-corpo').html(
+            '<div class="row g-3 mb-3">' +
+                '<div class="col-sm-6">' +
+                    '<div class="text-muted small mb-1">Paroquiano</div>' +
+                    '<div class="fw-semibold">' + _esc(d.nomeParoquiano) + '</div>' +
+                '</div>' +
+                '<div class="col-sm-6">' +
+                    '<div class="text-muted small mb-1">Colaborador</div>' +
+                    '<div class="fw-semibold">' + _esc(d.nomeColaborador) + '</div>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="mb-3">' +
+                '<div class="text-muted small mb-2 fw-semibold text-uppercase" ' +
+                     'style="letter-spacing:.05em">Formas de Pagamento</div>' +
+                pagHtml +
+            '</div>' +
+
+            '<div class="row g-2 pt-2 border-top">' +
+                '<div class="col-4 text-center">' +
+                    '<div class="text-muted small">Total Bruto</div>' +
+                    '<div>R$ ' + _moeda(d.totBruto) + '</div>' +
+                '</div>' +
+                '<div class="col-4 text-center">' +
+                    '<div class="text-muted small">Crédito</div>' +
+                    '<div>' + credHtml + '</div>' +
+                '</div>' +
+                '<div class="col-4 text-center">' +
+                    '<div class="text-muted small">Total Final</div>' +
+                    '<div class="fw-bold fs-5">R$ ' + _moeda(d.valorFinal) + '</div>' +
+                '</div>' +
+            '</div>'
+        );
+
+        modalDetalheObj.show();
+    }
+
     $btnFiltrar.on('click', _carregarLista);
 
     $btnLimpar.on('click', async function () {
         $filtroDataIni.val('');
         $filtroDataFim.val('');
+        $filtroColaborador.val('');
+        $filtroParoquiano.val('');
+        $filtroFormaPag.val('');
+        $filtroCredito.val('');
         await _carregarLista();
     });
 
@@ -651,6 +749,7 @@
 
         formas.forEach(function (f) {
             $('<option>').val(f.idFormaPag).text(f.descricao).appendTo($pdvSelectForma);
+            $('<option>').val(f.idFormaPag).text(f.descricao).appendTo($filtroFormaPag);
         });
     }
 

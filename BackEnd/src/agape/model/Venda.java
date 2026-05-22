@@ -100,8 +100,10 @@ public class Venda {
         return dao.inserir(conn, this);
     }
 
-    public java.util.List<Venda> listar(Connection conn, String dataInicio, String dataFim) throws Exception {
-        return dao.listar(conn, dataInicio, dataFim);
+    public java.util.List<Venda> listar(Connection conn, String dataInicio, String dataFim,
+                                         String nomeColaborador, String nomeParoquiano,
+                                         Integer idFormaPag, Boolean usouCredito) throws Exception {
+        return dao.listar(conn, dataInicio, dataFim, nomeColaborador, nomeParoquiano, idFormaPag, usouCredito);
     }
 
     public String toJson() {
