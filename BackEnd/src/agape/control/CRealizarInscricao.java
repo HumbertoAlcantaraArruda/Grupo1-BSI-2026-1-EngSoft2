@@ -13,6 +13,7 @@ import agape.facade.InscricaoFacade;
 import agape.model.Inscricao;
 import agape.model.Paroquiano;
 import agape.util.ResponseObject;
+import agape.util.TradutorErro;
 
 /**
  * CRealizarInscricao — Controller do caso de uso RF_F3: Realizar Inscrição.
@@ -66,7 +67,7 @@ public class CRealizarInscricao implements HttpHandler {
             ResponseObject err = new ResponseObject();
             err.setStatus(ResponseObject.STATUS_FAIL);
             err.setCode(ResponseObject.CODE_ERROR);
-            err.addMessage("Erro inesperado: " + e.getMessage());
+            err.addMessage(TradutorErro.traduzir(e));
             enviarResposta(exchange, err);
         }
     }
@@ -155,7 +156,7 @@ public class CRealizarInscricao implements HttpHandler {
             rollback(conn); // ── Rollback: garante integridade em falha (Fluxo 7.2) ──
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_BAD_REQUEST);
-            response.addMessage(e.getMessage() != null ? e.getMessage() : "Erro ao realizar inscrição.");
+            response.addMessage(TradutorErro.traduzir(e));
         } finally {
             restaurarAutoCommit(conn);
         }
@@ -240,7 +241,7 @@ public class CRealizarInscricao implements HttpHandler {
     private void erroInterno(ResponseObject r, Exception e) {
         r.setStatus(ResponseObject.STATUS_FAIL);
         r.setCode(ResponseObject.CODE_ERROR);
-        r.addMessage("Erro interno: " + (e != null ? e.getMessage() : ""));
+        r.addMessage(TradutorErro.traduzir(e));
     }
 
     private ResponseObject naoEncontrado() {
@@ -251,3 +252,4 @@ public class CRealizarInscricao implements HttpHandler {
         return r;
     }
 }
+

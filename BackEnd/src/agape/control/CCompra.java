@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import agape.model.Compra;
 import agape.model.ItemCompra;
 import agape.util.ResponseObject;
+import agape.util.TradutorErro;
 
 public class CCompra implements HttpHandler {
 
@@ -111,7 +112,7 @@ public class CCompra implements HttpHandler {
             ResponseObject error = new ResponseObject();
             error.setStatus(ResponseObject.STATUS_FAIL);
             error.setCode(ResponseObject.CODE_ERROR);
-            error.addMessage("Erro: " + e.getMessage());
+            error.addMessage(TradutorErro.traduzir(e));
             enviarResposta(exchange, error);
         }
     }
@@ -148,10 +149,11 @@ public class CCompra implements HttpHandler {
             try { if (conn != null) conn.rollback(); } catch (SQLException se) {}
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_ERROR);
-            response.addMessage("Erro ao processar compra: " + e.getMessage());
+            response.addMessage(TradutorErro.traduzir(e));
         } finally {
             try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException se) {}
         }
         return response;
     }
 }
+

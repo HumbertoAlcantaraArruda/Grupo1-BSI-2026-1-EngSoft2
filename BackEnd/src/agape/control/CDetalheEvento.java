@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import agape.util.TradutorErro;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -59,7 +60,7 @@ public class CDetalheEvento implements HttpHandler {
                 default       -> escreverJson(exchange, 404, erro("Endpoint não encontrado."));
             }
         } catch (Exception e) {
-            try { escreverJson(exchange, 500, erro("Erro: " + e.getMessage())); }
+            try { escreverJson(exchange, 500, erro(TradutorErro.traduzir(e))); }
             catch (IOException ignored) {}
         }
     }
@@ -213,3 +214,4 @@ public class CDetalheEvento implements HttpHandler {
         exchange.close();
     }
 }
+

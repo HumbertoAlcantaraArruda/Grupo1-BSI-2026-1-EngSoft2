@@ -10,6 +10,7 @@ import com.sun.net.httpserver.HttpExchange;
 
 import agape.model.EventoStatus;
 import agape.util.ResponseObject;
+import agape.util.TradutorErro;
 
 public class CEventoStatus implements HttpHandler {
 
@@ -47,7 +48,7 @@ public class CEventoStatus implements HttpHandler {
             ResponseObject erro = new ResponseObject();
             erro.setStatus(ResponseObject.STATUS_FAIL);
             erro.setCode(ResponseObject.CODE_ERROR);
-            erro.addMessage("Erro inesperado: " + e.getMessage());
+            erro.addMessage(TradutorErro.traduzir(e));
             enviarResposta(exchange, erro);
         }
     }
@@ -215,7 +216,7 @@ public class CEventoStatus implements HttpHandler {
     private void erroInterno(ResponseObject r, Exception e) {
         r.setStatus(ResponseObject.STATUS_FAIL);
         r.setCode(ResponseObject.CODE_ERROR);
-        r.addMessage("Erro interno do servidor: " + (e != null ? e.getMessage() : ""));
+        r.addMessage(TradutorErro.traduzir(e));
     }
 
     private ResponseObject naoEncontrado() {
@@ -226,3 +227,4 @@ public class CEventoStatus implements HttpHandler {
         return r;
     }
 }
+

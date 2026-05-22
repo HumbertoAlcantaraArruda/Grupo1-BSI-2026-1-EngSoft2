@@ -14,6 +14,7 @@ import java.text.Normalizer;
 
 import agape.model.Parametrizacao;
 import agape.util.ResponseObject;
+import agape.util.TradutorErro;
 
 public class CParametrizacao implements HttpHandler {
 
@@ -230,8 +231,9 @@ public class CParametrizacao implements HttpHandler {
             ResponseObject error = new ResponseObject();
             error.setStatus(ResponseObject.STATUS_FAIL);
             error.setCode(ResponseObject.CODE_ERROR);
-            error.addMessage("Erro: " + e.getMessage());
+            error.addMessage(TradutorErro.traduzir(e));
             enviarResposta(exchange, error);
         }
     }
 }
+

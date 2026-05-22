@@ -15,6 +15,7 @@ import java.util.List;
 import agape.facade.VendaFacade;
 import agape.model.*;
 import agape.util.ResponseObject;
+import agape.util.TradutorErro;
 
 /**
  * CVenda — Controller da rota /venda e /paroquiano.
@@ -66,7 +67,7 @@ public class CVenda implements HttpHandler {
             ResponseObject erro = new ResponseObject();
             erro.setStatus(ResponseObject.STATUS_FAIL);
             erro.setCode(ResponseObject.CODE_ERROR);
-            erro.addMessage("Erro inesperado: " + e.getMessage());
+            erro.addMessage(TradutorErro.traduzir(e));
             enviarResposta(exchange, erro);
         }
     }
@@ -153,11 +154,9 @@ public class CVenda implements HttpHandler {
             response.setResult(p);
 
         } catch (Exception e) {
-            // Propaga a mensagem real para o frontend conseguir exibir a causa raiz
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_ERROR);
-            response.addMessage("Erro ao buscar paroquiano: " +
-                    (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            response.addMessage(TradutorErro.traduzir(e));
         }
         return response;
     }
@@ -289,7 +288,7 @@ public class CVenda implements HttpHandler {
             try { if (conn != null) conn.rollback(); } catch (SQLException ignored) {}
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_ERROR);
-            response.addMessage("Erro ao processar venda: " + e.getMessage());
+            response.addMessage(TradutorErro.traduzir(e));
         } finally {
             try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException ignored) {}
         }
@@ -345,7 +344,7 @@ public class CVenda implements HttpHandler {
     private void erroInterno(ResponseObject r) {
         r.setStatus(ResponseObject.STATUS_FAIL);
         r.setCode(ResponseObject.CODE_ERROR);
-        r.addMessage("Erro interno do servidor.");
+        r.addMessage("Ocorreu um problema ao processar sua solicitação. Tente novamente.");
     }
 
     private ResponseObject naoEncontrado() {
@@ -356,3 +355,4 @@ public class CVenda implements HttpHandler {
         return r;
     }
 }
+

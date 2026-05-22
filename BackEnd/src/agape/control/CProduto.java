@@ -10,6 +10,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import agape.model.Produto;
 import agape.util.ResponseObject;
+import agape.util.TradutorErro;
 
 public class CProduto implements HttpHandler {
     private static CProduto instancia;
@@ -47,7 +48,7 @@ public class CProduto implements HttpHandler {
         ResponseObject erro = new ResponseObject();
         erro.setStatus(ResponseObject.STATUS_FAIL);
         erro.setCode(ResponseObject.CODE_ERROR);
-        erro.addMessage("Erro inesperado: " + e.getMessage());
+        erro.addMessage(TradutorErro.traduzir(e));
         enviarResposta(exchange, erro);
       }
     }
@@ -94,7 +95,7 @@ public class CProduto implements HttpHandler {
         catch (Exception e){
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_ERROR);
-            response.addMessage("Erro inesperado: " + e.getMessage());
+            response.addMessage(TradutorErro.traduzir(e));
         }
         return response;
     }
@@ -263,7 +264,7 @@ public class CProduto implements HttpHandler {
     private void erroInterno(ResponseObject r, Exception e) {
         r.setStatus(ResponseObject.STATUS_FAIL);
         r.setCode(ResponseObject.CODE_ERROR);
-        r.addMessage("Erro interno do servidor: " + (e != null ? e.getMessage() : ""));
+        r.addMessage(TradutorErro.traduzir(e));
     }
 
     private ResponseObject naoEncontrado() {
@@ -275,3 +276,4 @@ public class CProduto implements HttpHandler {
     }
 
 }
+
