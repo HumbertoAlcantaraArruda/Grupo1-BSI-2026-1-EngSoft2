@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(java *)",
+      "PowerShell(ls \"C:\\\\Users\\\\Faculdade\\\\Documents\\\\Agape2\\\\AGAPE\\\\BackEnd\\\\out\\\\production\\\\BackEnd\\\\agape\" -Recurse | Where-Object { $_.Extension -eq \".class\" } | Select-Object Name, Directory | Sort-Object Directory)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Faculdade\\\\Documents\\\\Agape2\\\\AGAPE\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(Get-Content -Path \"C:\\\\Users\\\\Faculdade\\\\Documents\\\\Agape2\\\\AGAPE\\\\FrontEnd\\\\views\\\\eventos\\\\evento.js\" -Encoding UTF8)",
+      "Bash(Measure-Object -Line)",
+      "PowerShell(Get-Content \"C:\\\\Users\\\\Faculdade\\\\Documents\\\\Agape2\\\\AGAPE\\\\FrontEnd\\\\views\\\\eventos\\\\evento.js\" | ForEach-Object { Write-Output \"Line: $_\" })"
+    ]
+  }
+}

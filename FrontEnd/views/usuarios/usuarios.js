@@ -1,14 +1,13 @@
 /* usuarios.js — View: vincula eventos ao DOM e delega ao Controller */
 
-(function () {
+(function ($) {
 
     var auth = window.AGAPE.Utils.Auth.getInstance();
     if (!auth.requireLogin()) return;
 
-    // Apenas ADM acessa esta página
     var usuarioLogado = auth.getUsuario();
     if (!usuarioLogado || usuarioLogado.nivel !== 'ADM') {
-        window.location.replace('./index.html');
+        window.location.replace('../index.html');
         return;
     }
 
@@ -16,35 +15,35 @@
     var mascaras  = window.AGAPE.Utils.Mascaras.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    var tabelaCorpo          = document.getElementById('tabela-corpo');
-    var modalEl              = document.getElementById('modal-usuario');
-    var formUsuario          = document.getElementById('form-usuario');
-    var inputIdUsuario       = document.getElementById('idUsuario');
-    var inputNome            = document.getElementById('nome');
-    var inputCpf             = document.getElementById('cpf');
-    var inputEmail           = document.getElementById('email');
-    var selectNivel          = document.getElementById('nivel');
-    var modalTitulo          = document.getElementById('modal-titulo');
-    var filtrNome            = document.getElementById('filtro-nome');
-    var filtrNivel           = document.getElementById('filtro-nivel');
-    var filtrStatus          = document.getElementById('filtro-status');
-    var btnCadastrar         = document.getElementById('btn-cadastrar');
-    var btnFiltrar           = document.getElementById('btn-filtrar');
-    var btnLimpar            = document.getElementById('btn-limpar');
-    var btnSalvar            = document.getElementById('btn-salvar');
-    var btnConfirmarStatus   = document.getElementById('btn-confirmar-status');
-    var btnConfirmarExcluir  = document.getElementById('btn-confirmar-excluir');
-    var btnConfirmarReset    = document.getElementById('btn-confirmar-reset');
+    var $tabelaCorpo          = $('#tabela-corpo');
+    var $modalEl              = $('#modal-usuario');
+    var $formUsuario          = $('#form-usuario');
+    var $inputIdUsuario       = $('#idUsuario');
+    var $inputNome            = $('#nome');
+    var $inputCpf             = $('#cpf');
+    var $inputEmail           = $('#email');
+    var $selectNivel          = $('#nivel');
+    var $modalTitulo          = $('#modal-titulo');
+    var $filtrNome            = $('#filtro-nome');
+    var $filtrNivel           = $('#filtro-nivel');
+    var $filtrStatus          = $('#filtro-status');
+    var $btnCadastrar         = $('#btn-cadastrar');
+    var $btnFiltrar           = $('#btn-filtrar');
+    var $btnLimpar            = $('#btn-limpar');
+    var $btnSalvar            = $('#btn-salvar');
+    var $btnConfirmarStatus   = $('#btn-confirmar-status');
+    var $btnConfirmarExcluir  = $('#btn-confirmar-excluir');
+    var $btnConfirmarReset    = $('#btn-confirmar-reset');
 
-    var modalObj        = new bootstrap.Modal(modalEl);
-    var modalStatusObj  = new bootstrap.Modal(document.getElementById('modal-status'));
-    var modalExcluirObj = new bootstrap.Modal(document.getElementById('modal-excluir'));
-    var modalResetObj   = new bootstrap.Modal(document.getElementById('modal-reset-senha'));
+    var modalObj        = new bootstrap.Modal($modalEl[0]);
+    var modalStatusObj  = new bootstrap.Modal($('#modal-status')[0]);
+    var modalExcluirObj = new bootstrap.Modal($('#modal-excluir')[0]);
+    var modalResetObj   = new bootstrap.Modal($('#modal-reset-senha')[0]);
 
     var idUsuarioLogado = usuarioLogado ? Number(usuarioLogado.idUsuario) : null;
 
     var idParaStatus  = null;
-    var acaoStatus    = null; // 'ativar' | 'desativar'
+    var acaoStatus    = null;
     var idParaExcluir = null;
     var idParaReset   = null;
 
@@ -58,89 +57,164 @@
     }
 
     function _bindCpfValidacao() {
-        inputCpf.addEventListener('blur', function () {
-            var digits = mascaras.apenasDigitos(inputCpf.value);
-
+        $inputCpf.on('blur', function () {
+            var digits = mascaras.apenasDigitos($inputCpf.val());
             if (digits.length === 0) {
-                inputCpf.classList.remove('is-invalid', 'is-valid');
+                $inputCpf.removeClass('is-invalid is-valid');
                 return;
             }
             var resultado = window.AGAPE.Utils.ValidadorCpf.validar(digits);
-            validador.destacarCampo(inputCpf, resultado.valido, resultado.mensagem);
+            validador.destacarCampo($inputCpf[0], resultado.valido, resultado.mensagem);
         });
     }
 
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="6" class="tabela-vazia">Carregando...</td></tr>';
+        $tabelaCorpo.html('<tr><td colspan="6" class="tabela-vazia">Carregando...</td></tr>');
         _renderizarTabela(await ctrl.listar());
     }
 
+
+
+    var _dt = null;
+
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
-            tabelaCorpo.innerHTML =
+            if (_dt) { _dt.destroy(); _dt = null; }
+            $tabelaCorpo.html(
                 '<tr><td colspan="6" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
-                _escapar(resultado.erro || 'Erro ao carregar dados.') +
-                '</td></tr>';
+                _esc(resultado.erro || 'Erro ao carregar dados.') +
+                '</td></tr>'
+            );
             return;
         }
 
         var lista = Array.isArray(resultado.dados) ? resultado.dados : [];
+        var dados = lista.map(function (u) {
+            return {
+                idUsuario: u.idUsuario,
+                nome:      u.nome,
+                cpf:       u.cpf,
+                email:     u.email,
+                nivel:     u.nivel,
+                status:    u.status
+            };
+        });
 
-        if (lista.length === 0) {
-            tabelaCorpo.innerHTML =
-                '<tr><td colspan="6" class="tabela-vazia">' +
-                '<i class="bi bi-inbox me-1"></i>Nenhum usuário encontrado.' +
-                '</td></tr>';
+        if (_dt) {
+            _dt.clear().rows.add(dados).draw();
             return;
         }
 
-        var html = lista.map(function (u) {
-            var ativo      = u.status === 1 || u.status === '1';
-            var badgeStatus = ativo
-                ? '<span class="badge-ativo">Ativo</span>'
-                : '<span class="badge-inativo">Inativo</span>';
-            var badgeNivel = _badgeNivel(u.nivel);
-            var cpfFmt     = _formatarCpf(u.cpf);
-
-            var btnToggle = ativo
-                ? '<button class="btn-acao btn-desativar me-1" ' +
-                  'data-id="' + u.idUsuario + '" data-nome="' + _escapar(u.nome) + '" ' +
-                  'title="Desativar"><i class="bi bi-person-dash"></i></button>'
-                : '<button class="btn-acao btn-ativar me-1" ' +
-                  'data-id="' + u.idUsuario + '" data-nome="' + _escapar(u.nome) + '" ' +
-                  'title="Ativar"><i class="bi bi-person-check"></i></button>';
-
-            return (
-                '<tr>' +
-                '<td class="text-start">' + _escapar(u.nome) + '</td>' +
-                '<td>' + cpfFmt + '</td>' +
-                '<td>' + _escapar(u.email) + '</td>' +
-                '<td>' + badgeNivel + '</td>' +
-                '<td>' + badgeStatus + '</td>' +
-                '<td>' +
-                '<button class="btn-acao btn-editar me-1" ' +
-                'data-id="'    + u.idUsuario     + '" ' +
-                'data-nome="'  + _escapar(u.nome)  + '" ' +
-                'data-cpf="'   + _escapar(u.cpf)   + '" ' +
-                'data-email="' + _escapar(u.email) + '" ' +
-                'data-nivel="' + _escapar(u.nivel) + '" ' +
-                'title="Editar"><i class="bi bi-pencil"></i></button>' +
-                btnToggle +
-                '<button class="btn-acao btn-reset-senha me-1" ' +
-                'data-id="'   + u.idUsuario      + '" ' +
-                'data-nome="' + _escapar(u.nome) + '" ' +
-                'title="Resetar Senha"><i class="bi bi-key"></i></button>' +
-                '<button class="btn-acao btn-excluir" ' +
-                'data-id="' + u.idUsuario + '" data-nome="' + _escapar(u.nome) + '" ' +
-                'title="Excluir"><i class="bi bi-trash"></i></button>' +
-                '</td></tr>'
-            );
-        }).join('');
-
-        tabelaCorpo.innerHTML = html;
-        _bindBotoesTabela();
+        _dt = $tabelaCorpo.closest('table').DataTable({
+            dom: '<"top d-flex justify-content-end" f>rt<"bottom d-flex justify-content-between" l p>',
+            searching: false,
+            info: false,
+            data: dados,
+            columnDefs: [
+                { className: 'text-center', targets: '_all' }
+            ],
+            columns: [
+                { data: 'nome',  render: function (d) { return _esc(d); } },
+                { data: 'cpf',   render: function (d) { return _formatarCpf(d); } },
+                { data: 'email', render: function (d) { return _esc(d); } },
+                { data: 'nivel', render: function (d) { return _badgeNivel(d); } },
+                { data: 'status', render: function (d) {
+                    var ativo = d === 1 || d === '1';
+                    return ativo ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
+                }},
+                { data: null, orderable: false, render: function (d, t, row) {
+                    var ativo = row.status === 1 || row.status === '1';
+                    var btnToggle = ativo
+                        ? '<button class="btn-acao btn-desativar me-1" data-id="' + row.idUsuario + '" data-nome="' + _esc(row.nome) + '" title="Desativar"><i class="bi bi-person-dash"></i></button>'
+                        : '<button class="btn-acao btn-ativar me-1" data-id="' + row.idUsuario + '" data-nome="' + _esc(row.nome) + '" title="Ativar"><i class="bi bi-person-check"></i></button>';
+                    return '<button class="btn-acao btn-editar me-1" ' +
+                        'data-id="'    + row.idUsuario   + '" ' +
+                        'data-nome="'  + _esc(row.nome)  + '" ' +
+                        'data-cpf="'   + _esc(row.cpf)   + '" ' +
+                        'data-email="' + _esc(row.email) + '" ' +
+                        'data-nivel="' + _esc(row.nivel) + '" title="Editar">' +
+                        '<i class="bi bi-pencil"></i></button>' +
+                        btnToggle +
+                        '<button class="btn-acao btn-reset-senha me-1" ' +
+                        'data-id="'   + row.idUsuario   + '" ' +
+                        'data-nome="' + _esc(row.nome)  + '" title="Resetar Senha">' +
+                        '<i class="bi bi-key"></i></button>' +
+                        '<button class="btn-acao btn-excluir" ' +
+                        'data-id="'   + row.idUsuario   + '" ' +
+                        'data-nome="' + _esc(row.nome)  + '" title="Excluir">' +
+                        '<i class="bi bi-trash"></i></button>';
+                }}
+            ],
+            language: {
+                decimal: ',', thousands: '.',
+                emptyTable:   'Nenhum usuário encontrado',
+                info:         'Mostrando _START_ a _END_ de _TOTAL_ registro(s)',
+                infoEmpty:    'Nenhum registro encontrado',
+                infoFiltered: '(filtrado de _MAX_ no total)',
+                lengthMenu:   'Mostrar _MENU_ por página',
+                search:       'Buscar:',
+                zeroRecords:  'Nenhum usuário encontrado',
+                paginate: {
+                    first: '<i class="bi bi-chevron-double-left"></i>',
+                    last: '<i class="bi bi-chevron-double-right"></i>',
+                    next: '<i class="bi bi-chevron-right"></i>',
+                    previous: '<i class="bi bi-chevron-left"></i>'
+                }
+            },
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            order: [[0, 'asc']]
+        });
     }
+
+    $tabelaCorpo.on('click', '.btn-editar', function () {
+        _abrirModalEdicao($(this).data());
+    });
+
+    $tabelaCorpo.on('click', '.btn-ativar', function () {
+        if ($(this).data('id') === idUsuarioLogado) {
+            validador.mostrarAlerta('Você não tem permissão para realizar esta ação na sua própria conta.', 'erro');
+            return;
+        }
+        idParaStatus = $(this).data('id');
+        acaoStatus   = 'ativar';
+        $('#status-msg').text('Deseja ativar o usuário:');
+        $('#status-nome').text($(this).data('nome'));
+        $btnConfirmarStatus.attr('class', 'btn btn-success btn-sm')
+            .html('<i class="bi bi-person-check me-1"></i>Ativar');
+        modalStatusObj.show();
+    });
+
+    $tabelaCorpo.on('click', '.btn-desativar', function () {
+        if ($(this).data('id') === idUsuarioLogado) {
+            validador.mostrarAlerta('Você não tem permissão para realizar esta ação na sua própria conta.', 'erro');
+            return;
+        }
+        idParaStatus = $(this).data('id');
+        acaoStatus   = 'desativar';
+        $('#status-msg').text('Deseja desativar o usuário:');
+        $('#status-nome').text($(this).data('nome'));
+        $btnConfirmarStatus.attr('class', 'btn btn-warning btn-sm')
+            .html('<i class="bi bi-person-dash me-1"></i>Desativar');
+        modalStatusObj.show();
+    });
+
+    $tabelaCorpo.on('click', '.btn-excluir', function () {
+        if ($(this).data('id') === idUsuarioLogado) {
+            validador.mostrarAlerta('Você não tem permissão para realizar esta ação na sua própria conta.', 'erro');
+            return;
+        }
+        idParaExcluir = $(this).data('id');
+        $('#excluir-nome').text($(this).data('nome'));
+        modalExcluirObj.show();
+    });
+
+    $tabelaCorpo.on('click', '.btn-reset-senha', function () {
+        idParaReset = $(this).data('id');
+        $('#reset-nome').text($(this).data('nome'));
+        modalResetObj.show();
+    });
 
     function _badgeNivel(nivel) {
         var cores = { ADM: '#024040', COLAB: '#8C142A', PAROQ: '#6c757d' };
@@ -153,123 +227,64 @@
     function _formatarCpf(cpf) {
         var d = (cpf || '').replace(/\D/g, '');
         if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        return _escapar(cpf || '');
+        return _esc(cpf || '');
     }
 
-    function _bindBotoesTabela() {
-        document.querySelectorAll('.btn-editar').forEach(function (btn) {
-            btn.addEventListener('click', function () { _abrirModalEdicao(this.dataset); });
-        });
-        document.querySelectorAll('.btn-ativar').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                if (Number(this.dataset.id) === idUsuarioLogado) {
-                    validador.mostrarAlerta('Você não tem permissão para realizar esta ação na sua própria conta.', 'erro');
-                    return;
-                }
-                idParaStatus = this.dataset.id;
-                acaoStatus   = 'ativar';
-                document.getElementById('status-msg').textContent  = 'Deseja ativar o usuário:';
-                document.getElementById('status-nome').textContent = this.dataset.nome;
-                btnConfirmarStatus.className = 'btn btn-success btn-sm';
-                btnConfirmarStatus.innerHTML = '<i class="bi bi-person-check me-1"></i>Ativar';
-                modalStatusObj.show();
-            });
-        });
-        document.querySelectorAll('.btn-desativar').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                if (Number(this.dataset.id) === idUsuarioLogado) {
-                    validador.mostrarAlerta('Você não tem permissão para realizar esta ação na sua própria conta.', 'erro');
-                    return;
-                }
-                idParaStatus = this.dataset.id;
-                acaoStatus   = 'desativar';
-                document.getElementById('status-msg').textContent  = 'Deseja desativar o usuário:';
-                document.getElementById('status-nome').textContent = this.dataset.nome;
-                btnConfirmarStatus.className = 'btn btn-warning btn-sm';
-                btnConfirmarStatus.innerHTML = '<i class="bi bi-person-dash me-1"></i>Desativar';
-                modalStatusObj.show();
-            });
-        });
-        document.querySelectorAll('.btn-excluir').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                if (Number(this.dataset.id) === idUsuarioLogado) {
-                    validador.mostrarAlerta('Você não tem permissão para realizar esta ação na sua própria conta.', 'erro');
-                    return;
-                }
-                idParaExcluir = this.dataset.id;
-                document.getElementById('excluir-nome').textContent = this.dataset.nome;
-                modalExcluirObj.show();
-            });
-        });
-        document.querySelectorAll('.btn-reset-senha').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                idParaReset = this.dataset.id;
-                document.getElementById('reset-nome').textContent = this.dataset.nome;
-                modalResetObj.show();
-            });
-        });
-    }
-
-    btnCadastrar.addEventListener('click', function () {
-        modalTitulo.textContent  = 'Cadastrar Usuário';
-        validador.resetar(formUsuario);
-        inputIdUsuario.value = '';
-        inputNome.value      = '';
-        inputCpf.value       = '';
-        inputEmail.value     = '';
-        selectNivel.value    = '';
-        selectNivel.disabled = false;
-        var aviso = document.getElementById('aviso-nivel-proprio');
-        if (aviso) aviso.remove();
+    $btnCadastrar.on('click', function () {
+        $modalTitulo.text('Cadastrar Usuário');
+        validador.resetar($formUsuario[0]);
+        $inputIdUsuario.val('');
+        $inputNome.val('');
+        $inputCpf.val('');
+        $inputEmail.val('');
+        $selectNivel.val('');
+        $selectNivel.prop('disabled', false);
+        $('#aviso-nivel-proprio').remove();
         modalObj.show();
     });
 
     function _abrirModalEdicao(dados) {
-        modalTitulo.textContent   = 'Alterar Usuário';
-        validador.resetar(formUsuario);
-        inputIdUsuario.value      = dados.id;
-        inputNome.value           = dados.nome  || '';
-        inputCpf.value            = _formatarCpf(dados.cpf);
-        inputEmail.value          = dados.email || '';
-        selectNivel.value         = dados.nivel || '';
+        $modalTitulo.text('Alterar Usuário');
+        validador.resetar($formUsuario[0]);
+        $inputIdUsuario.val(dados.id);
+        $inputNome.val(dados.nome  || '');
+        $inputCpf.val(_formatarCpf(dados.cpf));
+        $inputEmail.val(dados.email || '');
+        $selectNivel.val(dados.nivel || '');
 
-        var editandoSiMesmo = Number(dados.id) === idUsuarioLogado;
-        selectNivel.disabled = editandoSiMesmo;
+        var editandoSiMesmo = dados.id === idUsuarioLogado;
+        $selectNivel.prop('disabled', editandoSiMesmo);
 
-        var avisoNivel = document.getElementById('aviso-nivel-proprio');
+        $('#aviso-nivel-proprio').remove();
         if (editandoSiMesmo) {
-            if (!avisoNivel) {
-                avisoNivel = document.createElement('small');
-                avisoNivel.id        = 'aviso-nivel-proprio';
-                avisoNivel.className = 'text-muted mt-1 d-block';
-                avisoNivel.textContent = 'Você não pode alterar seu próprio nível de acesso.';
-                selectNivel.parentElement.appendChild(avisoNivel);
-            }
-        } else if (avisoNivel) {
-            avisoNivel.remove();
+            $('<small>')
+                .attr('id', 'aviso-nivel-proprio')
+                .addClass('text-muted mt-1 d-block')
+                .text('Você não pode alterar seu próprio nível de acesso.')
+                .appendTo($selectNivel.parent());
         }
 
         modalObj.show();
     }
 
-    btnSalvar.addEventListener('click', async function () {
-        var _cpfDigits     = mascaras.apenasDigitos(inputCpf.value);
+    $btnSalvar.on('click', async function () {
+        var _cpfDigits     = mascaras.apenasDigitos($inputCpf.val());
         var _cpfAlgoValido = true;
         if (_cpfDigits.length > 0) {
             var _cpfResult = window.AGAPE.Utils.ValidadorCpf.validar(_cpfDigits);
-            validador.destacarCampo(inputCpf, _cpfResult.valido, _cpfResult.mensagem);
+            validador.destacarCampo($inputCpf[0], _cpfResult.valido, _cpfResult.mensagem);
             _cpfAlgoValido = _cpfResult.valido;
         }
 
-        if (!validador.validarFormulario(formUsuario) || !_cpfAlgoValido) return;
+        if (!validador.validarFormulario($formUsuario[0]) || !_cpfAlgoValido) return;
 
-        var novoCadastro = !inputIdUsuario.value;
+        var novoCadastro = !$inputIdUsuario.val();
         var dados = {
-            idUsuario: inputIdUsuario.value || null,
-            nome:      inputNome.value.trim(),
-            cpf:       inputCpf.value,
-            email:     inputEmail.value.trim(),
-            nivel:     selectNivel.value
+            idUsuario: $inputIdUsuario.val() || null,
+            nome:      $inputNome.val().trim(),
+            cpf:       $inputCpf.val(),
+            email:     $inputEmail.val().trim(),
+            nivel:     $selectNivel.val()
         };
 
         var resultado = novoCadastro
@@ -288,7 +303,7 @@
         }
     });
 
-    btnConfirmarStatus.addEventListener('click', async function () {
+    $btnConfirmarStatus.on('click', async function () {
         if (!idParaStatus) return;
         var acao      = acaoStatus;
         var resultado = acao === 'ativar'
@@ -307,7 +322,7 @@
         }
     });
 
-    btnConfirmarExcluir.addEventListener('click', async function () {
+    $btnConfirmarExcluir.on('click', async function () {
         if (!idParaExcluir) return;
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
@@ -320,7 +335,7 @@
         }
     });
 
-    btnConfirmarReset.addEventListener('click', async function () {
+    $btnConfirmarReset.on('click', async function () {
         if (!idParaReset) return;
         var resultado = await ctrl.resetarSenha(idParaReset);
         modalResetObj.hide();
@@ -332,26 +347,25 @@
         }
     });
 
-    btnFiltrar.addEventListener('click', function () {
+    $btnFiltrar.on('click', function () {
         _renderizarTabela(ctrl.filtrar({
-            nome:   filtrNome.value,
-            nivel:  filtrNivel.value,
-            status: filtrStatus.value
+            nome:   $filtrNome.val(),
+            nivel:  $filtrNivel.val(),
+            status: $filtrStatus.val()
         }));
     });
 
-    btnLimpar.addEventListener('click', async function () {
-        filtrNome.value = filtrNivel.value = filtrStatus.value = '';
+    $btnLimpar.on('click', async function () {
+        $filtrNome.val('');
+        $filtrNivel.val('');
+        $filtrStatus.val('');
         await _carregarLista();
     });
 
-    function _escapar(texto) {
-        if (texto === null || texto === undefined) return '';
-        return String(texto)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    function _esc(texto) {
+        return $('<div>').text(texto == null ? '' : String(texto)).html();
     }
 
-    document.addEventListener('DOMContentLoaded', inicializar);
+    $(inicializar);
 
-})();
+}(jQuery));

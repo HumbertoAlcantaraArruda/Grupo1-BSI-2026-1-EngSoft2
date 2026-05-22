@@ -1,31 +1,32 @@
 /* categoriaEvento.js — View: vincula eventos ao DOM e delega ao Controller */
 
-(function () {
+(function ($) {
 
     if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
 
     var ctrl      = window.AGAPE.Controllers.CategoriaEventoController.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    var tabelaCorpo         = document.getElementById('tabela-corpo');
-    var modalEl             = document.getElementById('modal-categoria');
-    var formCategoria       = document.getElementById('form-categoria');
-    var inputId             = document.getElementById('catId');
-    var inputNome           = document.getElementById('nome');
-    var selectAtivo         = document.getElementById('ativo');
-    var modalTitulo         = document.getElementById('modal-titulo');
-    var secaoAtivo          = document.getElementById('secao-ativo');
-    var filtrNome           = document.getElementById('filtro-nome');
-    var filtrAtivo          = document.getElementById('filtro-ativo');
-    var btnCadastrar        = document.getElementById('btn-cadastrar');
-    var btnFiltrar          = document.getElementById('btn-filtrar');
-    var btnLimpar           = document.getElementById('btn-limpar');
-    var btnSalvar           = document.getElementById('btn-salvar');
-    var btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
+    var $tabelaCorpo         = $('#tabela-corpo');
+    var $modalEl             = $('#modal-categoria');
+    var $formCategoria       = $('#form-categoria');
+    var $inputId             = $('#catId');
+    var $inputNome           = $('#nome');
+    var $selectAtivo         = $('#ativo');
+    var $modalTitulo         = $('#modal-titulo');
+    var $secaoAtivo          = $('#secao-ativo');
+    var $filtrNome           = $('#filtro-nome');
+    var $filtrAtivo          = $('#filtro-ativo');
+    var $btnCadastrar        = $('#btn-cadastrar');
+    var $btnFiltrar          = $('#btn-filtrar');
+    var $btnLimpar           = $('#btn-limpar');
+    var $btnSalvar           = $('#btn-salvar');
+    var $btnConfirmarExcluir = $('#btn-confirmar-excluir');
 
-    var modalObj        = new bootstrap.Modal(modalEl);
-    var modalExcluirObj = new bootstrap.Modal(document.getElementById('modal-excluir'));
+    var modalObj        = new bootstrap.Modal($modalEl[0]);
+    var modalExcluirObj = new bootstrap.Modal($('#modal-excluir')[0]);
     var idParaExcluir   = null;
+    var _dt             = null;
 
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
@@ -33,94 +34,118 @@
     }
 
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="3" class="tabela-vazia">Carregando...</td></tr>';
+        $tabelaCorpo.html('<tr><td colspan="3" class="tabela-vazia">Carregando...</td></tr>');
         _renderizarTabela(await ctrl.listar());
     }
 
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
-            tabelaCorpo.innerHTML =
+            if (_dt) { _dt.destroy(); _dt = null; }
+            $tabelaCorpo.html(
                 '<tr><td colspan="3" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
-                _escapar(resultado.erro || 'Erro ao carregar dados.') +
-                '</td></tr>';
+                _esc(resultado.erro || 'Erro ao carregar dados.') +
+                '</td></tr>'
+            );
             return;
         }
 
         var lista = Array.isArray(resultado.dados) ? resultado.dados : [];
+        var dados = lista.map(function (c) {
+            var ativo = (c.ativo === true || c.ativo === 1 || c.ativo === 'true');
+            return { idCatEvento: c.idCatEvento, nome: c.nome, ativo: ativo };
+        });
 
-        if (lista.length === 0) {
-            tabelaCorpo.innerHTML =
-                '<tr><td colspan="3" class="tabela-vazia">' +
-                '<i class="bi bi-inbox me-1"></i>Nenhuma categoria encontrada.' +
-                '</td></tr>';
+        if (_dt) {
+            _dt.clear().rows.add(dados).draw();
             return;
         }
 
-        var html = lista.map(function (c) {
-            var ativo = (c.ativo === true || c.ativo === 1 || c.ativo === 'true');
-            var badge = ativo ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
-            return (
-                '<tr>' +
-                '<td>' + _escapar(c.nome) + '</td>' +
-                '<td>' + badge + '</td>' +
-                '<td>' +
-                '<button class="btn-acao btn-editar me-1" data-id="' + c.idCatEvento + '" ' +
-                'data-nome="' + _escapar(c.nome) + '" data-ativo="' + ativo + '" title="Editar">' +
-                '<i class="bi bi-pencil"></i></button>' +
-                '<button class="btn-acao btn-excluir" data-id="' + c.idCatEvento + '" ' +
-                'data-nome="' + _escapar(c.nome) + '" title="Excluir">' +
-                '<i class="bi bi-trash"></i></button>' +
-                '</td></tr>'
-            );
-        }).join('');
-
-        tabelaCorpo.innerHTML = html;
-        _bindBotoesTabela();
+        _dt = $tabelaCorpo.closest('table').DataTable({
+            dom: '<"top d-flex justify-content-end" f>rt<"bottom d-flex justify-content-between" l p>',
+            searching: false,
+            info: false,
+            data: dados,
+            columnDefs: [
+                { className: 'text-center', targets: '_all' }
+            ],
+            columns: [
+                { data: 'nome', render: function (d) { return _esc(d); } },
+                { data: 'ativo', render: function (d) {
+                    return d ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
+                }},
+                { data: null, orderable: false, render: function (d, t, row) {
+                    return '<button class="btn-acao btn-editar me-1" ' +
+                        'data-id="' + row.idCatEvento + '" ' +
+                        'data-nome="' + _esc(row.nome) + '" ' +
+                        'data-ativo="' + row.ativo + '" title="Editar">' +
+                        '<i class="bi bi-pencil"></i></button>' +
+                        '<button class="btn-acao btn-excluir" ' +
+                        'data-id="' + row.idCatEvento + '" ' +
+                        'data-nome="' + _esc(row.nome) + '" title="Excluir">' +
+                        '<i class="bi bi-trash"></i></button>';
+                }}
+            ],
+            language: {
+                decimal: ',', thousands: '.',
+                emptyTable:   'Nenhuma categoria encontrada',
+                info:         'Mostrando _START_ a _END_ de _TOTAL_ registro(s)',
+                infoEmpty:    'Nenhum registro encontrado',
+                infoFiltered: '(filtrado de _MAX_ no total)',
+                lengthMenu:   'Mostrar _MENU_ por página',
+                search:       'Buscar:',
+                zeroRecords:  'Nenhuma categoria encontrada',
+                paginate: {
+                    first: '<i class="bi bi-chevron-double-left"></i>',
+                    last:  '<i class="bi bi-chevron-double-right"></i>',
+                    next:  '<i class="bi bi-chevron-right"></i>',
+                    previous: '<i class="bi bi-chevron-left"></i>'
+                }
+            },
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            order: [[0, 'asc']]
+        });
     }
 
-    function _bindBotoesTabela() {
-        document.querySelectorAll('.btn-editar').forEach(function (btn) {
-            btn.addEventListener('click', function () { _abrirModalEdicao(this.dataset); });
-        });
-        document.querySelectorAll('.btn-excluir').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                idParaExcluir = this.dataset.id;
-                document.getElementById('excluir-nome').textContent = this.dataset.nome;
-                modalExcluirObj.show();
-            });
-        });
-    }
+    $tabelaCorpo.on('click', '.btn-editar', function () {
+        _abrirModalEdicao($(this).data());
+    });
 
-    btnCadastrar.addEventListener('click', function () {
-        modalTitulo.textContent = 'Cadastrar Categoria de Evento';
-        validador.resetar(formCategoria);
-        inputId.value     = '';
-        inputNome.value   = '';
-        selectAtivo.value = 'true';
-        // Campo "ativo" desabilitado no cadastro — POST não envia esse campo
-        selectAtivo.disabled = true;
+    $tabelaCorpo.on('click', '.btn-excluir', function () {
+        idParaExcluir = $(this).data('id');
+        $('#excluir-nome').text($(this).data('nome'));
+        modalExcluirObj.show();
+    });
+
+    $btnCadastrar.on('click', function () {
+        $modalTitulo.text('Cadastrar Categoria de Evento');
+        validador.resetar($formCategoria[0]);
+        $inputId.val('');
+        $inputNome.val('');
+        $selectAtivo.val('true');
+        $selectAtivo.prop('disabled', true);
         modalObj.show();
     });
 
     function _abrirModalEdicao(dados) {
-        modalTitulo.textContent  = 'Alterar Categoria de Evento';
-        validador.resetar(formCategoria);
-        inputId.value         = dados.id;
-        inputNome.value       = dados.nome;
-        selectAtivo.value     = dados.ativo === 'true' ? 'true' : 'false';
-        selectAtivo.disabled  = false;
-        secaoAtivo.style.display = 'block';
+        $modalTitulo.text('Alterar Categoria de Evento');
+        validador.resetar($formCategoria[0]);
+        $inputId.val(dados.id);
+        $inputNome.val(dados.nome);
+        $selectAtivo.val(dados.ativo ? 'true' : 'false');
+        $selectAtivo.prop('disabled', false);
+        $secaoAtivo.show();
         modalObj.show();
     }
 
-    btnSalvar.addEventListener('click', async function () {
-        if (!validador.validarFormulario(formCategoria)) return;
+    $btnSalvar.on('click', async function () {
+        if (!validador.validarFormulario($formCategoria[0])) return;
 
         var dados = {
-            idCatEvento: inputId.value || null,
-            nome:        inputNome.value.trim(),
-            ativo:       selectAtivo.value === 'true'
+            idCatEvento: $inputId.val() || null,
+            nome:        $inputNome.val().trim(),
+            ativo:       $selectAtivo.val() === 'true'
         };
 
         var resultado = dados.idCatEvento
@@ -139,7 +164,7 @@
         }
     });
 
-    btnConfirmarExcluir.addEventListener('click', async function () {
+    $btnConfirmarExcluir.on('click', async function () {
         if (!idParaExcluir) return;
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
@@ -152,24 +177,21 @@
         }
     });
 
-    btnFiltrar.addEventListener('click', async function () {
-        tabelaCorpo.innerHTML = '<tr><td colspan="3" class="tabela-vazia">Filtrando...</td></tr>';
-        _renderizarTabela(await ctrl.filtrar({ nome: filtrNome.value, ativo: filtrAtivo.value }));
+    $btnFiltrar.on('click', async function () {
+        $tabelaCorpo.html('<tr><td colspan="3" class="tabela-vazia">Filtrando...</td></tr>');
+        _renderizarTabela(await ctrl.filtrar({ nome: $filtrNome.val(), ativo: $filtrAtivo.val() }));
     });
 
-    btnLimpar.addEventListener('click', async function () {
-        filtrNome.value = filtrAtivo.value = '';
+    $btnLimpar.on('click', async function () {
+        $filtrNome.val('');
+        $filtrAtivo.val('');
         await _carregarLista();
     });
 
-    // Escapa HTML para evitar XSS ao inserir dados do backend no DOM
-    function _escapar(texto) {
-        if (texto === null || texto === undefined) return '';
-        return String(texto)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    function _esc(texto) {
+        return $('<div>').text(texto == null ? '' : String(texto)).html();
     }
 
-    document.addEventListener('DOMContentLoaded', inicializar);
+    $(inicializar);
 
-})();
+}(jQuery));

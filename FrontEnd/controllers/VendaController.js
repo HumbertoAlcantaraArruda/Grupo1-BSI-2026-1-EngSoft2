@@ -64,7 +64,12 @@ window.AGAPE.Controllers.VendaController = (function () {
         if (digits.length !== 11) {
             return { status: 'error', erro: 'CPF deve ter 11 dígitos.' };
         }
+
+
         var resultado = await this._service.buscarParoquiano(digits);
+
+
+
         if (resultado.status === 'ok') {
             this._estado.paroquiano = resultado.dados;
         }

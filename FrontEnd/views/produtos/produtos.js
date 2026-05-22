@@ -1,6 +1,6 @@
 /* produtos.js — View: vincula eventos ao DOM e delega ao Controller */
 
-(function () {
+(function ($) {
 
     if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
 
@@ -8,28 +8,29 @@
     var mascaras  = window.AGAPE.Utils.Mascaras.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    var tabelaCorpo         = document.getElementById('tabela-corpo');
-    var modalEl             = document.getElementById('modal-produto');
-    var formProduto         = document.getElementById('form-produto');
-    var inputIdProd         = document.getElementById('idProd');
-    var inputNome           = document.getElementById('nome');
-    var selectCategoria     = document.getElementById('idCatProd');
-    var inputValorUni       = document.getElementById('valorUni');
-    var inputQtde           = document.getElementById('qtdeAtual');
-    var modalTitulo         = document.getElementById('modal-titulo');
-    var filtrNome           = document.getElementById('filtro-nome');
-    var filtrCategoria      = document.getElementById('filtro-categoria');
-    var filtrOperador       = document.getElementById('filtro-operador');
-    var filtrQtde           = document.getElementById('filtro-qtde');
-    var btnCadastrar        = document.getElementById('btn-cadastrar');
-    var btnFiltrar          = document.getElementById('btn-filtrar');
-    var btnLimpar           = document.getElementById('btn-limpar');
-    var btnSalvar           = document.getElementById('btn-salvar');
-    var btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
+    var $tabelaCorpo         = $('#tabela-corpo');
+    var $modalEl             = $('#modal-produto');
+    var $formProduto         = $('#form-produto');
+    var $inputIdProd         = $('#idProd');
+    var $inputNome           = $('#nome');
+    var $selectCategoria     = $('#idCatProd');
+    var $inputValorUni       = $('#valorUni');
+    var $inputQtde           = $('#qtdeAtual');
+    var $modalTitulo         = $('#modal-titulo');
+    var $filtrNome           = $('#filtro-nome');
+    var $filtrCategoria      = $('#filtro-categoria');
+    var $filtrOperador       = $('#filtro-operador');
+    var $filtrQtde           = $('#filtro-qtde');
+    var $btnCadastrar        = $('#btn-cadastrar');
+    var $btnFiltrar          = $('#btn-filtrar');
+    var $btnLimpar           = $('#btn-limpar');
+    var $btnSalvar           = $('#btn-salvar');
+    var $btnConfirmarExcluir = $('#btn-confirmar-excluir');
 
-    var modalObj         = new bootstrap.Modal(modalEl);
-    var modalExcluirObj  = new bootstrap.Modal(document.getElementById('modal-excluir'));
-    var idParaExcluir    = null;
+    var modalObj        = new bootstrap.Modal($modalEl[0]);
+    var modalExcluirObj = new bootstrap.Modal($('#modal-excluir')[0]);
+    var idParaExcluir   = null;
+    var _dt             = null;
 
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
@@ -38,7 +39,6 @@
         await _carregarLista();
     }
 
-    // Popula os selects de categoria no filtro e no formulário
     async function _carregarCategorias() {
         var resultado = await ctrl.carregarCategorias();
 
@@ -46,124 +46,151 @@
         var opcaoPadraoForm = '<option value="">Selecione...</option>';
 
         if (resultado.status !== 'ok' || !Array.isArray(resultado.dados)) {
-            selectCategoria.innerHTML = opcaoPadraoForm;
-            filtrCategoria.innerHTML  = opcaoPadrao;
+            $selectCategoria.html(opcaoPadraoForm);
+            $filtrCategoria.html(opcaoPadrao);
             return;
         }
 
         var opcoesCategoria = resultado.dados
             .filter(function (c) { return c.ativo !== false; })
             .map(function (c) {
-                return '<option value="' + c.idCatProd + '">' + _escapar(c.nome) + '</option>';
+                return '<option value="' + c.idCatProd + '">' + _esc(c.nome) + '</option>';
             }).join('');
 
-        selectCategoria.innerHTML = opcaoPadraoForm + opcoesCategoria;
-        filtrCategoria.innerHTML  = opcaoPadrao + opcoesCategoria;
+        $selectCategoria.html(opcaoPadraoForm + opcoesCategoria);
+        $filtrCategoria.html(opcaoPadrao + opcoesCategoria);
     }
 
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Carregando...</td></tr>';
-        var resultado = await ctrl.listar();
-        _renderizarTabela(resultado);
+        $tabelaCorpo.html('<tr><td colspan="5" class="tabela-vazia">Carregando...</td></tr>');
+        _renderizarTabela(await ctrl.listar());
     }
 
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
-            tabelaCorpo.innerHTML =
+            if (_dt) { _dt.destroy(); _dt = null; }
+            $tabelaCorpo.html(
                 '<tr><td colspan="5" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
-                _escapar(resultado.erro || 'Erro ao carregar dados.') +
-                '</td></tr>';
+                _esc(resultado.erro || 'Erro ao carregar dados.') +
+                '</td></tr>'
+            );
             return;
         }
 
         var lista = Array.isArray(resultado.dados) ? resultado.dados : [];
+        var dados = lista.map(function (p) {
+            return {
+                idProd:        p.idProd,
+                nome:          p.nome,
+                nomeCategoria: p.nomeCategoria || p.idCatProd || '-',
+                idCatProd:     p.idCatProd,
+                qtdeAtual:     p.qtdeAtual,
+                valorUni:      p.valorUni
+            };
+        });
 
-        if (lista.length === 0) {
-            tabelaCorpo.innerHTML =
-                '<tr><td colspan="5" class="tabela-vazia">' +
-                '<i class="bi bi-inbox me-1"></i>Nenhum produto encontrado.' +
-                '</td></tr>';
+        if (_dt) {
+            _dt.clear().rows.add(dados).draw();
             return;
         }
 
-        var html = lista.map(function (p) {
-            var valorFormatado = mascaras.numeroParaMonetario(p.valorUni);
-            return (
-                '<tr>' +
-                '<td>' + _escapar(p.nome) + '</td>' +
-                '<td>' + _escapar(p.nomeCategoria || p.idCatProd || '-') + '</td>' +
-                '<td>' + _escapar(String(p.qtdeAtual)) + '</td>' +
-                '<td>R$ ' + valorFormatado + '</td>' +
-                '<td>' +
-                '<button class="btn-acao btn-editar me-1" ' +
-                'data-id="' + p.idProd + '" ' +
-                'data-nome="' + _escapar(p.nome) + '" ' +
-                'data-idcatprod="' + p.idCatProd + '" ' +
-                'data-valoruni="' + p.valorUni + '" ' +
-                'data-qtde="' + p.qtdeAtual + '" title="Editar">' +
-                '<i class="bi bi-pencil"></i></button>' +
-                '<button class="btn-acao btn-excluir" ' +
-                'data-id="' + p.idProd + '" ' +
-                'data-nome="' + _escapar(p.nome) + '" title="Excluir">' +
-                '<i class="bi bi-trash"></i></button>' +
-                '</td></tr>'
-            );
-        }).join('');
-
-        tabelaCorpo.innerHTML = html;
-        _bindBotoesTabela();
+        _dt = $tabelaCorpo.closest('table').DataTable({
+            dom: '<"top d-flex justify-content-end" f>rt<"bottom d-flex justify-content-between" l p>',
+            searching: false,
+            info: false,
+            data: dados,
+            columnDefs: [
+                { className: 'text-center', targets: '_all' }
+            ],
+            columns: [
+                { data: 'nome',          render: function (d) { return _esc(d); } },
+                { data: 'nomeCategoria', render: function (d) { return _esc(d); } },
+                { data: 'qtdeAtual' },
+                { data: 'valorUni',      render: function (d) {
+                    return 'R$ ' + mascaras.numeroParaMonetario(d);
+                }},
+                { data: null, orderable: false, render: function (d, t, row) {
+                    return '<button class="btn-acao btn-editar me-1" ' +
+                        'data-id="'       + row.idProd    + '" ' +
+                        'data-nome="'     + _esc(row.nome) + '" ' +
+                        'data-idcatprod="'+ row.idCatProd  + '" ' +
+                        'data-valoruni="' + row.valorUni   + '" ' +
+                        'data-qtde="'     + row.qtdeAtual  + '" title="Editar">' +
+                        '<i class="bi bi-pencil"></i></button>' +
+                        '<button class="btn-acao btn-excluir" ' +
+                        'data-id="'   + row.idProd      + '" ' +
+                        'data-nome="' + _esc(row.nome) + '" title="Excluir">' +
+                        '<i class="bi bi-trash"></i></button>';
+                }}
+            ],
+            language: {
+                decimal: ',', thousands: '.',
+                emptyTable:   'Nenhum produto encontrado',
+                info:         'Mostrando _START_ a _END_ de _TOTAL_ registro(s)',
+                infoEmpty:    'Nenhum registro encontrado',
+                infoFiltered: '(filtrado de _MAX_ no total)',
+                lengthMenu:   'Mostrar _MENU_ por página',
+                search:       'Buscar:',
+                zeroRecords:  'Nenhum produto encontrado',
+                paginate: {
+                    first: '<i class="bi bi-chevron-double-left"></i>',
+                    last:  '<i class="bi bi-chevron-double-right"></i>',
+                    next:  '<i class="bi bi-chevron-right"></i>',
+                    previous: '<i class="bi bi-chevron-left"></i>'
+                }
+            },
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            order: [[0, 'asc']]
+        });
     }
 
-    function _bindBotoesTabela() {
-        document.querySelectorAll('.btn-editar').forEach(function (btn) {
-            btn.addEventListener('click', function () { _abrirModalEdicao(this.dataset); });
-        });
-        document.querySelectorAll('.btn-excluir').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                idParaExcluir = this.dataset.id;
-                document.getElementById('excluir-nome').textContent = this.dataset.nome;
-                modalExcluirObj.show();
-            });
-        });
-    }
+    $tabelaCorpo.on('click', '.btn-editar', function () {
+        _abrirModalEdicao($(this).data());
+    });
 
-    btnCadastrar.addEventListener('click', function () {
-        modalTitulo.textContent = 'Cadastrar Produto';
-        validador.resetar(formProduto);
-        inputIdProd.value = '';
-        inputNome.value   = '';
-        inputValorUni.value = '';
-        inputQtde.value   = '';
-        selectCategoria.selectedIndex = 0;
+    $tabelaCorpo.on('click', '.btn-excluir', function () {
+        idParaExcluir = $(this).data('id');
+        $('#excluir-nome').text($(this).data('nome'));
+        modalExcluirObj.show();
+    });
+
+    $btnCadastrar.on('click', function () {
+        $modalTitulo.text('Cadastrar Produto');
+        validador.resetar($formProduto[0]);
+        $inputIdProd.val('');
+        $inputNome.val('');
+        $inputValorUni.val('');
+        $inputQtde.val('');
+        $selectCategoria.prop('selectedIndex', 0);
         mascaras.remover('#valorUni');
         mascaras.aplicar('#valorUni', 'monetario');
         modalObj.show();
     });
 
     function _abrirModalEdicao(dados) {
-        modalTitulo.textContent   = 'Alterar Produto';
-        validador.resetar(formProduto);
-        inputIdProd.value         = dados.id;
-        inputNome.value           = dados.nome;
-        inputQtde.value           = dados.qtde;
-        selectCategoria.value     = dados.idcatprod;
-        // dataset converte atributos para minúsculas (data-valoruni → valoruni)
+        $modalTitulo.text('Alterar Produto');
+        validador.resetar($formProduto[0]);
+        $inputIdProd.val(dados.id);
+        $inputNome.val(dados.nome);
+        $inputQtde.val(dados.qtde);
+        $selectCategoria.val(dados.idcatprod);
         mascaras.remover('#valorUni');
-        inputValorUni.value = mascaras.numeroParaMonetario(dados.valoruni);
+        $inputValorUni.val(mascaras.numeroParaMonetario(dados.valoruni));
         mascaras.aplicar('#valorUni', 'monetario');
         modalObj.show();
     }
 
-    btnSalvar.addEventListener('click', async function () {
-        if (!validador.validarFormulario(formProduto)) return;
+    $btnSalvar.on('click', async function () {
+        if (!validador.validarFormulario($formProduto[0])) return;
 
         var dados = {
-            idProd:    inputIdProd.value || null,
-            nome:      inputNome.value.trim(),
-            idCatProd: selectCategoria.value,
-            valorUni:  mascaras.monetarioParaNumero(inputValorUni.value),
-            qtdeAtual: inputQtde.value
+            idProd:    $inputIdProd.val() || null,
+            nome:      $inputNome.val().trim(),
+            idCatProd: $selectCategoria.val(),
+            valorUni:  mascaras.monetarioParaNumero($inputValorUni.val()),
+            qtdeAtual: $inputQtde.val()
         };
 
         var resultado = dados.idProd
@@ -182,7 +209,7 @@
         }
     });
 
-    btnConfirmarExcluir.addEventListener('click', async function () {
+    $btnConfirmarExcluir.on('click', async function () {
         if (!idParaExcluir) return;
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
@@ -195,37 +222,29 @@
         }
     });
 
-    btnFiltrar.addEventListener('click', async function () {
+    $btnFiltrar.on('click', async function () {
         var filtros = {
-            nome:       filtrNome.value,
-            idCatProd:  filtrCategoria.value,
-            operador:   filtrOperador.value,
-            quantidade: filtrQtde.value
+            nome:       $filtrNome.val(),
+            idCatProd:  $filtrCategoria.val(),
+            operador:   $filtrOperador.val(),
+            quantidade: $filtrQtde.val()
         };
-        tabelaCorpo.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Filtrando...</td></tr>';
+        $tabelaCorpo.html('<tr><td colspan="5" class="tabela-vazia">Filtrando...</td></tr>');
         _renderizarTabela(await ctrl.filtrar(filtros));
     });
 
-    btnLimpar.addEventListener('click', async function () {
-        filtrNome.value = filtrCategoria.value = filtrOperador.value = filtrQtde.value = '';
+    $btnLimpar.on('click', async function () {
+        $filtrNome.val('');
+        $filtrCategoria.val('');
+        $filtrOperador.val('');
+        $filtrQtde.val('');
         await _carregarLista();
     });
 
-    // Decodifica operadores URL-encoded para exibição (ex.: %3E%3D → >=)
-    var _OPERADORES = { '>=': '>=', '<=': '<=', '>': '>', '<': '<', '=': '=' };
-    function _traduzirOperador(valor) {
-        var dec = decodeURIComponent(valor || '');
-        return _OPERADORES[dec] || dec;
+    function _esc(texto) {
+        return $('<div>').text(texto == null ? '' : String(texto)).html();
     }
 
-    // Escapa HTML para evitar XSS ao inserir dados do backend no DOM
-    function _escapar(texto) {
-        if (texto === null || texto === undefined) return '';
-        return String(texto)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-    }
+    $(inicializar);
 
-    document.addEventListener('DOMContentLoaded', inicializar);
-
-})();
+}(jQuery));

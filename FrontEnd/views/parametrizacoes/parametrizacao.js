@@ -1,6 +1,6 @@
 /* parametrizacao.js — View: gerencia o formulário de configuração do sistema */
 
-(function () {
+(function ($) {
 
     if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
 
@@ -8,31 +8,39 @@
     var mascaras  = window.AGAPE.Utils.Mascaras.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    var form = document.getElementById('form-parametrizacao');
+    var $form = $('#form-parametrizacao');
 
     var campos = {
-        cnpj: document.getElementById('cnpj'), razaoSocial: document.getElementById('razaoSocial'),
-        nomeFantasia: document.getElementById('nomeFantasia'), responsavel: document.getElementById('responsavel'),
-        logradouro: document.getElementById('logradouro'), numEndereco: document.getElementById('numEndereco'),
-        complemento: document.getElementById('complemento'), bairro: document.getElementById('bairro'),
-        cidade: document.getElementById('cidade'), uf: document.getElementById('uf'),
-        cep: document.getElementById('cep'), pais: document.getElementById('pais'),
-        email: document.getElementById('email'), telefone1: document.getElementById('telefone1'),
-        telefone2: document.getElementById('telefone2'), site: document.getElementById('site'),
-        inscricaoEstadual: document.getElementById('inscricaoEstadual'),
-        inscricaoMunicipal: document.getElementById('inscricaoMunicipal'),
-        moedaPadrao: document.getElementById('moedaPadrao'), fusoHorario: document.getElementById('fusoHorario'),
-        obs: document.getElementById('obs')
+        cnpj:               $('#cnpj'),
+        razaoSocial:        $('#razaoSocial'),
+        nomeFantasia:       $('#nomeFantasia'),
+        responsavel:        $('#responsavel'),
+        logradouro:         $('#logradouro'),
+        numEndereco:        $('#numEndereco'),
+        complemento:        $('#complemento'),
+        bairro:             $('#bairro'),
+        cidade:             $('#cidade'),
+        uf:                 $('#uf'),
+        cep:                $('#cep'),
+        pais:               $('#pais'),
+        email:              $('#email'),
+        telefone1:          $('#telefone1'),
+        telefone2:          $('#telefone2'),
+        site:               $('#site'),
+        inscricaoEstadual:  $('#inscricaoEstadual'),
+        inscricaoMunicipal: $('#inscricaoMunicipal'),
+        moedaPadrao:        $('#moedaPadrao'),
+        fusoHorario:        $('#fusoHorario'),
+        obs:                $('#obs')
     };
 
-    var inputLogoGrande  = document.getElementById('input-logo-grande');
-    var inputLogoPequeno = document.getElementById('input-logo-pequeno');
-    var previewGrande    = document.getElementById('preview-logo-grande');
-    var previewPequeno   = document.getElementById('preview-logo-pequeno');
-    var btnSalvarLogos   = document.getElementById('btn-salvar-logos');
-    var btnSalvar        = document.getElementById('btn-salvar');
+    var $inputLogoGrande  = $('#input-logo-grande');
+    var $inputLogoPequeno = $('#input-logo-pequeno');
+    var $previewGrande    = $('#preview-logo-grande');
+    var $previewPequeno   = $('#preview-logo-pequeno');
+    var $btnSalvarLogos   = $('#btn-salvar-logos');
+    var $btnSalvar        = $('#btn-salvar');
 
-    // Armazena base64 e nome dos arquivos selecionados enquanto aguarda o envio
     var _logoGrandeBase64  = null;
     var _logoPequenoBase64 = null;
     var _nomeLogoGrande    = null;
@@ -52,98 +60,104 @@
 
     function _bindCepLookup() {
         var viaCep = window.AGAPE.Utils.ViaCep.getInstance();
-        var camposEndereco = [campos.logradouro, campos.bairro, campos.cidade, campos.uf];
+        var $camposEndereco = [campos.logradouro, campos.bairro, campos.cidade, campos.uf];
 
-        campos.cep.addEventListener('blur', async function () {
-            var digits = mascaras.apenasDigitos(campos.cep.value);
-            campos.cep.classList.remove('is-invalid', 'is-valid');
+        campos.cep.on('blur', async function () {
+            var digits = mascaras.apenasDigitos(campos.cep.val());
+            campos.cep.removeClass('is-invalid is-valid');
 
             if (digits.length === 0) return;
 
             if (digits.length !== 8) {
                 _limparCamposEndereco();
-                validador.destacarCampo(campos.cep, false, 'CEP inválido. Informe 8 dígitos.');
+                validador.destacarCampo(campos.cep[0], false, 'CEP inválido. Informe 8 dígitos.');
                 return;
             }
 
             _limparCamposEndereco();
-            camposEndereco.forEach(function (el) { el.disabled = true; });
+            $.each($camposEndereco, function (_, $el) { $el.prop('disabled', true); });
 
             var resultado = await viaCep.buscar(digits);
-            camposEndereco.forEach(function (el) { el.disabled = false; });
+            $.each($camposEndereco, function (_, $el) { $el.prop('disabled', false); });
 
             if (resultado.status === 'ok') {
                 var d = resultado.dados;
-                campos.logradouro.value = d.logradouro || '';
-                campos.bairro.value     = d.bairro     || '';
-                campos.cidade.value     = d.localidade || '';
-                campos.uf.value         = d.uf         || '';
-                validador.destacarCampo(campos.cep, true);
-                campos.numEndereco.focus();
+                campos.logradouro.val(d.logradouro || '');
+                campos.bairro.val(d.bairro         || '');
+                campos.cidade.val(d.localidade     || '');
+                campos.uf.val(d.uf                 || '');
+                validador.destacarCampo(campos.cep[0], true);
+                campos.numEndereco[0].focus();
             } else {
-                validador.destacarCampo(campos.cep, false, resultado.mensagem);
+                validador.destacarCampo(campos.cep[0], false, resultado.mensagem);
             }
         });
     }
 
     function _limparCamposEndereco() {
-        campos.logradouro.value = '';
-        campos.bairro.value     = '';
-        campos.cidade.value     = '';
-        campos.uf.value         = '';
+        campos.logradouro.val('');
+        campos.bairro.val('');
+        campos.cidade.val('');
+        campos.uf.val('');
     }
 
     function _bindCnpjLookup() {
         var brasilApi = window.AGAPE.Utils.BrasilApiCnpj.getInstance();
 
-        campos.cnpj.addEventListener('blur', async function () {
-            var digits = mascaras.apenasDigitos(campos.cnpj.value);
-            campos.cnpj.classList.remove('is-invalid', 'is-valid');
+        campos.cnpj.on('blur', async function () {
+            var digits = mascaras.apenasDigitos(campos.cnpj.val());
+            campos.cnpj.removeClass('is-invalid is-valid');
 
             if (digits.length === 0) return;
 
             if (digits.length !== 14) {
                 _limparCamposCnpj();
-                validador.destacarCampo(campos.cnpj, false, 'CNPJ inválido. Informe 14 dígitos.');
+                validador.destacarCampo(campos.cnpj[0], false, 'CNPJ inválido. Informe 14 dígitos.');
                 return;
             }
 
             _limparCamposCnpj();
-            campos.cnpj.disabled = true;
+            campos.cnpj.prop('disabled', true);
 
             var resultado = await brasilApi.buscar(digits);
-            campos.cnpj.disabled = false;
+            campos.cnpj.prop('disabled', false);
 
             if (resultado.status === 'ok') {
                 var d = resultado.dados;
-                campos.razaoSocial.value  = d.razao_social  || '';
-                campos.nomeFantasia.value = d.nome_fantasia || '';
-                validador.destacarCampo(campos.cnpj, true);
+                campos.razaoSocial.val(d.razao_social  || '');
+                campos.nomeFantasia.val(d.nome_fantasia || '');
+                validador.destacarCampo(campos.cnpj[0], true);
             } else {
-                validador.destacarCampo(campos.cnpj, false, resultado.mensagem);
+                validador.destacarCampo(campos.cnpj[0], false, resultado.mensagem);
             }
         });
     }
 
     function _limparCamposCnpj() {
-        campos.razaoSocial.value  = '';
-        campos.nomeFantasia.value = '';
+        campos.razaoSocial.val('');
+        campos.nomeFantasia.val('');
     }
 
     function _exibirBannerPendente() {
         if (sessionStorage.getItem('agape_param_pendente') !== '1') return;
 
-        var banner = document.createElement('div');
-        banner.id  = 'banner-param-pendente';
-        banner.className = 'alert alert-warning d-flex align-items-center gap-2 mb-0 rounded-0';
-        banner.style.cssText = 'position:sticky;top:0;z-index:90;border-left:none;border-right:none;border-top:none;';
-        banner.innerHTML =
-            '<i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>' +
-            '<span><strong>Atenção:</strong> Os dados da empresa ainda não foram preenchidos. ' +
-            'Preencha e salve as informações abaixo para liberar o acesso ao sistema.</span>';
-
-        var areaConteudo = document.querySelector('.area-conteudo');
-        if (areaConteudo) areaConteudo.insertBefore(banner, areaConteudo.firstChild);
+        $('<div>')
+            .attr('id', 'banner-param-pendente')
+            .addClass('alert alert-warning d-flex align-items-center gap-2 mb-0 rounded-0')
+            .css({
+                position:      'sticky',
+                top:           0,
+                'z-index':     90,
+                'border-left': 'none',
+                'border-right':'none',
+                'border-top':  'none'
+            })
+            .html(
+                '<i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>' +
+                '<span><strong>Atenção:</strong> Os dados da empresa ainda não foram preenchidos. ' +
+                'Preencha e salve as informações abaixo para liberar o acesso ao sistema.</span>'
+            )
+            .prependTo($('.area-conteudo'));
     }
 
     async function _carregarDados() {
@@ -154,71 +168,66 @@
         var d = resultado.dados;
 
         Object.keys(campos).forEach(function (chave) {
-            if (campos[chave] && d[chave] !== undefined && d[chave] !== null) {
-                campos[chave].value = d[chave];
+            if (campos[chave].length && d[chave] !== undefined && d[chave] !== null) {
+                campos[chave].val(d[chave]);
             }
         });
 
-        if (d.logotipoGrande)  { previewGrande.src  = '../assets/img/' + d.logotipoGrande;  previewGrande.classList.remove('d-none');  }
-        if (d.logotipoPequeno) { previewPequeno.src = '../assets/img/' + d.logotipoPequeno; previewPequeno.classList.remove('d-none'); }
+        if (d.logotipoGrande)  { $previewGrande.attr('src',  '../assets/img/' + d.logotipoGrande).removeClass('d-none');  }
+        if (d.logotipoPequeno) { $previewPequeno.attr('src', '../assets/img/' + d.logotipoPequeno).removeClass('d-none'); }
 
         if (d.razaoSocial && d.razaoSocial.trim() !== '') {
             sessionStorage.removeItem('agape_param_pendente');
-            var banner = document.getElementById('banner-param-pendente');
-            if (banner) banner.remove();
+            $('#banner-param-pendente').remove();
         }
     }
 
-    btnSalvar.addEventListener('click', async function () {
-        if (!validador.validarFormulario(form)) return;
+    $btnSalvar.on('click', async function () {
+        if (!validador.validarFormulario($form[0])) return;
 
         var dados = {};
         Object.keys(campos).forEach(function (chave) {
-            dados[chave] = campos[chave] ? campos[chave].value : '';
+            dados[chave] = campos[chave].length ? campos[chave].val() : '';
         });
 
-        // Remove máscara antes de enviar
         dados.cnpj = mascaras.apenasDigitos(dados.cnpj);
 
         var resultado = await ctrl.salvar(dados);
         if (resultado.status === 'ok') {
             sessionStorage.removeItem('agape_param_pendente');
-            var banner = document.getElementById('banner-param-pendente');
-            if (banner) banner.remove();
+            $('#banner-param-pendente').remove();
             validador.mostrarAlerta('Parametrização salva com sucesso!', 'sucesso');
-            form.classList.remove('was-validated');
+            $form.removeClass('was-validated');
         } else {
             validador.mostrarAlerta(resultado.erro || 'Erro ao salvar.', 'erro');
         }
     });
 
-    inputLogoGrande.addEventListener('change', function () {
+    $inputLogoGrande.on('change', function () {
         var arquivo = this.files[0];
         if (!arquivo) return;
         _nomeLogoGrande = arquivo.name;
         var reader = new FileReader();
         reader.onload = function (e) {
             _logoGrandeBase64 = e.target.result;
-            previewGrande.src = e.target.result;
-            previewGrande.classList.remove('d-none');
+            $previewGrande.attr('src', e.target.result).removeClass('d-none');
         };
         reader.readAsDataURL(arquivo);
     });
 
-    inputLogoPequeno.addEventListener('change', function () {
+    $inputLogoPequeno.on('change', function () {
         var arquivo = this.files[0];
         if (!arquivo) return;
         _nomeLogoPequeno = arquivo.name;
         var reader = new FileReader();
         reader.onload = function (e) {
             _logoPequenoBase64 = e.target.result;
-            previewPequeno.src = e.target.result;
-            previewPequeno.classList.remove('d-none');
+            $previewPequeno.attr('src', e.target.result).removeClass('d-none');
         };
         reader.readAsDataURL(arquivo);
     });
 
-    btnSalvarLogos.addEventListener('click', async function () {
+    $btnSalvarLogos.on('click', async function () {
         if (!_logoGrandeBase64 && !_logoPequenoBase64) {
             validador.mostrarAlerta('Selecione ao menos um arquivo de logotipo.', 'aviso');
             return;
@@ -238,6 +247,6 @@
         }
     });
 
-    document.addEventListener('DOMContentLoaded', inicializar);
+    $(inicializar);
 
-})();
+}(jQuery));

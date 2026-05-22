@@ -1,111 +1,134 @@
-/* index.js — View: login, vincula eventos ao DOM e delega ao AuthController */
+(function ($) {
 
-(function () {
-
-    // Se já existe uma sessão ativa, pula direto para a área logada.
     if (window.AGAPE.Utils.Auth.getInstance().estaLogado()) {
-        window.location.href = './produtos.html';
+        window.location.href = './produtos/produtos.html';
         return;
     }
 
     var ctrl = window.AGAPE.Controllers.AuthController.getInstance();
 
-    var imgLogo    = document.getElementById('login-logo');
-    var form       = document.getElementById('login-form');
-    var inputEmail = document.getElementById('email');
-    var inputSenha = document.getElementById('senha');
-    var btnLogin   = document.getElementById('btn-login');
-    var alertBox   = document.getElementById('login-alert');
-    var alertMsg   = document.getElementById('login-alert-msg');
-    var emailError = document.getElementById('email-error');
-    var senhaError = document.getElementById('senha-error');
-    var toggleBtn  = document.getElementById('toggle-password');
+    var $imgLogo = $('#login-logo');
+    var $form = $('#login-form');
+    var $inputEmail = $('#email');
+    var $inputSenha = $('#senha');
+    var $btnLogin = $('#btn-login');
+    var $alertBox = $('#login-alert');
+    var $alertMsg = $('#login-alert-msg');
+    var $emailError = $('#email-error');
+    var $senhaError = $('#senha-error');
+    var $toggleBtn = $('#toggle-password');
 
     async function inicializar() {
         await _carregarLogo();
+        _vincularEventos();
+    }
 
-        toggleBtn.addEventListener('click', function () {
-            var visivel = inputSenha.type === 'text';
-            inputSenha.type = visivel ? 'password' : 'text';
-            toggleBtn.querySelector('i').className = visivel ? 'bi bi-eye' : 'bi bi-eye-slash';
+    function _vincularEventos() {
+
+        $toggleBtn.on('click', function (e) {
+            e.preventDefault();
+            var $icon = $toggleBtn.find('i');
+            var isPassword = $inputSenha.prop('type') === 'password';
+
+            $inputSenha.prop('type', isPassword ? 'text' : 'password');
+            $icon.toggleClass('bi-eye bi-eye-slash');
         });
 
-        inputEmail.addEventListener('input', _ocultarAlerta);
-        inputSenha.addEventListener('input', _ocultarAlerta);
+        // Ocultar alertas ao digitar
+        $inputEmail.on('input', _ocultarAlerta);
+        $inputSenha.on('input', _ocultarAlerta);
 
-        form.addEventListener('submit', _onSubmit);
+        // Submissão do formulário
+        $form.on('submit', _onSubmit);
     }
+
 
     async function _carregarLogo() {
         try {
             var resultado = await ctrl.carregarLogo();
-            if (resultado.status === 'ok' && resultado.dados && resultado.dados.logotipoGrande) {
-                imgLogo.src = '../assets/img/' + resultado.dados.logotipoGrande;
+            if (resultado.status === 'ok' && resultado.dados?.logotipoGrande) {
+                $imgLogo.attr('src', '../assets/img/' + resultado.dados.logotipoGrande);
             }
         } catch (_) {
-            // mantém a imagem padrão já definida no src
+            // Mantém a imagem padrão já definida no src
         }
     }
 
+
     function _mostrarAlerta(msg) {
-        alertMsg.textContent = msg;
-        alertBox.classList.add('visivel');
+        $alertMsg.text(msg);
+        $alertBox.addClass('visivel');
     }
 
     function _ocultarAlerta() {
-        alertBox.classList.remove('visivel');
-        alertMsg.textContent = '';
+        $alertBox.removeClass('visivel');
+        $alertMsg.text('');
     }
 
     function _limparErros() {
-        emailError.textContent = '';
-        senhaError.textContent = '';
-        inputEmail.classList.remove('is-invalid');
-        inputSenha.classList.remove('is-invalid');
+        $emailError.text('');
+        $senhaError.text('');
+        $inputEmail.removeClass('is-invalid');
+        $inputSenha.removeClass('is-invalid');
     }
 
     async function _onSubmit(e) {
         e.preventDefault();
+
         _limparErros();
         _ocultarAlerta();
 
-        var email = inputEmail.value.trim();
-        var senha = inputSenha.value;
-
+        var email = $inputEmail.val().trim();
+        var senha = $inputSenha.val();
         var temErro = false;
+
+        // Validação de e-mail
         if (!email) {
-            emailError.textContent = 'Informe o e-mail.';
-            inputEmail.classList.add('is-invalid');
+            $emailError.text('Informe o e-mail.');
+            $inputEmail.addClass('is-invalid');
+            $inputEmail.focus();
             temErro = true;
         }
+
+        // Validação de senha
         if (!senha) {
-            senhaError.textContent = 'Informe a senha.';
-            inputSenha.classList.add('is-invalid');
+            $senhaError.text('Informe a senha.');
+            $inputSenha.addClass('is-invalid');
+            if (!temErro) {
+                $inputSenha.focus();
+            }
             temErro = true;
         }
+
         if (temErro) return;
 
-        btnLogin.disabled = true;
-        btnLogin.innerHTML =
-            '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Entrando...';
+        // Desabilita botão e exibe spinner
+        $btnLogin
+            .prop('disabled', true)
+            .html(
+                '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Entrando...'
+            );
 
+        // Realiza login
         var resultado = await ctrl.login(email, senha);
 
-        btnLogin.disabled = false;
-        btnLogin.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Entrar';
+        // Reabilita botão
+        $btnLogin
+            .prop('disabled', false)
+            .html('<i class="bi bi-box-arrow-in-right"></i> Entrar');
 
-
+        // Trata resultado
         if (resultado.status === 'ok') {
-            window.location.href = './produtos.html';
+            window.location.href = './produtos/produtos.html';
         } else if (resultado.status === 'primeiroAcesso') {
-            window.location.href = './trocarSenha.html';
+            window.location.href = './usuarios/trocarSenha.html';
         } else if (resultado.status === 'parametrizacaoPendente') {
-            window.location.href = './parametrizacao.html';
+            window.location.href = './parametrizacoes/parametrizacao.html';
         } else {
             _mostrarAlerta('Inválido - Revise suas credenciais');
         }
     }
 
-    document.addEventListener('DOMContentLoaded', inicializar);
+    $(document).ready(inicializar);
 
-})();
+})(jQuery);

@@ -1,77 +1,68 @@
 /* trocarSenha.js — View: troca de senha obrigatória no primeiro acesso */
 
-(function () {
+(function ($) {
 
     var CHAVE_EMAIL = 'agape_primeiro_acesso_email';
 
-    // Se não há e-mail de primeiro acesso pendente nem sessão, volta ao login
     var emailPendente = sessionStorage.getItem(CHAVE_EMAIL);
     if (!emailPendente) {
-        window.location.replace('./index.html');
+        window.location.replace('../index.html');
         return;
     }
 
-    // Se já está logado (sessão completa), vai para a área interna
     if (window.AGAPE.Utils.Auth.getInstance().estaLogado()) {
         sessionStorage.removeItem(CHAVE_EMAIL);
-        window.location.replace('./produtos.html');
+        window.location.replace('../produtos/produtos.html');
         return;
     }
 
     var ctrl = window.AGAPE.Controllers.AuthController.getInstance();
 
-    var form            = document.getElementById('troca-form');
-    var inputSenhaAtual = document.getElementById('senhaAtual');
-    var inputNovaSenha  = document.getElementById('novaSenha');
-    var inputConfirmar  = document.getElementById('confirmarSenha');
-    var btnTrocar       = document.getElementById('btn-trocar');
-    var alertBox        = document.getElementById('troca-alert');
-    var alertMsg        = document.getElementById('troca-alert-msg');
+    var $form            = $('#troca-form');
+    var $inputSenhaAtual = $('#senhaAtual');
+    var $inputNovaSenha  = $('#novaSenha');
+    var $inputConfirmar  = $('#confirmarSenha');
+    var $btnTrocar       = $('#btn-trocar');
+    var $alertBox        = $('#troca-alert');
+    var $alertMsg        = $('#troca-alert-msg');
 
-    // Botões de mostrar/ocultar senha
-    document.querySelectorAll('.toggle-password').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var alvo   = document.getElementById(this.dataset.alvo);
-            var visivel = alvo.type === 'text';
-            alvo.type   = visivel ? 'password' : 'text';
-            this.querySelector('i').className = visivel ? 'bi bi-eye' : 'bi bi-eye-slash';
-        });
+    $('.toggle-password').on('click', function () {
+        var $alvo   = $('#' + $(this).data('alvo'));
+        var visivel = $alvo.prop('type') === 'text';
+        $alvo.prop('type', visivel ? 'password' : 'text');
+        $(this).find('i').attr('class', visivel ? 'bi bi-eye' : 'bi bi-eye-slash');
     });
 
     function _mostrarAlerta(msg) {
-        alertMsg.textContent = msg;
-        alertBox.classList.add('visivel');
+        $alertMsg.text(msg);
+        $alertBox.addClass('visivel');
     }
 
     function _ocultarAlerta() {
-        alertBox.classList.remove('visivel');
-        alertMsg.textContent = '';
+        $alertBox.removeClass('visivel');
+        $alertMsg.text('');
     }
 
     function _erro(id, msg) {
-        var el = document.getElementById(id + '-error');
-        if (el) el.textContent = msg;
-        var input = document.getElementById(id);
-        if (input) input.classList.add('is-invalid');
+        $('#' + id + '-error').text(msg);
+        $('#' + id).addClass('is-invalid');
     }
 
     function _limparErros() {
         ['senhaAtual', 'novaSenha', 'confirmarSenha'].forEach(function (id) {
-            var el = document.getElementById(id + '-error');
-            if (el) el.textContent = '';
-            var input = document.getElementById(id);
-            if (input) input.classList.remove('is-invalid');
+            $('#' + id + '-error').text('');
+            $('#' + id).removeClass('is-invalid');
         });
     }
 
-    form.addEventListener('submit', async function (e) {
+    $form.on('submit', async function (e) {
         e.preventDefault();
         _limparErros();
         _ocultarAlerta();
 
-        var senhaAtual    = inputSenhaAtual.value;
-        var novaSenha     = inputNovaSenha.value;
-        var confirmarSenha = inputConfirmar.value;
+        var senhaAtual     = $inputSenhaAtual.val();
+        var novaSenha      = $inputNovaSenha.val();
+        var confirmarSenha = $inputConfirmar.val();
 
         var temErro = false;
 
@@ -99,20 +90,19 @@
 
         if (temErro) return;
 
-        btnTrocar.disabled = true;
-        btnTrocar.innerHTML =
-            '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Salvando...';
+        $btnTrocar.prop('disabled', true).html(
+            '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Salvando...'
+        );
 
         var resultado = await ctrl.trocarSenha(emailPendente, senhaAtual, novaSenha);
 
-        btnTrocar.disabled = false;
-        btnTrocar.innerHTML = '<i class="bi bi-check-circle"></i> Definir nova senha e entrar';
+        $btnTrocar.prop('disabled', false).html('<i class="bi bi-check-circle"></i> Definir nova senha e entrar');
 
         if (resultado.status === 'ok') {
-            window.location.replace('./produtos.html');
+            window.location.replace('../produtos/produtos.html');
         } else {
             _mostrarAlerta(resultado.erro || 'Erro ao alterar a senha. Tente novamente.');
         }
     });
 
-})();
+}(jQuery));

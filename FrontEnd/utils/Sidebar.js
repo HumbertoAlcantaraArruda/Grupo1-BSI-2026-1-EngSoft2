@@ -1,52 +1,39 @@
 /**
  * Sidebar.js — Componente de navegação lateral injetado em todas as telas.
- *
- * Padrões aplicados:
- *   Pure Fabrication (GRASP) — classe criada por conveniência técnica, sem
- *     correspondência direta no domínio de negócio.
- *   Low Coupling (GRASP)    — comunica com venda.js via window.AGAPE_VENDA_GUARDIAO,
- *     sem importação direta.
- *
- * Funcionalidades:
- *   1. Injeção de HTML dinâmico filtrado por nível de usuário.
- *   2. Submenus: itens com `filhos[]` exibem chevron + expand/collapse.
- *   3. Expansão automática: clicar em pai com submenus expande a sidebar colapsada.
- *   4. Guardião de Navegação: intercepta nav-links quando há venda ativa.
- *   5. Toggle desktop + overlay mobile.
  */
 
 window.AGAPE = window.AGAPE || {};
 window.AGAPE.Utils = window.AGAPE.Utils || {};
 
-window.AGAPE.Utils.Sidebar = (function () {
+window.AGAPE.Utils.Sidebar = (function ($) {
 
     // ── Definição dos itens do menu ───────────────────────────────────────────
-    // Itens com `filhos` criam submenus expansíveis com chevron rotativo.
 
     var _itens = [
         {
             rotulo: 'Realizar Venda',
-            href:   'venda.html',
+            href:   '../vendas/venda.html',
             icone:  'bi-cart3',
             niveis: ['ADM', 'COLAB']
         },
-        {
-            rotulo: 'Cadastros',
-            icone:  'bi-archive',
-            niveis: ['ADM', 'COLAB'],
-            filhos: [
-                { rotulo: 'Produtos',             href: 'produtos.html',         icone: 'bi-box-seam',       niveis: ['ADM', 'COLAB'] },
-                { rotulo: 'Categoria de Produto', href: 'categoriaProduto.html', icone: 'bi-tags',           niveis: ['ADM', 'COLAB'] },
-                { rotulo: 'Categoria de Evento',  href: 'categoriaEvento.html',  icone: 'bi-calendar-event', niveis: ['ADM', 'COLAB'] },
-                { rotulo: 'Forma de Pagamento',   href: 'formaPagamento.html',   icone: 'bi-credit-card',    niveis: ['ADM', 'COLAB'] },
-                { rotulo: 'Fornecedor',           href: 'fornecedor.html',       icone: 'bi-truck',          niveis: ['ADM', 'COLAB'] }
-            ]
-        }
+        // {
+        //     rotulo: 'Cadastros',
+        //     icone:  'bi-archive',
+        //     niveis: ['ADM', 'COLAB'],
+        //     filhos: [
+                { rotulo: 'Produtos',             href: '../produtos/produtos.html',             icone: 'bi-box-seam',       niveis: ['ADM', 'COLAB'] },
+                { rotulo: 'Categoria de Produto', href: '../produtos/categoriaProduto.html',     icone: 'bi-tags',           niveis: ['ADM', 'COLAB'] },
+                { rotulo: 'Categoria de Evento',  href: '../eventos/categoriaEvento.html',       icone: 'bi-calendar-event', niveis: ['ADM', 'COLAB'] },
+                { rotulo: 'Forma de Pagamento',   href: '../pagamentos/formaPagamento.html',     icone: 'bi-credit-card',    niveis: ['ADM', 'COLAB'] },
+                { rotulo: 'Fornecedor',           href: '../fornecedores/fornecedor.html',       icone: 'bi-truck',          niveis: ['ADM', 'COLAB'] },
+                { rotulo: 'Eventos', href: '../eventos/evento.html', icone: 'bi-calendar-plus', niveis: ['ADM', 'COLAB'] },
+        //     ]
+        // }
     ];
 
     var _itensConfig = [
-        { rotulo: 'Usuários',       href: 'usuarios.html',       icone: 'bi-people', niveis: ['ADM'] },
-        { rotulo: 'Parametrização', href: 'parametrizacao.html', icone: 'bi-gear',   niveis: ['ADM'] }
+        { rotulo: 'Usuários',       href: '../usuarios/usuarios.html',             icone: 'bi-people', niveis: ['ADM'] },
+        { rotulo: 'Parametrização', href: '../parametrizacoes/parametrizacao.html',icone: 'bi-gear',   niveis: ['ADM'] }
     ];
 
     // ── Utilitários internos ──────────────────────────────────────────────────
@@ -57,30 +44,32 @@ window.AGAPE.Utils.Sidebar = (function () {
         });
     }
 
+    // Retorna apenas o nome do arquivo da URL atual (ex.: "produtos.html")
     function _paginaAtual() {
         var caminho = window.location.pathname;
         return caminho.substring(caminho.lastIndexOf('/') + 1);
     }
 
-    // Verifica se algum filho está na página atual (para marcar o pai como ativo)
+    // Compara somente o filename do href com a página atual
+    function _eAtivo(href) {
+        return _paginaAtual() === href.split('/').pop();
+    }
+
     function _filhoAtivo(item) {
         if (!item.filhos) return false;
-        var pg = _paginaAtual();
-        return item.filhos.some(function (f) { return f.href === pg; });
+        return item.filhos.some(function (f) { return _eAtivo(f.href); });
     }
 
     // ── Construção do HTML ────────────────────────────────────────────────────
 
     function _construirHtml() {
-        var paginaAtual = _paginaAtual();
         var auth        = window.AGAPE.Utils.Auth ? window.AGAPE.Utils.Auth.getInstance() : null;
         var usuario     = auth ? auth.getUsuario() : null;
         var nomeUsuario = usuario && usuario.nome  ? usuario.nome  : '';
         var nivel       = usuario && usuario.nivel ? usuario.nivel : '';
 
-        // Monta item simples (sem filhos)
         function _itemSimples(item) {
-            var ativo = (paginaAtual === item.href) ? ' ativo' : '';
+            var ativo = _eAtivo(item.href) ? ' ativo' : '';
             return (
                 '<li class="nav-item">' +
                 '<a class="nav-link' + ativo + '" href="' + item.href + '" data-href="' + item.href + '">' +
@@ -90,15 +79,14 @@ window.AGAPE.Utils.Sidebar = (function () {
             );
         }
 
-        // Monta item com submenus (filhos) — padrão Composite estrutural
         function _itemComFilhos(item) {
-            var haAtivo     = _filhoAtivo(item);
-            var classeAberto = haAtivo ? ' submenu-aberto' : '';
-            var filhosFiltrados = _filtrarPorNivel(item.filhos, nivel);
+            var haAtivo          = _filhoAtivo(item);
+            var classeAberto     = haAtivo ? ' submenu-aberto' : '';
+            var filhosFiltrados  = _filtrarPorNivel(item.filhos, nivel);
             if (filhosFiltrados.length === 0) return '';
 
             var filhosHtml = filhosFiltrados.map(function (filho) {
-                var ativo = (paginaAtual === filho.href) ? ' ativo' : '';
+                var ativo = _eAtivo(filho.href) ? ' ativo' : '';
                 return (
                     '<li class="nav-item-filho">' +
                     '<a class="nav-link nav-link-filho' + ativo + '" href="' + filho.href +
@@ -115,7 +103,6 @@ window.AGAPE.Utils.Sidebar = (function () {
                 ' data-rotulo="' + item.rotulo + '" role="button" tabindex="0">' +
                 '<i class="bi ' + item.icone + '"></i>' +
                 '<span>' + item.rotulo + '</span>' +
-                // Chevron rotativo — indica expansão/colapso do submenu
                 '<i class="bi bi-chevron-down nav-chevron ms-auto"></i>' +
                 '</a>' +
                 '<ul class="list-unstyled nav-submenu' + classeAberto + '">' +
@@ -143,7 +130,7 @@ window.AGAPE.Utils.Sidebar = (function () {
         var itensConfigFiltrados = _filtrarPorNivel(_itensConfig, nivel);
 
         var secaoCadastros = itensFiltrados.length > 0
-            ? '<p class="nav-secao">Menu</p>' +
+            ? '<p class="nav-secao">Cadastros</p>' +
               '<ul class="list-unstyled mb-0">' + itensFiltrados.map(_montarItem).join('') + '</ul>'
             : '';
 
@@ -179,124 +166,98 @@ window.AGAPE.Utils.Sidebar = (function () {
     // ── CSS dos submenus (injetado uma única vez) ─────────────────────────────
 
     function _injetarEstilosSubmenu() {
-        if (document.getElementById('agape-sidebar-submenu-css')) return;
-        var style = document.createElement('style');
-        style.id  = 'agape-sidebar-submenu-css';
-        style.textContent = [
-            /* Submenu fechado: altura 0, sem visibilidade */
+        if ($('#agape-sidebar-submenu-css').length) return;
+        $('<style>').attr('id', 'agape-sidebar-submenu-css').text([
             '.nav-submenu { max-height: 0; overflow: hidden;',
             '  transition: max-height .25s ease, opacity .2s ease;',
             '  opacity: 0; padding-left: .5rem; list-style: none; }',
-
-            /* Submenu aberto */
             '.nav-submenu.submenu-aberto { max-height: 400px; opacity: 1; }',
-
-            /* Filho recuado */
             '.nav-link-filho { padding-left: 1.75rem !important; font-size: .85rem; }',
-
-            /* Chevron: roda 180° quando aberto */
             '.nav-chevron { transition: transform .25s ease; font-size: .75rem; }',
             '.nav-link-pai.submenu-pai-aberto .nav-chevron { transform: rotate(180deg); }'
-        ].join('\n');
-        document.head.appendChild(style);
+        ].join('\n')).appendTo('head');
     }
 
     // ── Submenus: toggle expansão/colapso ────────────────────────────────────
 
-    function _bindSubmenus(sidebar) {
-        sidebar.querySelectorAll('.nav-link-pai').forEach(function (link) {
-            link.addEventListener('click', function (e) {
+    function _bindSubmenus($sidebar) {
+        $sidebar.find('.nav-link-pai').each(function () {
+            var $link = $(this);
+
+            $link.on('click', function (e) {
                 e.preventDefault();
 
-                // Expansão automática: se sidebar colapsada, expande primeiro (UX inteligente)
-                if (sidebar.classList.contains('sidebar-colapsada')) {
-                    sidebar.classList.remove('sidebar-colapsada');
+                if ($sidebar.hasClass('sidebar-colapsada')) {
+                    $sidebar.removeClass('sidebar-colapsada');
                     localStorage.setItem('agape_sidebar_colapsada', 'false');
-                    _atualizarIconeToggle(sidebar, false);
-                    // Abre o submenu após a transição de expansão da sidebar
-                    setTimeout(function () { _toggleSubmenu(this, sidebar); }.bind(this), 260);
+                    _atualizarIconeToggle(false);
+                    setTimeout(function () { _toggleSubmenu($link, $sidebar); }, 260);
                     return;
                 }
 
-                _toggleSubmenu(this, sidebar);
+                _toggleSubmenu($link, $sidebar);
             });
 
-            // Acessibilidade: Enter/Espaço também abre o submenu
-            link.addEventListener('keydown', function (e) {
+            $link.on('keydown', function (e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    link.click();
+                    $link.trigger('click');
                 }
             });
         });
 
-        // Inicia com pais que possuem filhos ativos já abertos
-        sidebar.querySelectorAll('.nav-link-pai.ativo').forEach(function (link) {
-            _abrirSubmenu(link);
+        $sidebar.find('.nav-link-pai.ativo').each(function () {
+            _abrirSubmenu($(this));
         });
     }
 
-    function _toggleSubmenu(link, sidebar) {
-        var submenu = link.nextElementSibling;
-        if (!submenu || !submenu.classList.contains('nav-submenu')) return;
+    function _toggleSubmenu($link, $sidebar) {
+        var $submenu = $link.next('.nav-submenu');
+        if (!$submenu.length) return;
 
-        var estaAberto = submenu.classList.contains('submenu-aberto');
-        if (estaAberto) {
-            submenu.classList.remove('submenu-aberto');
-            link.classList.remove('submenu-pai-aberto');
+        if ($submenu.hasClass('submenu-aberto')) {
+            $submenu.removeClass('submenu-aberto');
+            $link.removeClass('submenu-pai-aberto');
         } else {
-            // Fecha outros submenus abertos (accordion)
-            sidebar.querySelectorAll('.nav-submenu.submenu-aberto').forEach(function (s) {
-                s.classList.remove('submenu-aberto');
-                if (s.previousElementSibling) {
-                    s.previousElementSibling.classList.remove('submenu-pai-aberto');
-                }
+            $sidebar.find('.nav-submenu.submenu-aberto').each(function () {
+                $(this).removeClass('submenu-aberto').prev().removeClass('submenu-pai-aberto');
             });
-            _abrirSubmenu(link);
+            _abrirSubmenu($link);
         }
     }
 
-    function _abrirSubmenu(link) {
-        var submenu = link.nextElementSibling;
-        if (!submenu) return;
-        submenu.classList.add('submenu-aberto');
-        link.classList.add('submenu-pai-aberto');
+    function _abrirSubmenu($link) {
+        $link.next('.nav-submenu').addClass('submenu-aberto');
+        $link.addClass('submenu-pai-aberto');
     }
 
     // ── Guardião de Navegação ─────────────────────────────────────────────────
 
-    /**
-     * _bindGuardiao — intercepta todos os cliques em nav-links.
-     * Se window.AGAPE_VENDA_GUARDIAO for uma função que retorna true,
-     * exibe modal de confirmação antes de navegar.
-     *
-     * Low Coupling (GRASP) — Sidebar não importa venda.js; usa contrato global.
-     * Protected Variation (GRASP) — ponto de variação isolado: só o guardião muda.
-     */
-    function _bindGuardiao(sidebar) {
-        sidebar.addEventListener('click', function (e) {
-            var link = e.target.closest('.nav-link[data-href]');
-            if (!link) return;
+    function _bindGuardiao($sidebar) {
+        $sidebar.on('click', function (e) {
+            var $link = $(e.target).closest('.nav-link[data-href]');
+            if (!$link.length) return;
 
             var guardiao = window.AGAPE_VENDA_GUARDIAO;
             if (typeof guardiao !== 'function' || !guardiao()) return;
 
-            // Há venda ativa — bloquear e perguntar
             e.preventDefault();
-            var destino = link.getAttribute('data-href');
-            _mostrarModalGuardiao(destino);
+            _mostrarModalGuardiao($link.attr('data-href'));
         });
     }
 
     function _mostrarModalGuardiao(destino) {
         var id = 'modal-guardiao-venda';
-        if (!document.getElementById(id)) {
-            var el = document.createElement('div');
-            el.id = id;
-            el.style.cssText =
-                'position:fixed;inset:0;background:rgba(0,0,0,.55);' +
-                'z-index:10000;display:flex;align-items:center;justify-content:center;';
-            el.innerHTML =
+        if (!$('#' + id).length) {
+            $('<div>').attr('id', id).css({
+                position:        'fixed',
+                inset:           0,
+                background:      'rgba(0,0,0,.55)',
+                'z-index':       10000,
+                display:         'flex',
+                'align-items':   'center',
+                'justify-content': 'center'
+            }).html(
                 '<div style="background:#fff;border-radius:.75rem;max-width:460px;width:90%;' +
                 'box-shadow:0 8px 32px rgba(0,0,0,.2);padding:2rem;text-align:center;">' +
                 '<i class="bi bi-cart-x-fill" style="font-size:2.75rem;color:#dc3545;"></i>' +
@@ -310,29 +271,25 @@ window.AGAPE.Utils.Sidebar = (function () {
                 '<i class="bi bi-arrow-left me-1"></i>Voltar à venda</button>' +
                 '<button id="btn-guardiao-confirmar" class="btn btn-danger">' +
                 '<i class="bi bi-box-arrow-right me-1"></i>Cancelar e sair</button>' +
-                '</div></div>';
-            document.body.appendChild(el);
+                '</div></div>'
+            ).appendTo('body');
         }
 
-        var overlay = document.getElementById(id);
-        overlay.style.display = 'flex';
+        var $overlay = $('#' + id).css('display', 'flex');
 
-        document.getElementById('btn-guardiao-confirmar').onclick = function () {
-            // Limpa guardião e navega
+        $('#btn-guardiao-confirmar').off('click').on('click', function () {
             window.AGAPE_VENDA_GUARDIAO = null;
             window.location.href = destino;
-        };
-        document.getElementById('btn-guardiao-cancelar').onclick = function () {
-            overlay.style.display = 'none';
-        };
+        });
+        $('#btn-guardiao-cancelar').off('click').on('click', function () {
+            $overlay.hide();
+        });
     }
 
     // ── Logout ────────────────────────────────────────────────────────────────
 
     function _bindLogout() {
-        var btn = document.getElementById('btn-sair');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
+        $('#btn-sair').on('click', function () {
             var auth    = window.AGAPE.Utils.Auth ? window.AGAPE.Utils.Auth.getInstance() : null;
             var usuario = auth ? auth.getUsuario() : null;
 
@@ -348,13 +305,16 @@ window.AGAPE.Utils.Sidebar = (function () {
 
     function _mostrarModalParamPendente(auth) {
         var id = 'modal-param-pendente';
-        if (!document.getElementById(id)) {
-            var el = document.createElement('div');
-            el.id = id;
-            el.style.cssText =
-                'position:fixed;inset:0;background:rgba(0,0,0,.55);' +
-                'z-index:10000;display:flex;align-items:center;justify-content:center;';
-            el.innerHTML =
+        if (!$('#' + id).length) {
+            $('<div>').attr('id', id).css({
+                position:        'fixed',
+                inset:           0,
+                background:      'rgba(0,0,0,.55)',
+                'z-index':       10000,
+                display:         'flex',
+                'align-items':   'center',
+                'justify-content': 'center'
+            }).html(
                 '<div style="background:#fff;border-radius:.75rem;max-width:440px;width:90%;' +
                 'box-shadow:0 8px 32px rgba(0,0,0,.2);padding:2rem;text-align:center;">' +
                 '<i class="bi bi-exclamation-triangle-fill" style="font-size:2.75rem;color:#f59e0b;"></i>' +
@@ -368,19 +328,18 @@ window.AGAPE.Utils.Sidebar = (function () {
                 '<i class="bi bi-arrow-left me-1"></i>Voltar</button>' +
                 '<button id="btn-param-confirmar" class="btn btn-danger">' +
                 '<i class="bi bi-box-arrow-right me-1"></i>Confirmar saída</button>' +
-                '</div></div>';
-            document.body.appendChild(el);
+                '</div></div>'
+            ).appendTo('body');
         }
 
-        var overlay = document.getElementById(id);
-        overlay.style.display = 'flex';
+        var $overlay = $('#' + id).css('display', 'flex');
 
-        document.getElementById('btn-param-confirmar').onclick = function () {
+        $('#btn-param-confirmar').off('click').on('click', function () {
             if (auth) auth.logout();
-        };
-        document.getElementById('btn-param-cancelar').onclick = function () {
-            overlay.style.display = 'none';
-        };
+        });
+        $('#btn-param-cancelar').off('click').on('click', function () {
+            $overlay.hide();
+        });
     }
 
     // ── Parametrização pendente ───────────────────────────────────────────────
@@ -391,79 +350,68 @@ window.AGAPE.Utils.Sidebar = (function () {
         if (!usuario || usuario.nivel !== 'ADM') return;
         if (sessionStorage.getItem('agape_param_pendente') !== '1') return;
 
-        var paginaAtual = _paginaAtual();
-        if (paginaAtual !== 'parametrizacao.html') {
-            window.location.replace('./parametrizacao.html');
+        if (_paginaAtual() !== 'parametrizacao.html') {
+            window.location.replace('../parametrizacoes/parametrizacao.html');
         }
     }
 
     // ── Toggle desktop ────────────────────────────────────────────────────────
 
-    function _atualizarIconeToggle(sidebar, colapsada) {
-        var icone = sidebar.querySelector('#btn-sidebar-toggle i');
-        var btn   = sidebar.querySelector('#btn-sidebar-toggle');
-        if (icone) icone.className = colapsada ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
-        if (btn)   btn.title       = colapsada ? 'Expandir menu' : 'Recolher menu';
+    function _atualizarIconeToggle(colapsada) {
+        $('#btn-sidebar-toggle i').attr('class', colapsada ? 'bi bi-chevron-right' : 'bi bi-chevron-left');
+        $('#btn-sidebar-toggle').attr('title', colapsada ? 'Expandir menu' : 'Recolher menu');
     }
 
-    function _bindToggleDesktop(sidebar) {
+    function _bindToggleDesktop($sidebar) {
         if (localStorage.getItem('agape_sidebar_colapsada') === 'true') {
-            sidebar.classList.add('sidebar-colapsada');
-            _atualizarIconeToggle(sidebar, true);
+            $sidebar.addClass('sidebar-colapsada');
+            _atualizarIconeToggle(true);
         }
 
-        var btn = document.getElementById('btn-sidebar-toggle');
-        if (!btn) return;
-
-        btn.addEventListener('click', function () {
-            var colapsada = sidebar.classList.toggle('sidebar-colapsada');
+        $('#btn-sidebar-toggle').on('click', function () {
+            $sidebar.toggleClass('sidebar-colapsada');
+            var colapsada = $sidebar.hasClass('sidebar-colapsada');
             localStorage.setItem('agape_sidebar_colapsada', colapsada ? 'true' : 'false');
-            _atualizarIconeToggle(sidebar, colapsada);
+            _atualizarIconeToggle(colapsada);
         });
     }
 
     // ── Mobile ────────────────────────────────────────────────────────────────
 
-    function _injetarHamburger(sidebar) {
-        var topbar = document.querySelector('.topbar');
-        if (!topbar || document.getElementById('btn-sidebar-mobile')) return;
+    function _injetarHamburger($sidebar) {
+        var $topbar = $('.topbar');
+        if (!$topbar.length || $('#btn-sidebar-mobile').length) return;
 
-        var overlay   = document.getElementById('sidebar-overlay');
-        var hamburger = document.createElement('button');
-        hamburger.id        = 'btn-sidebar-mobile';
-        hamburger.className = 'topbar-toggle-mobile';
-        hamburger.title     = 'Menu';
-        hamburger.innerHTML = '<i class="bi bi-list"></i>';
-
-        hamburger.addEventListener('click', function () {
-            sidebar.classList.add('sidebar-aberta');
-            if (overlay) overlay.classList.add('visivel');
-        });
-
-        topbar.insertBefore(hamburger, topbar.firstChild);
+        $('<button>').attr({ id: 'btn-sidebar-mobile', title: 'Menu' })
+            .addClass('topbar-toggle-mobile')
+            .html('<i class="bi bi-list"></i>')
+            .on('click', function () {
+                $sidebar.addClass('sidebar-aberta');
+                $('#sidebar-overlay').addClass('visivel');
+            })
+            .prependTo($topbar);
     }
 
-    function _bindExpandOnClick(sidebar) {
-        sidebar.addEventListener('click', function (e) {
-            if (!sidebar.classList.contains('sidebar-colapsada')) return;
-            if (e.target.closest('.sidebar-toggle')) return;
-            if (e.target.closest('.nav-link[data-href]')) return;
-            sidebar.classList.remove('sidebar-colapsada');
+    function _bindExpandOnClick($sidebar) {
+        $sidebar.on('click', function (e) {
+            if (!$sidebar.hasClass('sidebar-colapsada')) return;
+            if ($(e.target).closest('.sidebar-toggle').length) return;
+            if ($(e.target).closest('.nav-link[data-href]').length) return;
+            $sidebar.removeClass('sidebar-colapsada');
             localStorage.setItem('agape_sidebar_colapsada', 'false');
-            _atualizarIconeToggle(sidebar, false);
+            _atualizarIconeToggle(false);
         });
     }
 
-    function _injetarOverlay(sidebar) {
-        if (document.getElementById('sidebar-overlay')) return;
+    function _injetarOverlay($sidebar) {
+        if ($('#sidebar-overlay').length) return;
 
-        var overlay = document.createElement('div');
-        overlay.id = 'sidebar-overlay';
-        overlay.addEventListener('click', function () {
-            sidebar.classList.remove('sidebar-aberta');
-            overlay.classList.remove('visivel');
-        });
-        document.body.appendChild(overlay);
+        $('<div>').attr('id', 'sidebar-overlay')
+            .on('click', function () {
+                $sidebar.removeClass('sidebar-aberta');
+                $(this).removeClass('visivel');
+            })
+            .appendTo('body');
     }
 
     // ── API pública ───────────────────────────────────────────────────────────
@@ -472,21 +420,21 @@ window.AGAPE.Utils.Sidebar = (function () {
         _verificarParametrizacaoPendente();
         _injetarEstilosSubmenu();
 
-        var sidebar = document.getElementById(seletorAlvo || 'sidebar-wrapper');
-        if (!sidebar) {
+        var $sidebar = $('#' + (seletorAlvo || 'sidebar-wrapper'));
+        if (!$sidebar.length) {
             console.warn('[Sidebar] Elemento não encontrado: #' + (seletorAlvo || 'sidebar-wrapper'));
             return;
         }
 
-        sidebar.innerHTML = _construirHtml();
+        $sidebar.html(_construirHtml());
 
         _bindLogout();
-        _bindGuardiao(sidebar);     // Guardião de Navegação
-        _bindSubmenus(sidebar);     // Submenus com chevron rotativo
-        _injetarOverlay(sidebar);
-        _bindToggleDesktop(sidebar);
-        _bindExpandOnClick(sidebar);
-        _injetarHamburger(sidebar);
+        _bindGuardiao($sidebar);
+        _bindSubmenus($sidebar);
+        _injetarOverlay($sidebar);
+        _bindToggleDesktop($sidebar);
+        _bindExpandOnClick($sidebar);
+        _injetarHamburger($sidebar);
     }
 
     function registrarItem(item) {
@@ -495,4 +443,4 @@ window.AGAPE.Utils.Sidebar = (function () {
 
     return { inicializar: inicializar, registrarItem: registrarItem };
 
-})();
+}(jQuery));

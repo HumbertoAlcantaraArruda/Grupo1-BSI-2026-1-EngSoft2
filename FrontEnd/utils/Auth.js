@@ -55,7 +55,7 @@ window.AGAPE.Utils.Auth = (function () {
     // Se há sessão exibe o body (que começa oculto) e retorna true.
     Auth.prototype.requireLogin = function () {
         if (!this.estaLogado()) {
-            window.location.replace('./index.html');
+            window.location.replace('../index.html');
             return false;
         }
         $('body').show();
@@ -65,7 +65,7 @@ window.AGAPE.Utils.Auth = (function () {
     Auth.prototype.logout = function (redirecionar) {
         sessionStorage.removeItem(CHAVE);
         if (redirecionar !== false) {
-            window.location.replace('./index.html');
+            window.location.replace('../index.html');
         }
     };
 

@@ -1,6 +1,6 @@
 /* fornecedor.js — View: vincula eventos ao DOM e delega ao Controller */
 
-(function () {
+(function ($) {
 
     if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
 
@@ -8,35 +8,36 @@
     var mascaras  = window.AGAPE.Utils.Mascaras.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    var tabelaCorpo         = document.getElementById('tabela-corpo');
-    var modalEl             = document.getElementById('modal-fornecedor');
-    var formFornecedor      = document.getElementById('form-fornecedor');
-    var inputIdFornec       = document.getElementById('idFornec');
-    var inputNome           = document.getElementById('nome');
-    var inputContato        = document.getElementById('contato');
-    var inputTelefone1      = document.getElementById('telefone1');
-    var inputTelefone2      = document.getElementById('telefone2');
-    var inputEmail          = document.getElementById('email');
-    var inputSite           = document.getElementById('site');
-    var inputCnpj           = document.getElementById('cnpj');
-    var inputCep            = document.getElementById('cep');
-    var inputLogradouro     = document.getElementById('logradouro');
-    var inputCidade         = document.getElementById('cidade');
-    var selectUf            = document.getElementById('uf');
-    var inputObs            = document.getElementById('obs');
-    var selectAtivo         = document.getElementById('ativo');
-    var modalTitulo         = document.getElementById('modal-titulo');
-    var filtrNome           = document.getElementById('filtro-nome');
-    var filtrStatus         = document.getElementById('filtro-status');
-    var btnCadastrar        = document.getElementById('btn-cadastrar');
-    var btnFiltrar          = document.getElementById('btn-filtrar');
-    var btnLimpar           = document.getElementById('btn-limpar');
-    var btnSalvar           = document.getElementById('btn-salvar');
-    var btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
+    var $tabelaCorpo         = $('#tabela-corpo');
+    var $modalEl             = $('#modal-fornecedor');
+    var $formFornecedor      = $('#form-fornecedor');
+    var $inputIdFornec       = $('#idFornec');
+    var $inputNome           = $('#nome');
+    var $inputContato        = $('#contato');
+    var $inputTelefone1      = $('#telefone1');
+    var $inputTelefone2      = $('#telefone2');
+    var $inputEmail          = $('#email');
+    var $inputSite           = $('#site');
+    var $inputCnpj           = $('#cnpj');
+    var $inputCep            = $('#cep');
+    var $inputLogradouro     = $('#logradouro');
+    var $inputCidade         = $('#cidade');
+    var $selectUf            = $('#uf');
+    var $inputObs            = $('#obs');
+    var $selectAtivo         = $('#ativo');
+    var $modalTitulo         = $('#modal-titulo');
+    var $filtrNome           = $('#filtro-nome');
+    var $filtrStatus         = $('#filtro-status');
+    var $btnCadastrar        = $('#btn-cadastrar');
+    var $btnFiltrar          = $('#btn-filtrar');
+    var $btnLimpar           = $('#btn-limpar');
+    var $btnSalvar           = $('#btn-salvar');
+    var $btnConfirmarExcluir = $('#btn-confirmar-excluir');
 
-    var modalObj        = new bootstrap.Modal(modalEl);
-    var modalExcluirObj = new bootstrap.Modal(document.getElementById('modal-excluir'));
+    var modalObj        = new bootstrap.Modal($modalEl[0]);
+    var modalExcluirObj = new bootstrap.Modal($('#modal-excluir')[0]);
     var idParaExcluir   = null;
+    var _dt             = null;
 
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
@@ -52,229 +53,264 @@
     function _bindCepLookup() {
         var viaCep = window.AGAPE.Utils.ViaCep.getInstance();
 
-        inputCep.addEventListener('blur', async function () {
-            var digits = mascaras.apenasDigitos(inputCep.value);
-            inputCep.classList.remove('is-invalid', 'is-valid');
+        $inputCep.on('blur', async function () {
+            var digits = mascaras.apenasDigitos($inputCep.val());
+            $inputCep.removeClass('is-invalid is-valid');
 
             if (digits.length === 0) return;
 
             if (digits.length !== 8) {
                 _limparCamposEndereco();
-                validador.destacarCampo(inputCep, false, 'CEP inválido. Informe 8 dígitos.');
+                validador.destacarCampo($inputCep[0], false, 'CEP inválido. Informe 8 dígitos.');
                 return;
             }
 
             _limparCamposEndereco();
-            inputLogradouro.disabled = true;
-            inputCidade.disabled     = true;
-            selectUf.disabled        = true;
+            $inputLogradouro.prop('disabled', true);
+            $inputCidade.prop('disabled', true);
+            $selectUf.prop('disabled', true);
 
             var resultado = await viaCep.buscar(digits);
 
-            inputLogradouro.disabled = false;
-            inputCidade.disabled     = false;
-            selectUf.disabled        = false;
+            $inputLogradouro.prop('disabled', false);
+            $inputCidade.prop('disabled', false);
+            $selectUf.prop('disabled', false);
 
             if (resultado.status === 'ok') {
                 var d = resultado.dados;
-                inputLogradouro.value = d.logradouro || '';
-                inputCidade.value     = d.localidade || '';
-                selectUf.value        = d.uf         || '';
-                validador.destacarCampo(inputCep, true);
+                $inputLogradouro.val(d.logradouro || '');
+                $inputCidade.val(d.localidade     || '');
+                $selectUf.val(d.uf                || '');
+                validador.destacarCampo($inputCep[0], true);
             } else {
-                validador.destacarCampo(inputCep, false, resultado.mensagem);
+                validador.destacarCampo($inputCep[0], false, resultado.mensagem);
             }
         });
     }
 
     function _limparCamposEndereco() {
-        inputLogradouro.value = '';
-        inputCidade.value     = '';
-        selectUf.value        = '';
+        $inputLogradouro.val('');
+        $inputCidade.val('');
+        $selectUf.val('');
     }
 
     function _bindCnpjLookup() {
         var brasilApi = window.AGAPE.Utils.BrasilApiCnpj.getInstance();
 
-        inputCnpj.addEventListener('blur', async function () {
-            var digits = mascaras.apenasDigitos(inputCnpj.value);
-            inputCnpj.classList.remove('is-invalid', 'is-valid');
+        $inputCnpj.on('blur', async function () {
+            var digits = mascaras.apenasDigitos($inputCnpj.val());
+            $inputCnpj.removeClass('is-invalid is-valid');
 
             if (digits.length === 0) return;
 
             if (digits.length !== 14) {
                 _limparCamposCnpj();
-                validador.destacarCampo(inputCnpj, false, 'CNPJ inválido. Informe 14 dígitos.');
+                validador.destacarCampo($inputCnpj[0], false, 'CNPJ inválido. Informe 14 dígitos.');
                 return;
             }
 
             _limparCamposCnpj();
-            inputCnpj.disabled = true;
+            $inputCnpj.prop('disabled', true);
 
             var resultado = await brasilApi.buscar(digits);
-            inputCnpj.disabled = false;
+            $inputCnpj.prop('disabled', false);
 
             if (resultado.status === 'ok') {
                 var d = resultado.dados;
-                inputNome.value = (d.nome_fantasia && d.nome_fantasia.trim())
-                    ? d.nome_fantasia.trim()
-                    : (d.razao_social || '').trim();
-                validador.destacarCampo(inputCnpj, true);
+                $inputNome.val(
+                    (d.nome_fantasia && d.nome_fantasia.trim())
+                        ? d.nome_fantasia.trim()
+                        : (d.razao_social || '').trim()
+                );
+                validador.destacarCampo($inputCnpj[0], true);
             } else {
-                validador.destacarCampo(inputCnpj, false, resultado.mensagem);
+                validador.destacarCampo($inputCnpj[0], false, resultado.mensagem);
             }
         });
     }
 
     function _limparCamposCnpj() {
-        inputNome.value = '';
+        $inputNome.val('');
     }
 
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="6" class="tabela-vazia">Carregando...</td></tr>';
+        $tabelaCorpo.html('<tr><td colspan="6" class="tabela-vazia">Carregando...</td></tr>');
         _renderizarTabela(await ctrl.listar());
     }
 
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
-            tabelaCorpo.innerHTML =
+            if (_dt) { _dt.destroy(); _dt = null; }
+            $tabelaCorpo.html(
                 '<tr><td colspan="6" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
-                _escapar(resultado.erro || 'Erro ao carregar dados.') +
-                '</td></tr>';
+                _esc(resultado.erro || 'Erro ao carregar dados.') +
+                '</td></tr>'
+            );
             return;
         }
 
         var lista = Array.isArray(resultado.dados) ? resultado.dados : [];
+        var dados = lista.map(function (f) {
+            var ativo = (f.ativo === 1 || f.ativo === true || f.ativo === '1');
+            return {
+                idFornec:   f.idFornec,
+                nome:       f.nome       || '',
+                contato:    f.contato    || '',
+                telefone1:  f.telefone1  || '',
+                telefone2:  f.telefone2  || '',
+                email:      f.email      || '',
+                site:       f.site       || '',
+                cnpj:       f.cnpj       || '',
+                cep:        f.cep        || '',
+                logradouro: f.logradouro || '',
+                cidade:     f.cidade     || '',
+                uf:         f.uf         || '',
+                obs:        f.obs        || '',
+                ativo:      ativo
+            };
+        });
 
-        if (lista.length === 0) {
-            tabelaCorpo.innerHTML =
-                '<tr><td colspan="6" class="tabela-vazia">' +
-                '<i class="bi bi-inbox me-1"></i>Nenhum fornecedor encontrado.' +
-                '</td></tr>';
+        if (_dt) {
+            _dt.clear().rows.add(dados).draw();
             return;
         }
 
-        var html = lista.map(function (f) {
-            var ativo = (f.ativo === 1 || f.ativo === true || f.ativo === '1');
-            var badge = ativo
-                ? '<span class="badge-ativo">Ativo</span>'
-                : '<span class="badge-inativo">Inativo</span>';
-            return (
-                '<tr>' +
-                '<td>' + _escapar(f.nome)     + '</td>' +
-                '<td>' + _escapar(f.contato   || '—') + '</td>' +
-                '<td>' + _escapar(f.telefone1 || '—') + '</td>' +
-                '<td>' + _escapar(f.email     || '—') + '</td>' +
-                '<td>' + badge + '</td>' +
-                '<td>' +
-                '<button class="btn-acao btn-editar me-1" ' +
-                'data-id="'         + f.idFornec              + '" ' +
-                'data-nome="'       + _escapar(f.nome)        + '" ' +
-                'data-contato="'    + _escapar(f.contato)     + '" ' +
-                'data-telefone1="'  + _escapar(f.telefone1)   + '" ' +
-                'data-telefone2="'  + _escapar(f.telefone2)   + '" ' +
-                'data-email="'      + _escapar(f.email)       + '" ' +
-                'data-site="'       + _escapar(f.site)        + '" ' +
-                'data-cnpj="'       + _escapar(f.cnpj)        + '" ' +
-                'data-cep="'        + _escapar(f.cep)         + '" ' +
-                'data-logradouro="' + _escapar(f.logradouro)  + '" ' +
-                'data-cidade="'     + _escapar(f.cidade)      + '" ' +
-                'data-uf="'         + _escapar(f.uf)          + '" ' +
-                'data-obs="'        + _escapar(f.obs)         + '" ' +
-                'data-ativo="'      + (f.ativo === 1 || f.ativo === true || f.ativo === '1' ? '1' : '0') + '" ' +
-                'title="Editar">' +
-                '<i class="bi bi-pencil"></i></button>' +
-                '<button class="btn-acao btn-excluir" ' +
-                'data-id="'   + f.idFornec        + '" ' +
-                'data-nome="' + _escapar(f.nome)  + '" ' +
-                'title="Excluir">' +
-                '<i class="bi bi-trash"></i></button>' +
-                '</td></tr>'
-            );
-        }).join('');
-
-        tabelaCorpo.innerHTML = html;
-        _bindBotoesTabela();
+        _dt = $tabelaCorpo.closest('table').DataTable({
+            dom: '<"top d-flex justify-content-end" f>rt<"bottom d-flex justify-content-between" l p>',
+            searching: false,
+            info: false,
+            data: dados,
+            columnDefs: [
+                { className: 'text-center', targets: '_all' }
+            ],
+            columns: [
+                { data: 'nome',      render: function (d) { return _esc(d) || '—'; } },
+                { data: 'contato',   render: function (d) { return _esc(d) || '—'; } },
+                { data: 'telefone1', render: function (d) { return _esc(d) || '—'; } },
+                { data: 'email',     render: function (d) { return _esc(d) || '—'; } },
+                { data: 'ativo', render: function (d) {
+                    return d ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
+                }},
+                { data: null, orderable: false, render: function (d, t, row) {
+                    return '<button class="btn-acao btn-editar me-1" ' +
+                        'data-id="'         + row.idFornec              + '" ' +
+                        'data-nome="'       + _esc(row.nome)        + '" ' +
+                        'data-contato="'    + _esc(row.contato)     + '" ' +
+                        'data-telefone1="'  + _esc(row.telefone1)   + '" ' +
+                        'data-telefone2="'  + _esc(row.telefone2)   + '" ' +
+                        'data-email="'      + _esc(row.email)       + '" ' +
+                        'data-site="'       + _esc(row.site)        + '" ' +
+                        'data-cnpj="'       + _esc(row.cnpj)        + '" ' +
+                        'data-cep="'        + _esc(row.cep)         + '" ' +
+                        'data-logradouro="' + _esc(row.logradouro)  + '" ' +
+                        'data-cidade="'     + _esc(row.cidade)      + '" ' +
+                        'data-uf="'         + _esc(row.uf)          + '" ' +
+                        'data-obs="'        + _esc(row.obs)         + '" ' +
+                        'data-ativo="'      + (row.ativo ? '1' : '0') + '" ' +
+                        'title="Editar"><i class="bi bi-pencil"></i></button>' +
+                        '<button class="btn-acao btn-excluir" ' +
+                        'data-id="'   + row.idFornec      + '" ' +
+                        'data-nome="' + _esc(row.nome) + '" ' +
+                        'title="Excluir"><i class="bi bi-trash"></i></button>';
+                }}
+            ],
+            language: {
+                decimal: ',', thousands: '.',
+                emptyTable:   'Nenhum fornecedor encontrado',
+                info:         'Mostrando _START_ a _END_ de _TOTAL_ registro(s)',
+                infoEmpty:    'Nenhum registro encontrado',
+                infoFiltered: '(filtrado de _MAX_ no total)',
+                lengthMenu:   'Mostrar _MENU_ por página',
+                search:       'Buscar:',
+                zeroRecords:  'Nenhum fornecedor encontrado',
+                paginate: {
+                    first: '<i class="bi bi-chevron-double-left"></i>',
+                    last:  '<i class="bi bi-chevron-double-right"></i>',
+                    next:  '<i class="bi bi-chevron-right"></i>',
+                    previous: '<i class="bi bi-chevron-left"></i>'
+                }
+            },
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            order: [[0, 'asc']]
+        });
     }
 
-    function _bindBotoesTabela() {
-        document.querySelectorAll('.btn-editar').forEach(function (btn) {
-            btn.addEventListener('click', function () { _abrirModalEdicao(this.dataset); });
-        });
-        document.querySelectorAll('.btn-excluir').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                idParaExcluir = this.dataset.id;
-                document.getElementById('excluir-nome').textContent = this.dataset.nome;
-                modalExcluirObj.show();
-            });
-        });
-    }
+    $tabelaCorpo.on('click', '.btn-editar', function () {
+        _abrirModalEdicao($(this).data());
+    });
+
+    $tabelaCorpo.on('click', '.btn-excluir', function () {
+        idParaExcluir = $(this).data('id');
+        $('#excluir-nome').text($(this).data('nome'));
+        modalExcluirObj.show();
+    });
 
     function _limparModal() {
-        inputIdFornec.value   = '';
-        inputNome.value       = '';
-        inputContato.value    = '';
-        inputTelefone1.value  = '';
-        inputTelefone2.value  = '';
-        inputEmail.value      = '';
-        inputSite.value       = '';
-        inputCnpj.value       = '';
-        inputCep.value        = '';
-        inputLogradouro.value = '';
-        inputCidade.value     = '';
-        selectUf.value        = '';
-        inputObs.value        = '';
-        selectAtivo.value     = '1';
-        selectAtivo.disabled  = true;
+        $inputIdFornec.val('');
+        $inputNome.val('');
+        $inputContato.val('');
+        $inputTelefone1.val('');
+        $inputTelefone2.val('');
+        $inputEmail.val('');
+        $inputSite.val('');
+        $inputCnpj.val('');
+        $inputCep.val('');
+        $inputLogradouro.val('');
+        $inputCidade.val('');
+        $selectUf.val('');
+        $inputObs.val('');
+        $selectAtivo.val('1');
+        $selectAtivo.prop('disabled', true);
     }
 
-    btnCadastrar.addEventListener('click', function () {
-        modalTitulo.textContent = 'Cadastrar Fornecedor';
-        validador.resetar(formFornecedor);
+    $btnCadastrar.on('click', function () {
+        $modalTitulo.text('Cadastrar Fornecedor');
+        validador.resetar($formFornecedor[0]);
         _limparModal();
         modalObj.show();
     });
 
     function _abrirModalEdicao(dados) {
-        modalTitulo.textContent  = 'Alterar Fornecedor';
-        validador.resetar(formFornecedor);
-        inputIdFornec.value   = dados.id;
-        inputNome.value       = dados.nome       || '';
-        inputContato.value    = dados.contato    || '';
-        inputTelefone1.value  = dados.telefone1  || '';
-        inputTelefone2.value  = dados.telefone2  || '';
-        inputEmail.value      = dados.email      || '';
-        inputSite.value       = dados.site       || '';
-        inputCnpj.value       = dados.cnpj       || '';
-        inputCep.value        = dados.cep        || '';
-        inputLogradouro.value = dados.logradouro || '';
-        inputCidade.value     = dados.cidade     || '';
-        selectUf.value        = dados.uf         || '';
-        inputObs.value        = dados.obs        || '';
-        selectAtivo.value     = dados.ativo === '0' ? '0' : '1';
-        selectAtivo.disabled  = false;
+        $modalTitulo.text('Alterar Fornecedor');
+        validador.resetar($formFornecedor[0]);
+        $inputIdFornec.val(dados.id);
+        $inputNome.val(dados.nome       || '');
+        $inputContato.val(dados.contato    || '');
+        $inputTelefone1.val(dados.telefone1  || '');
+        $inputTelefone2.val(dados.telefone2  || '');
+        $inputEmail.val(dados.email      || '');
+        $inputSite.val(dados.site       || '');
+        $inputCnpj.val(dados.cnpj       || '');
+        $inputCep.val(dados.cep        || '');
+        $inputLogradouro.val(dados.logradouro || '');
+        $inputCidade.val(dados.cidade     || '');
+        $selectUf.val(dados.uf         || '');
+        $inputObs.val(dados.obs        || '');
+        $selectAtivo.val(dados.ativo === 0 ? '0' : '1');
+        $selectAtivo.prop('disabled', false);
         modalObj.show();
     }
 
-    btnSalvar.addEventListener('click', async function () {
-        if (!validador.validarFormulario(formFornecedor)) return;
+    $btnSalvar.on('click', async function () {
+        if (!validador.validarFormulario($formFornecedor[0])) return;
 
         var dados = {
-            idFornec:  inputIdFornec.value  || null,
-            nome:      inputNome.value.trim(),
-            contato:   inputContato.value.trim(),
-            telefone1: mascaras.apenasDigitos(inputTelefone1.value),
-            telefone2: mascaras.apenasDigitos(inputTelefone2.value),
-            email:     inputEmail.value.trim(),
-            site:      inputSite.value.trim(),
-            cnpj:      mascaras.apenasDigitos(inputCnpj.value),
-            cep:       mascaras.apenasDigitos(inputCep.value),
-            logradouro: inputLogradouro.value.trim(),
-            cidade:    inputCidade.value.trim(),
-            uf:        selectUf.value,
-            obs:       inputObs.value.trim(),
-            ativo:     selectAtivo.value
+            idFornec:   $inputIdFornec.val()  || null,
+            nome:       $inputNome.val().trim(),
+            contato:    $inputContato.val().trim(),
+            telefone1:  mascaras.apenasDigitos($inputTelefone1.val()),
+            telefone2:  mascaras.apenasDigitos($inputTelefone2.val()),
+            email:      $inputEmail.val().trim(),
+            site:       $inputSite.val().trim(),
+            cnpj:       mascaras.apenasDigitos($inputCnpj.val()),
+            cep:        mascaras.apenasDigitos($inputCep.val()),
+            logradouro: $inputLogradouro.val().trim(),
+            cidade:     $inputCidade.val().trim(),
+            uf:         $selectUf.val(),
+            obs:        $inputObs.val().trim(),
+            ativo:      $selectAtivo.val()
         };
 
         var resultado = dados.idFornec
@@ -293,7 +329,7 @@
         }
     });
 
-    btnConfirmarExcluir.addEventListener('click', async function () {
+    $btnConfirmarExcluir.on('click', async function () {
         if (!idParaExcluir) return;
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
@@ -306,22 +342,20 @@
         }
     });
 
-    btnFiltrar.addEventListener('click', function () {
-        _renderizarTabela(ctrl.filtrar({ nome: filtrNome.value, status: filtrStatus.value }));
+    $btnFiltrar.on('click', function () {
+        _renderizarTabela(ctrl.filtrar({ nome: $filtrNome.val(), status: $filtrStatus.val() }));
     });
 
-    btnLimpar.addEventListener('click', async function () {
-        filtrNome.value = filtrStatus.value = '';
+    $btnLimpar.on('click', async function () {
+        $filtrNome.val('');
+        $filtrStatus.val('');
         await _carregarLista();
     });
 
-    function _escapar(texto) {
-        if (texto === null || texto === undefined) return '';
-        return String(texto)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    function _esc(texto) {
+        return $('<div>').text(texto == null ? '' : String(texto)).html();
     }
 
-    document.addEventListener('DOMContentLoaded', inicializar);
+    $(inicializar);
 
-})();
+}(jQuery));

@@ -1,31 +1,32 @@
 /* formaPagamento.js — View: vincula eventos ao DOM e delega ao Controller */
 
-(function () {
+(function ($) {
 
     if (!window.AGAPE.Utils.Auth.getInstance().requireLogin()) return;
 
     var ctrl      = window.AGAPE.Controllers.FormaPagamentoController.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    var tabelaCorpo         = document.getElementById('tabela-corpo');
-    var modalEl             = document.getElementById('modal-forma');
-    var formForma           = document.getElementById('form-forma');
-    var inputId             = document.getElementById('formaId');
-    var inputDescricao      = document.getElementById('descricao');
-    var selectAtivo         = document.getElementById('ativo');
-    var modalTitulo         = document.getElementById('modal-titulo');
-    var secaoAtivo          = document.getElementById('secao-ativo');
-    var filtrDescricao      = document.getElementById('filtro-descricao');
-    var filtrAtivo          = document.getElementById('filtro-ativo');
-    var btnCadastrar        = document.getElementById('btn-cadastrar');
-    var btnFiltrar          = document.getElementById('btn-filtrar');
-    var btnLimpar           = document.getElementById('btn-limpar');
-    var btnSalvar           = document.getElementById('btn-salvar');
-    var btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
+    var $tabelaCorpo         = $('#tabela-corpo');
+    var $modalEl             = $('#modal-forma');
+    var $formForma           = $('#form-forma');
+    var $inputId             = $('#formaId');
+    var $inputDescricao      = $('#descricao');
+    var $selectAtivo         = $('#ativo');
+    var $modalTitulo         = $('#modal-titulo');
+    var $secaoAtivo          = $('#secao-ativo');
+    var $filtrDescricao      = $('#filtro-descricao');
+    var $filtrAtivo          = $('#filtro-ativo');
+    var $btnCadastrar        = $('#btn-cadastrar');
+    var $btnFiltrar          = $('#btn-filtrar');
+    var $btnLimpar           = $('#btn-limpar');
+    var $btnSalvar           = $('#btn-salvar');
+    var $btnConfirmarExcluir = $('#btn-confirmar-excluir');
 
-    var modalObj        = new bootstrap.Modal(modalEl);
-    var modalExcluirObj = new bootstrap.Modal(document.getElementById('modal-excluir'));
+    var modalObj        = new bootstrap.Modal($modalEl[0]);
+    var modalExcluirObj = new bootstrap.Modal($('#modal-excluir')[0]);
     var idParaExcluir   = null;
+    var _dt             = null;
 
     async function inicializar() {
         window.AGAPE.Utils.Sidebar.inicializar();
@@ -33,94 +34,119 @@
     }
 
     async function _carregarLista() {
-        tabelaCorpo.innerHTML = '<tr><td colspan="3" class="tabela-vazia">Carregando...</td></tr>';
+        $tabelaCorpo.html('<tr><td colspan="3" class="tabela-vazia">Carregando...</td></tr>');
         _renderizarTabela(await ctrl.listar());
     }
 
     function _renderizarTabela(resultado) {
         if (resultado.status !== 'ok') {
-            tabelaCorpo.innerHTML =
+            if (_dt) { _dt.destroy(); _dt = null; }
+            $tabelaCorpo.html(
                 '<tr><td colspan="3" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
-                _escapar(resultado.erro || 'Erro ao carregar dados.') +
-                '</td></tr>';
+                _esc(resultado.erro || 'Erro ao carregar dados.') +
+                '</td></tr>'
+            );
             return;
         }
 
         var lista = Array.isArray(resultado.dados) ? resultado.dados : [];
+        var dados = lista.map(function (f) {
+            var ativo = (f.ativo === true || f.ativo === 1 || f.ativo === 'true');
+            return { idFormaPag: f.idFormaPag, descricao: f.descricao, ativo: ativo };
+        });
 
-        if (lista.length === 0) {
-            tabelaCorpo.innerHTML =
-                '<tr><td colspan="3" class="tabela-vazia">' +
-                '<i class="bi bi-inbox me-1"></i>Nenhuma forma de pagamento encontrada.' +
-                '</td></tr>';
+        if (_dt) {
+            _dt.clear().rows.add(dados).draw();
             return;
         }
 
-        var html = lista.map(function (f) {
-            var ativo = (f.ativo === true || f.ativo === 1 || f.ativo === 'true');
-            var badge = ativo ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
-            return (
-                '<tr>' +
-                '<td>' + _escapar(f.descricao) + '</td>' +
-                '<td>' + badge + '</td>' +
-                '<td>' +
-                '<button class="btn-acao btn-editar me-1" data-id="' + f.idFormaPag + '" ' +
-                'data-descricao="' + _escapar(f.descricao) + '" data-ativo="' + ativo + '" title="Editar">' +
-                '<i class="bi bi-pencil"></i></button>' +
-                '<button class="btn-acao btn-excluir" data-id="' + f.idFormaPag + '" ' +
-                'data-descricao="' + _escapar(f.descricao) + '" title="Excluir">' +
-                '<i class="bi bi-trash"></i></button>' +
-                '</td></tr>'
-            );
-        }).join('');
-
-        tabelaCorpo.innerHTML = html;
-        _bindBotoesTabela();
+        _dt = $tabelaCorpo.closest('table').DataTable({
+            dom: '<"top d-flex justify-content-end" f>rt<"bottom d-flex justify-content-between" l p>',
+            searching: false,
+            info: false,
+            data: dados,
+            columnDefs: [
+                { className: 'text-center', targets: '_all' }
+            ],
+            columns: [
+                { data: 'descricao', render: function (d) { return _esc(d); } },
+                { data: 'ativo', render: function (d) {
+                    return d ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
+                }},
+                { data: null, orderable: false, render: function (d, t, row) {
+                    return '<button class="btn-acao btn-editar me-1" ' +
+                        'data-id="' + row.idFormaPag + '" ' +
+                        'data-descricao="' + _esc(row.descricao) + '" ' +
+                        'data-ativo="' + row.ativo + '" title="Editar">' +
+                        '<i class="bi bi-pencil"></i></button>' +
+                        '<button class="btn-acao btn-excluir" ' +
+                        'data-id="' + row.idFormaPag + '" ' +
+                        'data-descricao="' + _esc(row.descricao) + '" title="Excluir">' +
+                        '<i class="bi bi-trash"></i></button>';
+                }}
+            ],
+            language: {
+                decimal: ',', thousands: '.',
+                emptyTable:   'Nenhuma forma de pagamento encontrada',
+                info:         'Mostrando _START_ a _END_ de _TOTAL_ registro(s)',
+                infoEmpty:    'Nenhum registro encontrado',
+                infoFiltered: '(filtrado de _MAX_ no total)',
+                lengthMenu:   'Mostrar _MENU_ por página',
+                search:       'Buscar:',
+                zeroRecords:  'Nenhuma forma de pagamento encontrada',
+                paginate: {
+                    first: '<i class="bi bi-chevron-double-left"></i>',
+                    last:  '<i class="bi bi-chevron-double-right"></i>',
+                    next:  '<i class="bi bi-chevron-right"></i>',
+                    previous: '<i class="bi bi-chevron-left"></i>'
+                }
+            },
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            order: [[0, 'asc']]
+        });
     }
 
-    function _bindBotoesTabela() {
-        document.querySelectorAll('.btn-editar').forEach(function (btn) {
-            btn.addEventListener('click', function () { _abrirModalEdicao(this.dataset); });
-        });
-        document.querySelectorAll('.btn-excluir').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                idParaExcluir = this.dataset.id;
-                document.getElementById('excluir-descricao').textContent = this.dataset.descricao;
-                modalExcluirObj.show();
-            });
-        });
-    }
+    $tabelaCorpo.on('click', '.btn-editar', function () {
+        _abrirModalEdicao($(this).data());
+    });
 
-    btnCadastrar.addEventListener('click', function () {
-        modalTitulo.textContent  = 'Cadastrar Forma de Pagamento';
-        validador.resetar(formForma);
-        inputId.value          = '';
-        inputDescricao.value   = '';
-        selectAtivo.value      = 'true';
-        selectAtivo.disabled   = true;
-        secaoAtivo.style.display = 'none';
+    $tabelaCorpo.on('click', '.btn-excluir', function () {
+        idParaExcluir = $(this).data('id');
+        $('#excluir-descricao').text($(this).data('descricao'));
+        modalExcluirObj.show();
+    });
+
+    $btnCadastrar.on('click', function () {
+        $modalTitulo.text('Cadastrar Forma de Pagamento');
+        validador.resetar($formForma[0]);
+        $inputId.val('');
+        $inputDescricao.val('');
+        $selectAtivo.val('true');
+        $selectAtivo.prop('disabled', true);
+        $secaoAtivo.hide();
         modalObj.show();
     });
 
     function _abrirModalEdicao(dados) {
-        modalTitulo.textContent  = 'Alterar Forma de Pagamento';
-        validador.resetar(formForma);
-        inputId.value            = dados.id;
-        inputDescricao.value     = dados.descricao;
-        selectAtivo.value        = dados.ativo === 'true' ? 'true' : 'false';
-        selectAtivo.disabled     = false;
-        secaoAtivo.style.display = 'block';
+        $modalTitulo.text('Alterar Forma de Pagamento');
+        validador.resetar($formForma[0]);
+        $inputId.val(dados.id);
+        $inputDescricao.val(dados.descricao);
+        $selectAtivo.val(dados.ativo ? 'true' : 'false');
+        $selectAtivo.prop('disabled', false);
+        $secaoAtivo.show();
         modalObj.show();
     }
 
-    btnSalvar.addEventListener('click', async function () {
-        if (!validador.validarFormulario(formForma)) return;
+    $btnSalvar.on('click', async function () {
+        if (!validador.validarFormulario($formForma[0])) return;
 
         var dados = {
-            idFormaPag: inputId.value || null,
-            descricao:  inputDescricao.value.trim(),
-            ativo:      selectAtivo.value === 'true'
+            idFormaPag: $inputId.val() || null,
+            descricao:  $inputDescricao.val().trim(),
+            ativo:      $selectAtivo.val() === 'true'
         };
 
         var resultado = dados.idFormaPag
@@ -139,7 +165,7 @@
         }
     });
 
-    btnConfirmarExcluir.addEventListener('click', async function () {
+    $btnConfirmarExcluir.on('click', async function () {
         if (!idParaExcluir) return;
         var resultado = await ctrl.excluir(idParaExcluir);
         modalExcluirObj.hide();
@@ -152,23 +178,21 @@
         }
     });
 
-    btnFiltrar.addEventListener('click', async function () {
-        tabelaCorpo.innerHTML = '<tr><td colspan="3" class="tabela-vazia">Filtrando...</td></tr>';
-        _renderizarTabela(await ctrl.filtrar({ descricao: filtrDescricao.value, ativo: filtrAtivo.value }));
+    $btnFiltrar.on('click', async function () {
+        $tabelaCorpo.html('<tr><td colspan="3" class="tabela-vazia">Filtrando...</td></tr>');
+        _renderizarTabela(await ctrl.filtrar({ descricao: $filtrDescricao.val(), ativo: $filtrAtivo.val() }));
     });
 
-    btnLimpar.addEventListener('click', async function () {
-        filtrDescricao.value = filtrAtivo.value = '';
+    $btnLimpar.on('click', async function () {
+        $filtrDescricao.val('');
+        $filtrAtivo.val('');
         await _carregarLista();
     });
 
-    function _escapar(texto) {
-        if (texto === null || texto === undefined) return '';
-        return String(texto)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    function _esc(texto) {
+        return $('<div>').text(texto == null ? '' : String(texto)).html();
     }
 
-    document.addEventListener('DOMContentLoaded', inicializar);
+    $(inicializar);
 
-})();
+}(jQuery));
