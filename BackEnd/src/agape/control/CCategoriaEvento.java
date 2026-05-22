@@ -134,6 +134,11 @@ public class CCategoriaEvento implements HttpHandler {
             if (c.existeNome(conn, nome.trim(), id))
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outra categoria com esse nome.");
 
+            // Impede inativação quando há eventos vinculados
+            if (!ativo && c.isAtivo() && c.temEventos(conn))
+                return falha(response, ResponseObject.CODE_CONFLICT,
+                    "Não é possível inativar esta categoria pois há eventos vinculados a ela.");
+
             c.setNome(nome.trim());
             c.setAtivo(ativo);
             c.atualizar(conn);
@@ -154,6 +159,12 @@ public class CCategoriaEvento implements HttpHandler {
             CategoriaEvento c = new CategoriaEvento().buscarPorId(conn, id);
             if (c == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Categoria não encontrada.");
+
+            // Impede exclusão quando há eventos vinculados
+            if (c.temEventos(conn))
+                return falha(response, ResponseObject.CODE_CONFLICT,
+                    "Não é possível excluir esta categoria pois há eventos vinculados a ela.");
+
             c.excluir(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);

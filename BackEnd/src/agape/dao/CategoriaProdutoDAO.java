@@ -85,4 +85,15 @@ public class CategoriaProdutoDAO {
             stmt.executeUpdate();
         }
     }
+
+    /** Retorna true se há pelo menos um Produto vinculado a esta categoria. */
+    public boolean temProdutosVinculados(Connection conn, int idCatProd) throws Exception {
+        String sql = "SELECT 1 FROM Produto WHERE idCatProd=? LIMIT 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idCatProd);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
 }

@@ -199,9 +199,9 @@
         });
     }
 
-    $tabelaCorpo.on('click', '.btn-visualizar', function () {
+    $tabelaCorpo.on('click', '.btn-visualizar', async function () {
         var d = _dt.row($(this).closest('tr')).data();
-        _abrirModalVenda(d);
+        await _abrirModalVenda(d);
     });
 
     function _parsePagamentos(descFormaPag) {
@@ -215,20 +215,18 @@
         }).filter(function (p) { return p.forma; });
     }
 
-    function _abrirModalVenda(d) {
+    async function _abrirModalVenda(d) {
         $('#det-titulo').html(
             '<i class="bi bi-receipt me-2"></i>Venda #' + d.idVenda +
             ' <span class="text-muted fw-normal fs-6 ms-2">' + _formatarDataHora(d.dataHora) + '</span>'
         );
 
-        var pags     = _parsePagamentos(d.descFormaPag);
-        var pagHtml  = pags.length
+        var pags    = _parsePagamentos(d.descFormaPag);
+        var pagHtml = pags.length
             ? pags.map(function (p) {
                 return '<div class="d-flex justify-content-between align-items-center py-1 border-bottom">' +
                     '<span>' + _esc(p.forma) + '</span>' +
-                    (p.valor !== null
-                        ? '<strong>R$ ' + _moeda(p.valor) + '</strong>'
-                        : '') +
+                    (p.valor !== null ? '<strong>R$ ' + _moeda(p.valor) + '</strong>' : '') +
                 '</div>';
               }).join('')
             : '<span class="text-muted">Sem registro de pagamento</span>';
@@ -237,7 +235,15 @@
             ? '<span class="text-success fw-semibold">- R$ ' + _moeda(d.credUtilizado) + '</span>'
             : '<span class="text-muted">—</span>';
 
+        // Produtos: placeholder enquanto carrega
+        var itensHtml =
+            '<div id="det-itens-loading" class="text-center py-2">' +
+            '  <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>' +
+            '  <span class="text-muted small ms-2">Carregando produtos...</span>' +
+            '</div>';
+
         $('#det-corpo').html(
+            // ── Cabeçalho: paroquiano e colaborador ──────────────────────────
             '<div class="row g-3 mb-3">' +
                 '<div class="col-sm-6">' +
                     '<div class="text-muted small mb-1">Paroquiano</div>' +
@@ -249,12 +255,21 @@
                 '</div>' +
             '</div>' +
 
+            // ── Produtos ──────────────────────────────────────────────────────
+            '<div class="mb-3">' +
+                '<div class="text-muted small mb-2 fw-semibold text-uppercase" ' +
+                     'style="letter-spacing:.05em">Produtos</div>' +
+                '<div id="det-itens-container">' + itensHtml + '</div>' +
+            '</div>' +
+
+            // ── Formas de Pagamento ───────────────────────────────────────────
             '<div class="mb-3">' +
                 '<div class="text-muted small mb-2 fw-semibold text-uppercase" ' +
                      'style="letter-spacing:.05em">Formas de Pagamento</div>' +
                 pagHtml +
             '</div>' +
 
+            // ── Totais ────────────────────────────────────────────────────────
             '<div class="row g-2 pt-2 border-top">' +
                 '<div class="col-4 text-center">' +
                     '<div class="text-muted small">Total Bruto</div>' +
@@ -272,6 +287,43 @@
         );
 
         modalDetalheObj.show();
+
+        // Busca os itens da venda no backend e substitui o placeholder
+        try {
+            var http = window.AGAPE.Utils.HttpClient.getInstance();
+            var resultado = await http.get('/venda', { idVenda: d.idVenda });
+
+            var html = '';
+            if (resultado.status === 'ok' && Array.isArray(resultado.dados) && resultado.dados.length) {
+                html =
+                    '<div class="table-responsive">' +
+                    '<table class="table table-sm table-hover mb-0">' +
+                    '<thead class="table-light">' +
+                    '<tr>' +
+                    '<th style="font-size:.8rem;">Produto</th>' +
+                    '<th class="text-center" style="font-size:.8rem;">Qtd</th>' +
+                    '<th class="text-end" style="font-size:.8rem;">Vlr Unit.</th>' +
+                    '<th class="text-end" style="font-size:.8rem;">Subtotal</th>' +
+                    '</tr></thead><tbody>';
+                resultado.dados.forEach(function (item) {
+                    html +=
+                        '<tr>' +
+                        '<td style="font-size:.82rem;">' + _esc(item.nomeProduto || '—') + '</td>' +
+                        '<td class="text-center" style="font-size:.82rem;">' + item.quantidade + '</td>' +
+                        '<td class="text-end" style="font-size:.82rem;">R$ ' + _moeda(item.valorUnitario) + '</td>' +
+                        '<td class="text-end fw-semibold" style="font-size:.82rem;">R$ ' + _moeda(item.valorTotal) + '</td>' +
+                        '</tr>';
+                });
+                html += '</tbody></table></div>';
+            } else {
+                html = '<span class="text-muted small fst-italic">Nenhum produto encontrado.</span>';
+            }
+            $('#det-itens-container').html(html);
+        } catch (_) {
+            $('#det-itens-container').html(
+                '<span class="text-danger small">Erro ao carregar produtos.</span>'
+            );
+        }
     }
 
     $btnFiltrar.on('click', _carregarLista);

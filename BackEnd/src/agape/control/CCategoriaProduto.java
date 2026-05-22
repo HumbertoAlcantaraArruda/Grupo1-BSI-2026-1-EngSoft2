@@ -135,6 +135,11 @@ public class CCategoriaProduto implements HttpHandler {
             if (c.existeNome(conn, nome.trim(), idCatProd))
                 return falha(response, ResponseObject.CODE_CONFLICT, "Já existe outra categoria de produto com esse nome.");
 
+            // Impede inativação quando há produtos vinculados
+            if (!ativo && c.isAtivo() && c.temProdutos(conn))
+                return falha(response, ResponseObject.CODE_CONFLICT,
+                    "Não é possível inativar esta categoria pois há produtos vinculados a ela.");
+
             c.setNome(nome.trim());
             c.setAtivo(ativo);
             c.atualizar(conn);
@@ -155,6 +160,12 @@ public class CCategoriaProduto implements HttpHandler {
             CategoriaProduto c = new CategoriaProduto().buscarPorId(conn, id);
             if (c == null)
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Categoria de produto não encontrada.");
+
+            // Impede exclusão quando há produtos vinculados
+            if (c.temProdutos(conn))
+                return falha(response, ResponseObject.CODE_CONFLICT,
+                    "Não é possível excluir esta categoria pois há produtos vinculados a ela.");
+
             c.excluir(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);

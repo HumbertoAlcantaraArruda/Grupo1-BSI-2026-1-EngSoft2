@@ -9,6 +9,7 @@ package agape.model;
 public class ItemVenda {
     private int   idVenda;
     private int   idProd;
+    private String nomeProduto;   // campo de exibição (vem de JOIN com Produto)
     private int   quantidade;
     private float valorUnitario;
     private float valorTotal;     // calculado: valorUnitario × quantidade
@@ -18,6 +19,9 @@ public class ItemVenda {
 
     public int   getIdProd()         { return idProd; }
     public void  setIdProd(int v)    { this.idProd = v; }
+
+    public String getNomeProduto()          { return nomeProduto; }
+    public void   setNomeProduto(String v)  { this.nomeProduto = v; }
 
     public int   getQuantidade()          { return quantidade; }
     public void  setQuantidade(int v)     { this.quantidade = v; recalcularTotal(); }
@@ -31,5 +35,20 @@ public class ItemVenda {
     /** Information Expert — ItemVenda calcula seu próprio total. */
     private void recalcularTotal() {
         this.valorTotal = (float) Math.round(this.valorUnitario * this.quantidade * 100) / 100f;
+    }
+
+    public String toJson() {
+        return "{" +
+            "\"idProd\":"        + idProd                        + "," +
+            "\"nomeProduto\":"   + str(nomeProduto)              + "," +
+            "\"quantidade\":"    + quantidade                    + "," +
+            "\"valorUnitario\":" + valorUnitario                 + "," +
+            "\"valorTotal\":"    + valorTotal                    +
+        "}";
+    }
+
+    private String str(String s) {
+        if (s == null) return "null";
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 }

@@ -11,6 +11,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import agape.dao.*;
+import java.util.List;
 import agape.facade.VendaFacade;
 import agape.model.*;
 import agape.util.ResponseObject;
@@ -72,11 +73,30 @@ public class CVenda implements HttpHandler {
 
     private ResponseObject handleGet(Connection conn, String path, String query) {
         if (path.equals("/paroquiano")) return buscarParoquiano(conn, param(query, "cpf"));
-        if (path.equals("/venda"))      return listar(conn,
-                param(query, "dataInicio"), param(query, "dataFim"),
-                param(query, "nomeColaborador"), param(query, "nomeParoquiano"),
-                param(query, "idFormaPag"), param(query, "usouCredito"));
+        if (path.equals("/venda")) {
+            String idVendaStr = param(query, "idVenda");
+            if (!idVendaStr.isEmpty()) return listarItens(conn, parseSafeInt(idVendaStr));
+            return listar(conn,
+                    param(query, "dataInicio"), param(query, "dataFim"),
+                    param(query, "nomeColaborador"), param(query, "nomeParoquiano"),
+                    param(query, "idFormaPag"), param(query, "usouCredito"));
+        }
         return naoEncontrado();
+    }
+
+    /** Retorna os itens (produtos) de uma venda específica. */
+    public ResponseObject listarItens(Connection conn, int idVenda) {
+        ResponseObject response = new ResponseObject();
+        try {
+            List<agape.model.ItemVenda> itens =
+                new ItemVendaDAO().listarItensPorVenda(conn, idVenda);
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.setResult(itens);
+        } catch (Exception e) {
+            erroInterno(response);
+        }
+        return response;
     }
 
     public ResponseObject listar(Connection conn, String dataInicio, String dataFim,

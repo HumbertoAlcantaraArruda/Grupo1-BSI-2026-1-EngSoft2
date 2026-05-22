@@ -50,6 +50,11 @@ public class CategoriaProduto {
         return dao.existeNome(conn, nome, idExcluir);
     }
 
+    /** GRASP Information Expert — a categoria sabe se possui produtos vinculados. */
+    public boolean temProdutos(Connection conn) throws Exception {
+        return dao.temProdutosVinculados(conn, this.idCatProd);
+    }
+
     public void inserir(Connection conn) throws Exception {
         dao.inserir(conn, this);
     }

@@ -58,6 +58,11 @@ public class CategoriaEvento {
         return dao.existeNome(conn, nome, idExcluir);
     }
 
+    /** GRASP Information Expert — a categoria sabe se possui eventos vinculados. */
+    public boolean temEventos(Connection conn) throws Exception {
+        return dao.temEventosVinculados(conn, this.idCatEvento);
+    }
+
     public void inserir(Connection conn) throws Exception {
         dao.inserir(conn, this);
     }

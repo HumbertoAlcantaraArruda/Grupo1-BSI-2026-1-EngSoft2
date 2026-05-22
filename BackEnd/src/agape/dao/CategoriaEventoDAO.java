@@ -100,4 +100,15 @@ public class CategoriaEventoDAO {
             }
         }
     }
+
+    /** Retorna true se há pelo menos um Evento vinculado a esta categoria. */
+    public boolean temEventosVinculados(Connection conn, int idCatEvento) throws Exception {
+        String sql = "SELECT 1 FROM Evento WHERE idCatEvento=? LIMIT 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idCatEvento);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
 }
