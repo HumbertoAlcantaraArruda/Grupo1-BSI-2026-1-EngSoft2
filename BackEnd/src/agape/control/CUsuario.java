@@ -164,7 +164,23 @@ public class CUsuario implements HttpHandler {
             u.setPrimeiroAcesso(1);
             u.setDataAtivacao(LocalDateTime.now());
 
-            u.inserir(conn);
+            conn.setAutoCommit(false);
+            try {
+                u.inserir(conn);
+
+                if (NIVEL_PAROQ.equals(nivelNovo)) {
+                    new agape.dao.ParoquianoDAO().inserir(conn, u.getIdUsuario());
+                } else if (NIVEL_COLAB.equals(nivelNovo)) {
+                    new agape.dao.ColaboradorDAO().inserir(conn, u.getIdUsuario());
+                }
+
+                conn.commit();
+            } catch (Exception ex) {
+                try { conn.rollback(); } catch (Exception rb) { rb.printStackTrace(); }
+                throw ex;
+            } finally {
+                try { conn.setAutoCommit(true); } catch (Exception ig) {}
+            }
 
             u.setSenha(null);
             response.setStatus(ResponseObject.STATUS_OK);
@@ -173,7 +189,7 @@ public class CUsuario implements HttpHandler {
             response.setResult(u);
 
         } catch (Exception e) {
-            erroInterno(response);
+            erroInterno(response, e);
         }
         return response;
     }
@@ -402,6 +418,11 @@ public class CUsuario implements HttpHandler {
                 return falha(response, ResponseObject.CODE_FORBIDDEN,
                         "Não é possível excluir o único administrador ativo.");
 
+            if (NIVEL_PAROQ.equalsIgnoreCase(u.getNivel())) {
+                new agape.dao.ParoquianoDAO().excluir(conn, u.getIdUsuario());
+            } else if (NIVEL_COLAB.equalsIgnoreCase(u.getNivel())) {
+                new agape.dao.ColaboradorDAO().excluir(conn, u.getIdUsuario());
+            }
             u.excluir(conn);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
@@ -505,7 +526,7 @@ public class CUsuario implements HttpHandler {
 
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
@@ -545,6 +566,13 @@ public class CUsuario implements HttpHandler {
         r.setStatus(ResponseObject.STATUS_FAIL);
         r.setCode(ResponseObject.CODE_ERROR);
         r.addMessage("Erro interno do servidor.");
+    }
+
+    private void erroInterno(ResponseObject r, Exception e) {
+        r.setStatus(ResponseObject.STATUS_FAIL);
+        r.setCode(ResponseObject.CODE_ERROR);
+        r.addMessage("Erro interno do servidor: " + (e != null ? e.getMessage() : ""));
+        if (e != null) e.printStackTrace();
     }
 
     private ResponseObject naoEncontrado() {

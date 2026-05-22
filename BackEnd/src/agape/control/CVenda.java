@@ -151,13 +151,15 @@ public class CVenda implements HttpHandler {
             // ── Colaborador ───────────────────────────────────────────────────
             // Information Expert — UsuarioDAO/model é expert em buscar por email
             Usuario colab = new Usuario().buscarPorEmail(conn, requesterEmail);
+            System.out.println(colab);
             if (colab == null) {
                 conn.rollback();
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Colaborador não encontrado.");
             }
 
             // ── Parsing dos parâmetros da venda ───────────────────────────────
-            int   idParoquiano  = parseSafeInt(param(body, "idParoquiano"));
+            int   idParoquiano  = parseSafeInt(param(body, "idUsuario"));
+            System.out.println("[CVenda] idUsuario (paroquiano) recebido: " + idParoquiano);
             float totBruto      = parseSafeFloat(param(body, "totBruto"));
             float credUtilizado = parseSafeFloat(param(body, "credUtilizado"));
             float valorFinal    = parseSafeFloat(param(body, "valorFinal"));

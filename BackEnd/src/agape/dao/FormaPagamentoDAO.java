@@ -13,14 +13,16 @@ public class FormaPagamentoDAO {
         f.setIdFormaPag(rs.getInt("idFormaPag"));
         f.setDescricao(rs.getString("descricao"));
         f.setAtivo(rs.getInt("ativo"));
+        f.setPermiteParcelar(rs.getBoolean("permiteParcelar"));
         return f;
     }
 
     public void inserir(Connection conn, FormaPagamento f) throws Exception {
-        String sql = "INSERT INTO FormaPagamento (descricao, ativo) VALUES (?, ?)";
+        String sql = "INSERT INTO FormaPagamento (descricao, ativo, permiteParcelar) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, f.getDescricao());
             stmt.setInt(2, f.getAtivo());
+            stmt.setBoolean(3, f.isPermiteParcelar());
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) f.setIdFormaPag(rs.getInt(1));

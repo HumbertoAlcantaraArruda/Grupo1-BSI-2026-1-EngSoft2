@@ -8,7 +8,7 @@ public class MovimentacaoCaixaDAO {
 
     public void inserir(Connection conn, MovimentacaoCaixa m) throws Exception {
         String sql =
-            "INSERT INTO MovimentacaoCaixa (idCaixa, idUsuario, dataHora, valor, motivo) " +
+            "INSERT INTO MovimentacaoCaixa (idCaixa, Usuario_idUsuario, dataHora, valor, motivo) " +
             "VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, m.getIdCaixa());

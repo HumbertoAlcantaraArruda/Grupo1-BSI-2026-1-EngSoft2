@@ -67,7 +67,7 @@ public class CFormaPagamento implements HttpHandler {
     }
 
     private ResponseObject handlePost(Connection conn, String body) {
-        return inserir(conn, param(body, "descricao"));
+        return inserir(conn, param(body, "descricao"), parseSafeBool(param(body, "permiteParcelar")));
     }
 
     private ResponseObject handlePut(Connection conn, String path, String body) {
@@ -97,7 +97,7 @@ public class CFormaPagamento implements HttpHandler {
         return response;
     }
 
-    public ResponseObject inserir(Connection conn, String descricao) {
+    public ResponseObject inserir(Connection conn, String descricao, boolean permiteParcelar) {
         ResponseObject response = new ResponseObject();
         try {
             if (vazio(descricao))
@@ -109,6 +109,7 @@ public class CFormaPagamento implements HttpHandler {
 
             f.setDescricao(descricao.trim());
             f.setAtivo(1);
+            f.setPermiteParcelar(permiteParcelar);
             f.inserir(conn);
 
             response.setStatus(ResponseObject.STATUS_OK);

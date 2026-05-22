@@ -20,8 +20,24 @@ public class ParoquianoDAO {
 
     private static final String SQL_BASE =
         "SELECT u.idUsuario, u.nome, u.cpf, u.email, u.status, u.nivel, " +
-        "p.saldoCredito " +
-        "FROM Usuario u JOIN Paroquiano p ON u.idUsuario = p.idUsuario ";
+        "COALESCE(p.saldoCredito, 0) AS saldoCredito " +
+        "FROM Usuario u LEFT JOIN Paroquiano p ON u.idUsuario = p.idUsuario ";
+
+    public void inserir(Connection conn, int idUsuario) throws Exception {
+        String sql = "INSERT INTO Paroquiano (idUsuario, saldoCredito) VALUES (?, 0)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idUsuario);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void excluir(Connection conn, int idUsuario) throws Exception {
+        String sql = "DELETE FROM Paroquiano WHERE idUsuario = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idUsuario);
+            stmt.executeUpdate();
+        }
+    }
 
     public Paroquiano buscarPorCpf(Connection conn, String cpf) throws Exception {
         String sql = SQL_BASE + "WHERE u.cpf = ? AND u.nivel = 'PAROQ'";

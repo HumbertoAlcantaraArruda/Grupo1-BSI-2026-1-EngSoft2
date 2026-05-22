@@ -18,7 +18,7 @@ public class ContasReceberDAO {
      */
     public int inserir(Connection conn, ContasReceber cr) throws Exception {
         String sql =
-            "INSERT INTO ContasReceber (idVenda, idCaixa, idUsuario, valor, dataVencimento) " +
+            "INSERT INTO ContasReceber (Venda_idVenda, Caixa_idCaixa, Colaborador_idUsuario, valor, dataVencimento) " +
             "VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, cr.getIdVenda());
