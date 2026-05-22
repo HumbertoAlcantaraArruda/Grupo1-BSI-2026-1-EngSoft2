@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Eventos Disponíveis</title>
+
+    <link rel="stylesheet" href="../../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../assets/css/agape.css">
+
+    <style>
+        body { display: none; }
+
+        /* ── Cards de evento ── */
+        .evento-card {
+            border: none;
+            border-radius: .75rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,.09);
+            transition: transform .2s ease, box-shadow .2s ease;
+            overflow: hidden;
+            height: 100%;
+        }
+        .evento-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,.14);
+        }
+
+        .evento-card .card-img-top {
+            height: 190px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .evento-card .card-body {
+            padding: 1rem 1.25rem .75rem;
+        }
+
+        .evento-card .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: .35rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .evento-card .card-footer {
+            background: transparent;
+            border-top: 1px solid rgba(0,0,0,.07);
+            padding: .75rem 1.25rem 1rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .82rem;
+            color: #555;
+            margin-bottom: .25rem;
+        }
+        .meta-item i { color: var(--cor-primaria, #8C142A); font-size: .9rem; }
+
+        .inscritos-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            background: #f3e8ec;
+            color: var(--cor-primaria, #8C142A);
+            border-radius: 2rem;
+            padding: .2rem .75rem;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+
+        .categoria-tag {
+            font-size: .72rem;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 2rem;
+            padding: .15rem .6rem;
+            font-weight: 500;
+        }
+
+        /* ── Estado vazio ── */
+        .estado-vazio {
+            text-align: center;
+            padding: 4rem 1rem;
+            color: #6c757d;
+        }
+        .estado-vazio i { font-size: 3.5rem; margin-bottom: 1rem; opacity: .4; }
+
+        /* ── Spinner de carregamento ── */
+        .spinner-card {
+            border-radius: .75rem;
+            background: #f8f9fa;
+            height: 320px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .5; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper"></div>
+
+    <!-- Conteúdo principal -->
+    <div id="content-wrapper">
+
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Eventos Disponíveis</span>
+        </header>
+
+        <div class="area-conteudo">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="titulo-pagina mb-0">
+                        <i class="bi bi-calendar-check me-2"></i>Eventos
+                    </h1>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" id="btn-atualizar">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
+                </button>
+            </div>
+
+            <!-- Grade de cards -->
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="grade-eventos">
+                <!-- Preenchido via JS -->
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal: Confirmar Cancelamento -->
+<div class="modal fade" id="modal-cancelar" tabindex="-1"
+     aria-labelledby="modal-cancelar-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-cancelar-titulo">Cancelar Inscrição</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Deseja cancelar sua inscrição no evento:</p>
+                <p class="fw-semibold mb-0" id="cancelar-nome-evento"></p>
+                <p class="text-muted small mt-2">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Voltar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" id="btn-confirmar-cancelar">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar Inscrição
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Scripts -->
+<script src="../../assets/libs/jquery/jquery.min.js"></script>
+<script src="../../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../../utils/Auth.js"></script>
+<script src="../../utils/HttpClient.js"></script>
+<script src="../../utils/Validador.js"></script>
+<script src="../../utils/Sidebar.js"></script>
+
+<script src="../../services/EventosDisponiveisService.js"></script>
+
+<script src="eventosDisponiveis.js"></script>
+
+</body>
+</html>

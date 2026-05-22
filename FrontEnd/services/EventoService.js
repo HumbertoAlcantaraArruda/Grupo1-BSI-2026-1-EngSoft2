@@ -17,6 +17,16 @@ window.AGAPE.Services.EventoService = (function () {
         return await this._http.get('/evento', filtros || {});
     };
 
+    /** Retorna responsável, inscritos e lista de espera de um evento. */
+    EventoService.prototype.buscarDetalhe = async function (idEvento) {
+        return await this._http.get('/detalheEvento', { idEvento: idEvento });
+    };
+
+    /** ADM remove uma inscrição específica pelo id. */
+    EventoService.prototype.removerInscrito = async function (idInscricao) {
+        return await this._http.delete('/detalheEvento', { idInscricao: idInscricao });
+    };
+
     // ── Escrita (/controlarEvento — todas com transação no backend) ────────
 
     EventoService.prototype.cadastrar = async function (evento) {

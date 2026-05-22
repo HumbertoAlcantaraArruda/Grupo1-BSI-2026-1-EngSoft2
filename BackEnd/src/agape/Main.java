@@ -4,6 +4,8 @@ import com.sun.net.httpserver.HttpServer;
 
 import agape.control.CCategoriaEvento;
 import agape.control.CControlarEventos;
+import agape.control.CDetalheEvento;
+import agape.control.CEventosDisponiveis;
 import agape.control.CRealizarInscricao;
 import agape.control.CEvento;
 import agape.control.CEventoStatus;
@@ -32,7 +34,7 @@ public class Main {
 
 
         // Rotas operacionais — ADM e COLAB
-        server.createContext("/trocarSenha", new AuthFilter(CUsuario.getInstancia(), "ADM", "COLAB"));
+        server.createContext("/trocarSenha", CUsuario.getInstancia());
         server.createContext("/parametrizacao",    new AuthFilter(CParametrizacao.getInstancia(),   "ADM", "COLAB"));
         server.createContext("/formaPagamento",    new AuthFilter(CFormaPagamento.getInstancia(),   "ADM", "COLAB"));
         server.createContext("/categoriaProduto",  new AuthFilter(CCategoriaProduto.getInstancia(), "ADM", "COLAB"));
@@ -43,7 +45,11 @@ public class Main {
         // RF_F1 — Controlar Eventos (CRUD completo + abrir/fechar/lista de espera, com transações)
         server.createContext("/controlarEvento",  new AuthFilter(CControlarEventos.getInstancia(), "ADM", "COLAB"));
         // RF_F3 — Realizar Inscrição (GOF Facade + transação atômica)
-        server.createContext("/realizarInscricao", new AuthFilter(CRealizarInscricao.getInstancia(), "ADM", "COLAB"));
+        server.createContext("/realizarInscricao",  new AuthFilter(CRealizarInscricao.getInstancia(),   "ADM", "COLAB"));
+        // Visualização de detalhes: responsável, inscritos e lista de espera
+        server.createContext("/detalheEvento",      new AuthFilter(CDetalheEvento.getInstancia(),       "ADM", "COLAB"));
+        // Listagem de eventos disponíveis + inscrição/cancelamento pelo próprio paroquiano
+        server.createContext("/eventosDisponiveis", new AuthFilter(CEventosDisponiveis.getInstancia(),  "PAROQ", "ADM", "COLAB"));
         server.createContext("/fornecedor",        new AuthFilter(CFornecedor.getInstancia(),       "ADM", "COLAB"));
         server.createContext("/comprar",           new AuthFilter(CCompra.getInstancia(),           "ADM", "COLAB"));
 

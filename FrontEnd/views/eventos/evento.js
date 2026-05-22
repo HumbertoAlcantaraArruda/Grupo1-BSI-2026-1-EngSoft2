@@ -47,6 +47,7 @@
     var modalExcluirObj = new bootstrap.Modal($('#modal-excluir')[0]);
     var modalAdiarObj   = new bootstrap.Modal($('#modal-adiar')[0]);
     var modalReabrirObj = new bootstrap.Modal($('#modal-reabrir')[0]);
+    var modalDetalheObj = new bootstrap.Modal($('#modal-detalhe')[0]);
     var idParaExcluir   = null;
     var idParaAdiar     = null;
     var idParaReabrir   = null;
@@ -190,15 +191,22 @@
                     return '<span style="background:' + cor + ';color:#fff;font-size:.75rem;' +
                            'padding:.3em .65em;border-radius:.375rem;font-weight:500">' + label + '</span>';
                 }},
-                // Coluna de ações: dropdown dinâmico por status (RF_F1)
+                // Coluna de ações: botão olho (sempre) + dropdown por status
                 { data: null, orderable: false, render: function (d, t, row) {
                     var st   = row.idEventoStatus;
                     var id   = row.idEvento;
                     var nome = _esc(row.nome);
 
-                    // Finalizado → nenhuma ação permitida
+                    // Botão olho — visível para todos os eventos
+                    var btnOlho =
+                        '<button class="btn btn-sm btn-outline-primary btn-ver me-1" ' +
+                        '  data-id="' + id + '" title="Ver inscrições">' +
+                        '  <i class="bi bi-eye"></i>' +
+                        '</button>';
+
+                    // Finalizado → só o olho
                     if (st == 4) {
-                        return '<span class="text-muted fst-italic small">—</span>';
+                        return '<div class="d-flex justify-content-center">' + btnOlho + '</div>';
                     }
 
                     var di  = '<li><hr class="dropdown-divider"></li>';
@@ -248,13 +256,18 @@
                             '  <i class="bi bi-trash me-2"></i>Excluir</button></li>';
                     }
 
-                    return (
-                        '<div class="dropdown">' +
+                    var dropdown =
+                        '<div class="dropdown d-inline-block">' +
                         '<button class="btn btn-sm btn-outline-secondary dropdown-toggle" ' +
                         '  type="button" data-bs-toggle="dropdown" aria-expanded="false">' +
                         '  <i class="bi bi-three-dots-vertical"></i>' +
                         '</button>' +
                         '<ul class="dropdown-menu dropdown-menu-end">' + itens + '</ul>' +
+                        '</div>';
+
+                    return (
+                        '<div class="d-flex justify-content-center align-items-center gap-1">' +
+                        btnOlho + dropdown +
                         '</div>'
                     );
                 }}
@@ -298,6 +311,136 @@
     });
 
     // ── Ações da tabela ───────────────────────────────────────────────────────
+
+    // ── Ver detalhe ───────────────────────────────────────────────────────
+
+    var _servico         = window.AGAPE.Services.EventoService.getInstance();
+    var _idEventoDetalhe = null; // mantém o evento aberto para re-renderizar após remoção
+    var _isAdm = (function () {
+        var u = window.AGAPE.Utils.Auth.getInstance().getUsuario();
+        return u && u.nivel === 'ADM';
+    }());
+
+    $tabelaCorpo.on('click', '.btn-ver', function () {
+        _idEventoDetalhe = $(this).data('id');
+        _abrirDetalhe(_idEventoDetalhe);
+    });
+
+    async function _abrirDetalhe(idEvento) {
+        $('#detalhe-loading').show();
+        $('#detalhe-conteudo').hide();
+        $('#detalhe-erro').hide().text('');
+        $('#modal-detalhe-titulo').text('Detalhes do Evento');
+        modalDetalheObj.show();
+
+        var resultado = await _servico.buscarDetalhe(idEvento);
+
+        if (resultado.status !== 'ok') {
+            $('#detalhe-loading').hide();
+            $('#detalhe-erro').text(resultado.erro || 'Erro ao carregar detalhes.').show();
+            return;
+        }
+
+        var d = resultado.dados;
+        $('#modal-detalhe-titulo').text('Detalhes — ' + _esc(d.nomeEvento || ''));
+
+        // Responsável
+        $('#detalhe-responsavel-nome').text(d.nomeResponsavel   || '—');
+        $('#detalhe-responsavel-email').text(d.emailResponsavel || '');
+
+        // Inscritos
+        var inscritos = Array.isArray(d.inscritos) ? d.inscritos : [];
+        $('#detalhe-inscritos-badge').text(inscritos.length);
+        $('#detalhe-inscritos-corpo').html(_renderizarInscritos(inscritos));
+
+        // Lista de espera
+        var espera = Array.isArray(d.listaEspera) ? d.listaEspera : [];
+        $('#detalhe-espera-badge').text(espera.length);
+        $('#detalhe-espera-corpo').html(_renderizarListaDetalhe(espera,
+            ['Posição', 'Nome', 'E-mail', 'CPF', 'Entrou em'],
+            ['ordem', 'nome', 'email', 'cpf', 'dataInscricao'],
+            'Nenhum na lista de espera.'
+        ));
+
+        $('#detalhe-loading').hide();
+        $('#detalhe-conteudo').show();
+    }
+
+    // Tabela de inscritos com botão de remoção (ADM)
+    function _renderizarInscritos(lista) {
+        if (!lista.length)
+            return '<p class="text-muted small fst-italic">Nenhum inscrito.</p>';
+
+        var temRemover = _isAdm;
+        var html = '<div class="table-responsive">' +
+                   '<table class="table table-sm table-hover mb-0">' +
+                   '<thead class="table-light"><tr>' +
+                   '<th style="font-size:.78rem;">Nome</th>' +
+                   '<th style="font-size:.78rem;">E-mail</th>' +
+                   '<th style="font-size:.78rem;">CPF</th>' +
+                   '<th style="font-size:.78rem;">Data de Inscrição</th>';
+        if (temRemover) html += '<th style="width:48px;font-size:.78rem;"></th>';
+        html += '</tr></thead><tbody>';
+
+        lista.forEach(function (item) {
+            html += '<tr>' +
+                    '<td style="font-size:.82rem;">' + _esc(item.nome  || '—') + '</td>' +
+                    '<td style="font-size:.82rem;">' + _esc(item.email || '—') + '</td>' +
+                    '<td style="font-size:.82rem;">' + _esc(item.cpf   || '—') + '</td>' +
+                    '<td style="font-size:.82rem;">' + _formatarDataHora(item.dataInscricao || '') + '</td>';
+            if (temRemover) {
+                html += '<td class="text-center">' +
+                        '<button class="btn btn-sm btn-outline-danger btn-remover-inscrito py-0 px-1" ' +
+                        '  data-id="' + item.idInscricao + '" title="Remover inscrito">' +
+                        '  <i class="bi bi-person-dash"></i>' +
+                        '</button></td>';
+            }
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        return html;
+    }
+
+    // Delegação: clique no botão de remoção dentro do modal
+    $('#modal-detalhe').on('click', '.btn-remover-inscrito', async function () {
+        var idInscricao = $(this).data('id');
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i>');
+
+        var resultado = await _servico.removerInscrito(idInscricao);
+        if (resultado.status === 'ok') {
+            validador.mostrarAlerta('Inscrito removido. Vaga atualizada.', 'sucesso');
+            _abrirDetalhe(_idEventoDetalhe); // re-renderiza o modal
+            await _carregarLista();          // atualiza a tabela principal
+        } else {
+            $btn.prop('disabled', false).html('<i class="bi bi-person-dash"></i>');
+            validador.mostrarAlerta(resultado.erro || 'Erro ao remover inscrito.', 'erro');
+        }
+    });
+
+    function _renderizarListaDetalhe(lista, headers, campos, textoVazio) {
+        if (!lista.length)
+            return '<p class="text-muted small fst-italic">' + textoVazio + '</p>';
+
+        var html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0">' +
+                   '<thead class="table-light"><tr>';
+        headers.forEach(function (h) {
+            html += '<th class="fw-semibold" style="font-size:.78rem;">' + _esc(h) + '</th>';
+        });
+        html += '</tr></thead><tbody>';
+        lista.forEach(function (item) {
+            html += '<tr>';
+            campos.forEach(function (c) {
+                var val = item[c] != null ? String(item[c]) : '';
+                if (c === 'dataInscricao' && val) val = _formatarDataHora(val);
+                html += '<td style="font-size:.82rem;">' + _esc(val || '—') + '</td>';
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        return html;
+    }
 
     // Editar
     $tabelaCorpo.on('click', '.btn-editar', function () {

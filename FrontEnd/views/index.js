@@ -1,8 +1,16 @@
 (function ($) {
 
     if (window.AGAPE.Utils.Auth.getInstance().estaLogado()) {
-        window.location.href = './inscricoes/inscricao.html';
+        _redirecionar(window.AGAPE.Utils.Auth.getInstance().getUsuario());
         return;
+    }
+
+    function _redirecionar(usuario) {
+        if (usuario && usuario.nivel === 'PAROQ') {
+            window.location.href = './paroquiano/eventosDisponiveis.html';
+        } else {
+            window.location.href = './inscricoes/inscricao.html';
+        }
     }
 
     var ctrl = window.AGAPE.Controllers.AuthController.getInstance();
@@ -119,7 +127,7 @@
 
         // Trata resultado
         if (resultado.status === 'ok') {
-            window.location.href = './inscricoes/inscricao.html';
+            _redirecionar(window.AGAPE.Utils.Auth.getInstance().getUsuario());
         } else if (resultado.status === 'primeiroAcesso') {
             window.location.href = './usuarios/trocarSenha.html';
         } else if (resultado.status === 'parametrizacaoPendente') {

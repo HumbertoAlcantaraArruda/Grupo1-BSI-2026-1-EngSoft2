@@ -24,9 +24,11 @@ public class Evento {
     private Float valorInscricao;
     private String imagemEvento;
 
-    // Campos extras (JOINs)
-    private String nomeCatEvento;
-    private String nomeStatus;
+    // Campos extras (JOINs e subqueries)
+    private String  nomeCatEvento;
+    private String  nomeStatus;
+    private int     qtdInscritos;   // total de inscrições ativas no evento
+    private boolean inscritoAtual;  // true se o usuário consultante está inscrito
 
     public int getIdEvento() { return idEvento; }
     public void setIdEvento(int idEvento) { this.idEvento = idEvento; }
@@ -67,11 +69,17 @@ public class Evento {
     public String getImagemEvento() { return imagemEvento; }
     public void setImagemEvento(String imagemEvento) { this.imagemEvento = imagemEvento; }
 
-    public String getNomeCatEvento() { return nomeCatEvento; }
-    public void setNomeCatEvento(String nomeCatEvento) { this.nomeCatEvento = nomeCatEvento; }
+    public String  getNomeCatEvento()   { return nomeCatEvento; }
+    public void    setNomeCatEvento(String v)  { this.nomeCatEvento = v; }
 
-    public String getNomeStatus() { return nomeStatus; }
-    public void setNomeStatus(String nomeStatus) { this.nomeStatus = nomeStatus; }
+    public String  getNomeStatus()      { return nomeStatus; }
+    public void    setNomeStatus(String v)     { this.nomeStatus = v; }
+
+    public int     getQtdInscritos()    { return qtdInscritos; }
+    public void    setQtdInscritos(int v)      { this.qtdInscritos = v; }
+
+    public boolean isInscritoAtual()    { return inscritoAtual; }
+    public void    setInscritoAtual(boolean v) { this.inscritoAtual = v; }
 
     // ── Persistência (DAO encapsulado) ─────────────────────────────────────
 
@@ -232,7 +240,9 @@ public class Evento {
             "\"dataEvento\":"                  + dt(dataEvento)                + "," +
             "\"dataAberturaListaEspera\":"     + dt(dataAberturaListaEspera)   + "," +
             "\"valorInscricao\":"              + (valorInscricao != null ? valorInscricao : "null") + "," +
-            "\"imagemEvento\":"                + str(imagemEvento)             +
+            "\"imagemEvento\":"                + str(imagemEvento)             + "," +
+            "\"qtdInscritos\":"               + qtdInscritos                  + "," +
+            "\"inscritoAtual\":"              + inscritoAtual                 +
         "}";
     }
 

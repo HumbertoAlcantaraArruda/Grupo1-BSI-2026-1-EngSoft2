@@ -127,7 +127,7 @@
                                 <th>Vagas</th>
                                 <th>Valor</th>
                                 <th>Status</th>
-                                <th style="width:110px">Ações</th>
+                                <th style="width:130px">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-corpo" class="text-center">
@@ -366,6 +366,86 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════
+     Modal: Detalhe do Evento (responsável, inscritos, lista de espera)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-detalhe" tabindex="-1"
+     aria-labelledby="modal-detalhe-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-detalhe-titulo">Detalhes do Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Loading -->
+                <div id="detalhe-loading" class="text-center py-5">
+                    <div class="spinner-border" style="color:var(--cor-primaria,#8C142A)"
+                         role="status"></div>
+                    <p class="text-muted small mt-2">Carregando...</p>
+                </div>
+
+                <!-- Conteúdo (oculto até carregar) -->
+                <div id="detalhe-conteudo" style="display:none;">
+
+                    <!-- Responsável -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold pb-2 mb-2"
+                            style="border-bottom:2px solid var(--cor-primaria,#8C142A);">
+                            <i class="bi bi-person-badge me-2"></i>Responsável
+                        </h6>
+                        <p class="mb-0" id="detalhe-responsavel-nome" style="font-size:.95rem;"></p>
+                        <p class="text-muted small mb-0" id="detalhe-responsavel-email"></p>
+                    </div>
+
+                    <!-- Inscritos -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold pb-2 mb-2"
+                            style="border-bottom:2px solid var(--cor-primaria,#8C142A);">
+                            <i class="bi bi-people me-2"></i>Inscritos
+                            <span id="detalhe-inscritos-badge"
+                                  class="badge rounded-pill ms-1"
+                                  style="background:var(--cor-primaria,#8C142A);font-size:.7rem;"></span>
+                        </h6>
+                        <div id="detalhe-inscritos-corpo"></div>
+                    </div>
+
+                    <!-- Lista de Espera -->
+                    <div>
+                        <h6 class="fw-bold pb-2 mb-2"
+                            style="border-bottom:2px solid #cc6600;">
+                            <i class="bi bi-hourglass-split me-2"></i>Lista de Espera
+                            <span id="detalhe-espera-badge"
+                                  class="badge rounded-pill ms-1 bg-warning text-dark"
+                                  style="font-size:.7rem;"></span>
+                        </h6>
+                        <div id="detalhe-espera-corpo"></div>
+                    </div>
+
+                </div>
+
+                <!-- Erro -->
+                <div id="detalhe-erro" class="text-danger text-center py-3"
+                     style="display:none;"></div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Fechar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
      Modal: Confirmar Exclusão
      ══════════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="modal-excluir" tabindex="-1"
@@ -414,9 +494,9 @@
 <script src="../../utils/Validador.js"></script>
 <script src="../../utils/Sidebar.js"></script>
 
-<script src="../../models/Evento.js"></script>
-<script src="../../models/CategoriaEvento.js"></script>
-<script src="../../models/Usuario.js"></script>
+<script src="../../models/Evento.js?v=2"></script>
+<script src="../../models/CategoriaEvento.js?v=2"></script>
+<script src="../../models/Usuario.js?v=2"></script>
 
 <script src="../../services/EventoService.js"></script>
 <script src="../../services/CategoriaEventoService.js"></script>

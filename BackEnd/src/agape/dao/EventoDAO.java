@@ -145,9 +145,53 @@ public class EventoDAO {
         }
     }
 
+    /**
+     * Lista eventos com período de inscrição ativo (dataInicio ≤ NOW ≤ dataFim).
+     * Para cada evento inclui:
+     *   qtdInscritos — total de inscrições ativas (status=1)
+     *   inscritoAtual — true se idUsuario já está inscrito (status 1 ou 2)
+     */
+    public List<Evento> listarEventosDisponiveis(Connection conn, int idUsuario) throws Exception {
+        String sql =
+            "SELECT e.*, ce.nome AS nomeCatEvento, es.nome AS nomeStatus," +
+            "  (SELECT COUNT(*) FROM Inscricao i WHERE i.idEvento = e.idEvento AND i.status = 1) AS qtdInscritos," +
+            "  EXISTS(SELECT 1 FROM Inscricao i2 WHERE i2.idEvento = e.idEvento" +
+            "         AND i2.idUsuario = ? AND i2.status IN (1, 2)) AS inscritoAtual " +
+            "FROM Evento e " +
+            "LEFT JOIN CategoriaEvento ce ON e.idCatEvento = ce.idCatEvento " +
+            "LEFT JOIN EventoStatus   es ON e.idEventoStatus = es.idEventoStatus " +
+            "WHERE e.idEventoStatus = 1 " +
+            "  AND e.dataInicio <= NOW() " +
+            "  AND e.dataFim    >= NOW() " +
+            "ORDER BY e.dataEvento ASC";
+
+        List<Evento> lista = new ArrayList<>();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idUsuario);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Evento ev = mapearComJoins(rs);
+                    ev.setQtdInscritos(rs.getInt("qtdInscritos"));
+                    ev.setInscritoAtual(rs.getBoolean("inscritoAtual"));
+                    lista.add(ev);
+                }
+            }
+        }
+        return lista;
+    }
+
     /** Decrementa vagasDisp em 1, nunca abaixo de zero. */
     public void decrementarVagas(Connection conn, int idEvento) throws Exception {
         String sql = "UPDATE Evento SET vagasDisp = GREATEST(0, vagasDisp - 1) WHERE idEvento=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idEvento);
+            stmt.executeUpdate();
+        }
+    }
+
+    /** Incrementa vagasDisp em 1 quando uma inscrição ativa é cancelada sem promoção. */
+    public void incrementarVagas(Connection conn, int idEvento) throws Exception {
+        String sql = "UPDATE Evento SET vagasDisp = vagasDisp + 1 WHERE idEvento=?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idEvento);
             stmt.executeUpdate();

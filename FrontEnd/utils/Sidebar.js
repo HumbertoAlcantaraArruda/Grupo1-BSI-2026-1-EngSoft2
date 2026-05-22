@@ -11,6 +11,12 @@ window.AGAPE.Utils.Sidebar = (function ($) {
 
     var _itens = [
         {
+            rotulo: 'Eventos Disponíveis',
+            href:   '../paroquiano/eventosDisponiveis.html',
+            icone:  'bi-calendar-check',
+            niveis: ['PAROQ']
+        },
+        {
             rotulo: 'Realizar Venda',
             href:   '../vendas/venda.html',
             icone:  'bi-cart3',
