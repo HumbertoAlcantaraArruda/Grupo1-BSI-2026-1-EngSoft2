@@ -7,21 +7,23 @@
     var ctrl      = window.AGAPE.Controllers.FormaPagamentoController.getInstance();
     var validador = window.AGAPE.Utils.Validador.getInstance();
 
-    var $tabelaCorpo         = $('#tabela-corpo');
-    var $modalEl             = $('#modal-forma');
-    var $formForma           = $('#form-forma');
-    var $inputId             = $('#formaId');
-    var $inputDescricao      = $('#descricao');
-    var $selectAtivo         = $('#ativo');
-    var $modalTitulo         = $('#modal-titulo');
-    var $secaoAtivo          = $('#secao-ativo');
-    var $filtrDescricao      = $('#filtro-descricao');
-    var $filtrAtivo          = $('#filtro-ativo');
-    var $btnCadastrar        = $('#btn-cadastrar');
-    var $btnFiltrar          = $('#btn-filtrar');
-    var $btnLimpar           = $('#btn-limpar');
-    var $btnSalvar           = $('#btn-salvar');
-    var $btnConfirmarExcluir = $('#btn-confirmar-excluir');
+    var $tabelaCorpo          = $('#tabela-corpo');
+    var $modalEl              = $('#modal-forma');
+    var $formForma            = $('#form-forma');
+    var $inputId              = $('#formaId');
+    var $inputDescricao       = $('#descricao');
+    var $checkPermiteParcelar = $('#permiteParcelar');
+    var $avisoParcelar        = $('#aviso-parcelar');
+    var $selectAtivo          = $('#ativo');
+    var $modalTitulo          = $('#modal-titulo');
+    var $secaoAtivo           = $('#secao-ativo');
+    var $filtrDescricao       = $('#filtro-descricao');
+    var $filtrAtivo           = $('#filtro-ativo');
+    var $btnCadastrar         = $('#btn-cadastrar');
+    var $btnFiltrar           = $('#btn-filtrar');
+    var $btnLimpar            = $('#btn-limpar');
+    var $btnSalvar            = $('#btn-salvar');
+    var $btnConfirmarExcluir  = $('#btn-confirmar-excluir');
 
     var modalObj        = new bootstrap.Modal($modalEl[0]);
     var modalExcluirObj = new bootstrap.Modal($('#modal-excluir')[0]);
@@ -34,7 +36,7 @@
     }
 
     async function _carregarLista() {
-        $tabelaCorpo.html('<tr><td colspan="3" class="tabela-vazia">Carregando...</td></tr>');
+        $tabelaCorpo.html('<tr><td colspan="4" class="tabela-vazia">Carregando...</td></tr>');
         _renderizarTabela(await ctrl.listar());
     }
 
@@ -42,7 +44,7 @@
         if (resultado.status !== 'ok') {
             if (_dt) { _dt.destroy(); _dt = null; }
             $tabelaCorpo.html(
-                '<tr><td colspan="3" class="tabela-vazia text-danger">' +
+                '<tr><td colspan="4" class="tabela-vazia text-danger">' +
                 '<i class="bi bi-exclamation-triangle me-1"></i>' +
                 _esc(resultado.erro || 'Erro ao carregar dados.') +
                 '</td></tr>'
@@ -52,8 +54,9 @@
 
         var lista = Array.isArray(resultado.dados) ? resultado.dados : [];
         var dados = lista.map(function (f) {
-            var ativo = (f.ativo === true || f.ativo === 1 || f.ativo === 'true');
-            return { idFormaPag: f.idFormaPag, descricao: f.descricao, ativo: ativo };
+            var ativo           = (f.ativo === true || f.ativo === 1 || f.ativo === 'true');
+            var permiteParcelar = (f.permiteParcelar === true || f.permiteParcelar === 1 || f.permiteParcelar === 'true');
+            return { idFormaPag: f.idFormaPag, descricao: f.descricao, ativo: ativo, permiteParcelar: permiteParcelar };
         });
 
         if (_dt) {
@@ -71,6 +74,9 @@
             ],
             columns: [
                 { data: 'descricao', render: function (d) { return _esc(d); } },
+                { data: 'permiteParcelar', render: function (d) {
+                    return d ? '<span class="badge-ativo">Sim</span>' : '<span class="badge-inativo">Não</span>';
+                }},
                 { data: 'ativo', render: function (d) {
                     return d ? '<span class="badge-ativo">Ativo</span>' : '<span class="badge-inativo">Inativo</span>';
                 }},
@@ -78,7 +84,8 @@
                     return '<button class="btn-acao btn-editar me-1" ' +
                         'data-id="' + row.idFormaPag + '" ' +
                         'data-descricao="' + _esc(row.descricao) + '" ' +
-                        'data-ativo="' + row.ativo + '" title="Editar">' +
+                        'data-ativo="' + row.ativo + '" ' +
+                        'data-permite-parcelar="' + row.permiteParcelar + '" title="Editar">' +
                         '<i class="bi bi-pencil"></i></button>' +
                         '<button class="btn-acao btn-excluir" ' +
                         'data-id="' + row.idFormaPag + '" ' +
@@ -123,6 +130,8 @@
         validador.resetar($formForma[0]);
         $inputId.val('');
         $inputDescricao.val('');
+        $checkPermiteParcelar.prop('checked', false).prop('disabled', false);
+        $avisoParcelar.addClass('d-none');
         $selectAtivo.val('true');
         $selectAtivo.prop('disabled', true);
         $secaoAtivo.hide();
@@ -134,6 +143,9 @@
         validador.resetar($formForma[0]);
         $inputId.val(dados.id);
         $inputDescricao.val(dados.descricao);
+        $checkPermiteParcelar.prop('checked', dados.permiteParcelar === true || dados.permiteParcelar === 'true');
+        $checkPermiteParcelar.prop('disabled', true);
+        $avisoParcelar.removeClass('d-none');
         $selectAtivo.val(dados.ativo ? 'true' : 'false');
         $selectAtivo.prop('disabled', false);
         $secaoAtivo.show();
@@ -144,9 +156,10 @@
         if (!validador.validarFormulario($formForma[0])) return;
 
         var dados = {
-            idFormaPag: $inputId.val() || null,
-            descricao:  $inputDescricao.val().trim(),
-            ativo:      $selectAtivo.val() === 'true'
+            idFormaPag:      $inputId.val() || null,
+            descricao:       $inputDescricao.val().trim(),
+            permiteParcelar: $checkPermiteParcelar.prop('checked'),
+            ativo:           $selectAtivo.val() === 'true'
         };
 
         var resultado = dados.idFormaPag
@@ -179,7 +192,7 @@
     });
 
     $btnFiltrar.on('click', async function () {
-        $tabelaCorpo.html('<tr><td colspan="3" class="tabela-vazia">Filtrando...</td></tr>');
+        $tabelaCorpo.html('<tr><td colspan="4" class="tabela-vazia">Filtrando...</td></tr>');
         _renderizarTabela(await ctrl.filtrar({ descricao: $filtrDescricao.val(), ativo: $filtrAtivo.val() }));
     });
 

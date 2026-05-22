@@ -37,7 +37,7 @@ window.AGAPE.Controllers.VendaController = (function () {
             totBruto:      0,
             credUtilizado: 0,
             totalFinal:    0,
-            formasPag:     [],     // [{ idFormaPag, descricao }] — carregadas da API
+            formasPag:     [],     // [{ idFormaPag, descricao, permiteParcelar }] — carregadas da API
             pagamentos:    [],     // [{ idFormaPag, descricao, valor, numeroParcelas }]
             totalPago:     0
         };
@@ -265,7 +265,7 @@ window.AGAPE.Controllers.VendaController = (function () {
 
         var e = this._estado;
         var dados = {
-            idParoquiano:     e.paroquiano.idUsuario,
+            idUsuario:        e.paroquiano.idUsuario,
             totBruto:         e.totBruto.toFixed(2),
             credUtilizado:    e.credUtilizado.toFixed(2),
             valorFinal:       e.totalFinal.toFixed(2),
@@ -292,7 +292,9 @@ window.AGAPE.Controllers.VendaController = (function () {
     };
 
     VendaController.prototype.resetar = function () {
+        var formasPag = this._estado.formasPag;
         this._estado = _estadoInicial();
+        this._estado.formasPag = formasPag;
     };
 
     // ── Utilitário interno ────────────────────────────────────────────────────

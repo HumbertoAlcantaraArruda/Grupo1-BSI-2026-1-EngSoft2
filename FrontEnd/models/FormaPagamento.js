@@ -7,9 +7,10 @@ window.AGAPE.Models.FormaPagamento = (function () {
 
     function FormaPagamento(dados) {
         dados = dados || {};
-        this._idFormaPag = dados.idFormaPag || null;
-        this._descricao  = dados.descricao  || '';
-        this._ativo      = _parsearBooleano(dados.ativo, true);
+        this._idFormaPag      = dados.idFormaPag      || null;
+        this._descricao       = dados.descricao       || '';
+        this._ativo           = _parsearBooleano(dados.ativo, true);
+        this._permiteParcelar = _parsearBooleano(dados.permiteParcelar, false);
     }
 
     function _parsearBooleano(valor, padrao) {
@@ -18,13 +19,15 @@ window.AGAPE.Models.FormaPagamento = (function () {
         return padrao;
     }
 
-    FormaPagamento.prototype.getIdFormaPag = function () { return this._idFormaPag; };
-    FormaPagamento.prototype.getDescricao  = function () { return this._descricao;  };
-    FormaPagamento.prototype.getAtivo      = function () { return this._ativo;      };
+    FormaPagamento.prototype.getIdFormaPag      = function () { return this._idFormaPag;      };
+    FormaPagamento.prototype.getDescricao       = function () { return this._descricao;       };
+    FormaPagamento.prototype.getAtivo           = function () { return this._ativo;           };
+    FormaPagamento.prototype.getPermiteParcelar = function () { return this._permiteParcelar; };
 
-    FormaPagamento.prototype.setIdFormaPag = function (v) { this._idFormaPag = v;          };
-    FormaPagamento.prototype.setDescricao  = function (v) { this._descricao  = v;          };
-    FormaPagamento.prototype.setAtivo      = function (v) { this._ativo      = Boolean(v); };
+    FormaPagamento.prototype.setIdFormaPag      = function (v) { this._idFormaPag      = v;          };
+    FormaPagamento.prototype.setDescricao       = function (v) { this._descricao       = v;          };
+    FormaPagamento.prototype.setAtivo           = function (v) { this._ativo           = Boolean(v); };
+    FormaPagamento.prototype.setPermiteParcelar = function (v) { this._permiteParcelar = Boolean(v); };
 
     FormaPagamento.prototype.validar = function () {
         var erros = [];
@@ -45,9 +48,12 @@ window.AGAPE.Models.FormaPagamento = (function () {
         return dados;
     };
 
-    // POST envia apenas descricao (ativo padrão=1 no backend)
+    // POST envia descricao + permiteParcelar (ativo padrão=1 no backend)
     FormaPagamento.prototype.paraFormDataCadastro = function () {
-        return { descricao: this._descricao };
+        return {
+            descricao:       this._descricao,
+            permiteParcelar: this._permiteParcelar ? 'true' : 'false'
+        };
     };
 
     return FormaPagamento;

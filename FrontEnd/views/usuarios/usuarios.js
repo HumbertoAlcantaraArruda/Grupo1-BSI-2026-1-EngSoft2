@@ -225,9 +225,9 @@
     }
 
     function _formatarCpf(cpf) {
-        var d = (cpf || '').replace(/\D/g, '');
+        var d = String(cpf || '').replace(/\D/g, '');
         if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        return _esc(cpf || '');
+        return _esc(String(cpf || ''));
     }
 
     $btnCadastrar.on('click', function () {
@@ -252,17 +252,14 @@
         $inputEmail.val(dados.email || '');
         $selectNivel.val(dados.nivel || '');
 
-        var editandoSiMesmo = dados.id === idUsuarioLogado;
-        $selectNivel.prop('disabled', editandoSiMesmo);
+        $selectNivel.prop('disabled', true);
 
         $('#aviso-nivel-proprio').remove();
-        if (editandoSiMesmo) {
-            $('<small>')
-                .attr('id', 'aviso-nivel-proprio')
-                .addClass('text-muted mt-1 d-block')
-                .text('Você não pode alterar seu próprio nível de acesso.')
-                .appendTo($selectNivel.parent());
-        }
+        $('<small>')
+            .attr('id', 'aviso-nivel-proprio')
+            .addClass('text-muted mt-1 d-block')
+            .text('O nível de acesso não pode ser alterado após o cadastro.')
+            .appendTo($selectNivel.parent());
 
         modalObj.show();
     }

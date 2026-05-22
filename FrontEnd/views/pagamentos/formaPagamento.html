@@ -86,13 +86,14 @@
                         <thead class="text-center">
                             <tr>
                                 <th scope="col">Descrição</th>
+                                <th scope="col">Permite Parcelar</th>
                                 <th scope="col">Status</th>
                                 <th scope="col" style="width: 100px">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-corpo" class="text-center">
                             <tr>
-                                <td colspan="3" class="tabela-vazia">
+                                <td colspan="4" class="tabela-vazia">
                                     <i class="bi bi-hourglass-split me-1"></i>Carregando...
                                 </td>
                             </tr>
@@ -130,6 +131,16 @@
                         <div class="invalid-feedback">
                             Descrição deve ter pelo menos 2 caracteres.
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="permiteParcelar">
+                            <label class="form-check-label" for="permiteParcelar">Permite Parcelar</label>
+                        </div>
+                        <small id="aviso-parcelar" class="text-muted d-none">
+                            Esta definição não pode ser alterada após o cadastro.
+                        </small>
                     </div>
 
                     <!-- Status ocultado no cadastro -->
@@ -209,7 +220,7 @@
 
 <script src="../../controllers/FormaPagamentoController.js"></script>
 
-<script src="formaPagamento.js"></script>
+<script src="formaPagamento.js?v=2"></script>
 
 </body>
 </html>

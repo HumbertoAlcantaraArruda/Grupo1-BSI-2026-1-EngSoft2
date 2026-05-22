@@ -217,7 +217,7 @@
 
         $pdvSelectForma.val('');
         $pdvInputValPag.val('').removeClass('is-invalid is-valid');
-        $pdvInputParcelas.val('1');
+        $pdvInputParcelas.val('1').prop('disabled', true);
         $pdvSelectForma.removeClass('is-invalid');
         _feedback($pdvPagFeedback, '');
 
@@ -418,6 +418,39 @@
     // PDV — PAGAMENTOS
     // ══════════════════════════════════════════════════════════════════════════
 
+    $pdvSelectForma.on('change', function () {
+        _aplicarRegraParcelamento();
+    });
+
+    $pdvInputParcelas.on('keydown', function (e) {
+        if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+            e.preventDefault();
+        }
+    });
+
+    $pdvInputParcelas.on('input', function () {
+        var v = parseInt($(this).val(), 10);
+        if (!v || v < 1) $(this).val('1');
+    });
+
+    function _aplicarRegraParcelamento() {
+        var idFormaPag = parseInt($pdvSelectForma.val(), 10);
+        var formas     = ctrl.getEstado().formasPag;
+        var forma      = formas.find(function (f) { return f.idFormaPag === idFormaPag; });
+
+        if (!forma) {
+            $pdvInputParcelas.val('1').prop('disabled', true);
+            return;
+        }
+
+        var permite = forma.permiteParcelar === true  ||
+                      forma.permiteParcelar === 1     ||
+                      forma.permiteParcelar === '1'   ||
+                      forma.permiteParcelar === 'true';
+
+        $pdvInputParcelas.val('1').prop('disabled', !permite);
+    }
+
     $pdvBtnAddPag.on('click', function () {
         $pdvInputValPag.removeClass('is-invalid is-valid');
         $pdvSelectForma.removeClass('is-invalid');
@@ -445,7 +478,7 @@
         _atualizarResumoPdv();
 
         $pdvSelectForma.val('');
-        $pdvInputParcelas.val('1');
+        $pdvInputParcelas.val('1').prop('disabled', true);
         $pdvInputValPag.val(res.restante > 0 ? res.restante.toFixed(2) : '').removeClass('is-valid');
     });
 
@@ -481,6 +514,12 @@
     // ══════════════════════════════════════════════════════════════════════════
 
     $pdvBtnFinalizar.on('click', async function () {
+        if (!window.AGAPE.Utils.Auth.getInstance().estaLogado()) {
+            validador.mostrarAlerta('Sessão expirada. Você será redirecionado para o login.', 'erro');
+            setTimeout(function () { window.AGAPE.Utils.Auth.getInstance().logout(); }, 2000);
+            return;
+        }
+
         $pdvBtnFinalizar.prop('disabled', true).text('Processando...');
 
         var resultado = await ctrl.efetuarVenda();
