@@ -8,8 +8,38 @@
     <link rel="stylesheet" href="../../assets/libs/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../../assets/libs/icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../assets/libs/datatables/datatables.min.css">
+    <!-- Select2 — seletor avançado para Categoria de Evento (RF_F1) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     <link rel="stylesheet" href="../../assets/css/agape.css">
-    <style>body { display: none; }</style>
+    <style>
+        body { display: none; }
+
+        /* Ajusta Select2 ao visual Bootstrap/AGAPE */
+        .select2-container--default .select2-selection--single {
+            height: calc(1.5em + .75rem + 2px);
+            border: 1px solid #ced4da;
+            border-radius: .375rem;
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 1.5;
+            padding: 0;
+            color: #212529;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+        }
+        .select2-container { width: 100% !important; }
+        .select2-dropdown { border-color: #ced4da; border-radius: .375rem; }
+        .select2-search--dropdown .select2-search__field {
+            border-color: #ced4da; border-radius: .25rem;
+        }
+        .select2-container--default .select2-results__option--highlighted {
+            background-color: var(--cor-primaria, #8C142A);
+        }
+    </style>
 </head>
 <body>
 
@@ -24,7 +54,7 @@
         <!-- Topbar -->
         <header class="topbar">
             <span class="topbar-titulo">AGAPE</span>
-            <span class="topbar-subtitulo ms-2">/ Eventos</span>
+            <span class="topbar-subtitulo ms-2">/ Controlar Eventos</span>
         </header>
 
         <!-- Área de conteúdo -->
@@ -33,7 +63,7 @@
             <!-- Título + Cadastrar -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="titulo-pagina">
-                    <i class="bi bi-calendar-week me-2"></i>Eventos
+                    <i class="bi bi-calendar-week me-2"></i>Controlar Eventos
                 </h1>
                 <button class="btn btn-primary" id="btn-cadastrar">
                     <i class="bi bi-plus-circle me-1"></i> Cadastrar
@@ -48,14 +78,12 @@
                     </p>
                     <div class="row g-3 align-items-end">
 
-                        <!-- Nome -->
                         <div class="col-md-4">
                             <label for="filtro-nome" class="form-label form-label-sm">Nome</label>
                             <input type="text" class="form-control form-control-sm"
                                    id="filtro-nome" placeholder="Buscar por nome...">
                         </div>
 
-                        <!-- Categoria -->
                         <div class="col-md-3">
                             <label for="filtro-categoria" class="form-label form-label-sm">Categoria</label>
                             <select class="form-select form-select-sm" id="filtro-categoria">
@@ -63,7 +91,6 @@
                             </select>
                         </div>
 
-                        <!-- Status -->
                         <div class="col-md-2">
                             <label for="filtro-status" class="form-label form-label-sm">Status</label>
                             <select class="form-select form-select-sm" id="filtro-status">
@@ -75,7 +102,6 @@
                             </select>
                         </div>
 
-                        <!-- Botões -->
                         <div class="col-md-3 d-flex gap-2">
                             <button class="btn btn-primary btn-sm" id="btn-filtrar">
                                 <i class="bi bi-search me-1"></i>Filtrar
@@ -92,16 +118,16 @@
             <!-- Tabela -->
             <div class="tabela-wrapper">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0" id="tabela-eventos">
                         <thead class="text-center">
                             <tr>
-                                <th scope="col">Nome</th>
-                                <th scope="col">Categoria</th>
-                                <th scope="col">Data do Evento</th>
-                                <th scope="col">Vagas</th>
-                                <th scope="col">Valor</th>
-                                <th scope="col">Status</th>
-                                <th scope="col" style="width: 90px">Ações</th>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th>Data do Evento</th>
+                                <th>Vagas</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th style="width:110px">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-corpo" class="text-center">
@@ -120,7 +146,9 @@
 </div>
 
 
-<!-- Modal: Cadastrar / Alterar Evento -->
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Cadastrar / Alterar Evento
+     ══════════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="modal-evento" tabindex="-1"
      aria-labelledby="modal-titulo" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -146,9 +174,10 @@
                             <div class="invalid-feedback">Nome deve ter pelo menos 2 caracteres.</div>
                         </div>
 
-                        <!-- Categoria -->
+                        <!-- Categoria — Select2 (RF_F1 UX) -->
                         <div class="col-md-4">
                             <label for="idCatEvento" class="form-label campo-obrigatorio">Categoria</label>
+                            <!-- Select2 é inicializado via JS sobre este elemento -->
                             <select class="form-select" id="idCatEvento" required>
                                 <option value="">Selecione...</option>
                             </select>
@@ -164,9 +193,9 @@
                             <div class="invalid-feedback">Selecione o responsável.</div>
                         </div>
 
-                        <!-- Status (visível apenas na edição) -->
-                        <div class="col-md-6" id="secao-status" style="display: none;">
-                            <label for="idEventoStatus" class="form-label campo-obrigatorio">Status</label>
+                        <!-- Status (edição) -->
+                        <div class="col-md-6" id="secao-status" style="display:none;">
+                            <label for="idEventoStatus" class="form-label">Status</label>
                             <select class="form-select" id="idEventoStatus">
                                 <option value="1">Ativo</option>
                                 <option value="2">Cancelado</option>
@@ -204,8 +233,8 @@
                             <div class="invalid-feedback">Informe o total de vagas (mínimo 1).</div>
                         </div>
 
-                        <!-- Vagas Disponíveis (visível apenas na edição) -->
-                        <div class="col-md-3" id="secao-vagas-disp" style="display: none;">
+                        <!-- Vagas Disponíveis (edição) -->
+                        <div class="col-md-3" id="secao-vagas-disp" style="display:none;">
                             <label for="vagasDisp" class="form-label">Vagas Disponíveis</label>
                             <input type="number" class="form-control" id="vagasDisp"
                                    placeholder="0" min="0">
@@ -222,16 +251,20 @@
                         </div>
 
                         <!-- Data Abertura Lista de Espera -->
-                        <div class="col-md-3">
-                            <label for="dataAberturaListaEspera" class="form-label">Abertura Lista de Espera</label>
-                            <input type="datetime-local" class="form-control" id="dataAberturaListaEspera">
-                        </div>
+<!--                        <div class="col-md-3">-->
+<!--                            <label for="dataAberturaListaEspera" class="form-label">Abertura Lista de Espera</label>-->
+<!--                            <input type="datetime-local" class="form-control" id="dataAberturaListaEspera">-->
+<!--                        </div>-->
 
                         <!-- Imagem do Evento -->
                         <div class="col-md-12">
                             <label for="imagemEvento" class="form-label">Imagem do Evento</label>
-                            <input type="text" class="form-control" id="imagemEvento"
-                                   placeholder="Nome do arquivo ou URL da imagem">
+                            <input type="file" class="form-control" id="imagemEvento" accept="image/*">
+                            <div id="preview-imagem" class="mt-2" style="display:none;">
+                                <img id="img-preview" src="" alt="Preview"
+                                     style="max-height:160px;border-radius:6px;object-fit:contain;">
+                                <span id="nome-imagem-atual" class="d-block text-muted small mt-1"></span>
+                            </div>
                         </div>
 
                     </div>
@@ -239,8 +272,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary"
-                        data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                 </button>
                 <button type="button" class="btn btn-primary" id="btn-salvar">
@@ -253,7 +285,89 @@
 </div>
 
 
-<!-- Modal: Confirmar Exclusão -->
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Reabrir Evento Cancelado (exige nova data)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-reabrir" tabindex="-1"
+     aria-labelledby="modal-reabrir-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-reabrir-titulo">Reabrir Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2 small">Evento: <strong id="reabrir-nome"></strong></p>
+                <label for="reabrir-nova-data" class="form-label campo-obrigatorio">
+                    Nova data do evento
+                </label>
+                <input type="datetime-local" class="form-control" id="reabrir-nova-data">
+                <div class="form-text">
+                    Deve ser uma data futura. O status voltará para <strong>Ativo</strong>.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success btn-sm" id="btn-confirmar-reabrir">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reabrir
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Adiar Evento
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-adiar" tabindex="-1"
+     aria-labelledby="modal-adiar-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-adiar-titulo">Adiar Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2 small">Evento: <strong id="adiar-nome"></strong></p>
+                <label for="adiar-nova-data" class="form-label campo-obrigatorio">
+                    Nova data do evento
+                </label>
+                <input type="datetime-local" class="form-control" id="adiar-nova-data">
+                <div class="form-text">
+                    O status será alterado para <strong>Adiado</strong> automaticamente.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-warning btn-sm" id="btn-confirmar-adiar">
+                    <i class="bi bi-calendar-x me-1"></i>Adiar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Confirmar Exclusão
+     ══════════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="modal-excluir" tabindex="-1"
      aria-labelledby="modal-excluir-titulo" aria-hidden="true">
     <div class="modal-dialog modal-sm">
@@ -276,8 +390,7 @@
                         data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                 </button>
-                <button type="button" class="btn btn-danger btn-sm"
-                        id="btn-confirmar-excluir">
+                <button type="button" class="btn btn-danger btn-sm" id="btn-confirmar-excluir">
                     <i class="bi bi-trash me-1"></i>Excluir
                 </button>
             </div>
@@ -292,6 +405,8 @@
 <script src="../../assets/libs/jquery-mask/jquery.mask.min.js"></script>
 <script src="../../assets/libs/datatables/datatables.min.js"></script>
 <script src="../../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- Select2 JS — após jQuery e Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script src="../../utils/Auth.js"></script>
 <script src="../../utils/HttpClient.js"></script>

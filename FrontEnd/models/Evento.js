@@ -20,6 +20,8 @@ window.AGAPE.Models.Evento = (function () {
         this._dataAberturaListaEspera  = dados.dataAberturaListaEspera  || null;
         this._valorInscricao           = dados.valorInscricao != null ? dados.valorInscricao : null;
         this._imagemEvento             = dados.imagemEvento             || null;
+        this._imagemBase64             = dados.imagemBase64             || null;
+        this._nomeImagemEvento         = dados.nomeImagemEvento         || null;
     }
 
     Evento.prototype.getIdEvento                = function () { return this._idEvento;                };
@@ -49,6 +51,8 @@ window.AGAPE.Models.Evento = (function () {
     Evento.prototype.setDataAberturaListaEspera = function (v) { this._dataAberturaListaEspera = v || null; };
     Evento.prototype.setValorInscricao          = function (v) { this._valorInscricao          = v || null; };
     Evento.prototype.setImagemEvento            = function (v) { this._imagemEvento            = v || null; };
+    Evento.prototype.setImagemBase64            = function (v) { this._imagemBase64            = v || null; };
+    Evento.prototype.setNomeImagemEvento        = function (v) { this._nomeImagemEvento        = v || null; };
 
     Evento.prototype.validar = function () {
         var erros = [];
@@ -69,7 +73,7 @@ window.AGAPE.Models.Evento = (function () {
         return erros;
     };
 
-    Evento.prototype.paraFormData = function () {
+    Evento.prototype.paraJson = function () {
         var dados = {
             nome:                    this._nome,
             idCatEvento:             this._idCatEvento,
@@ -81,14 +85,16 @@ window.AGAPE.Models.Evento = (function () {
             vagasDisp:               this._vagasDisp,
             idEventoStatus:          this._idEventoStatus
         };
+        if (this._idEvento !== null && this._idEvento !== undefined) dados.idEvento = this._idEvento;
         if (this._dataAberturaListaEspera) dados.dataAberturaListaEspera = this._dataAberturaListaEspera;
         if (this._valorInscricao != null)  dados.valorInscricao          = this._valorInscricao;
-        if (this._imagemEvento)            dados.imagemEvento            = this._imagemEvento;
-        if (this._idEvento !== null && this._idEvento !== undefined) {
-            dados.idEvento = this._idEvento;
-        }
+        if (this._imagemBase64)            dados.imagemBase64            = this._imagemBase64;
+        if (this._nomeImagemEvento)        dados.nomeImagemEvento        = this._nomeImagemEvento;
         return dados;
     };
+
+    // Mantido por compatibilidade
+    Evento.prototype.paraFormData = Evento.prototype.paraJson;
 
     return Evento;
 

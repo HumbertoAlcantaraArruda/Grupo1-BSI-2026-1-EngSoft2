@@ -16,19 +16,20 @@ window.AGAPE.Utils.Sidebar = (function ($) {
             icone:  'bi-cart3',
             niveis: ['ADM', 'COLAB']
         },
-        // {
-        //     rotulo: 'Cadastros',
-        //     icone:  'bi-archive',
-        //     niveis: ['ADM', 'COLAB'],
-        //     filhos: [
+        // Grupo "Cadastros" com expansão inteligente por chevron (RF_F1 UX)
+        {
+            rotulo: 'Cadastros',
+            icone:  'bi-archive',
+            niveis: ['ADM', 'COLAB'],
+            filhos: [
                 { rotulo: 'Produtos',             href: '../produtos/produtos.html',             icone: 'bi-box-seam',       niveis: ['ADM', 'COLAB'] },
                 { rotulo: 'Categoria de Produto', href: '../produtos/categoriaProduto.html',     icone: 'bi-tags',           niveis: ['ADM', 'COLAB'] },
                 { rotulo: 'Categoria de Evento',  href: '../eventos/categoriaEvento.html',       icone: 'bi-calendar-event', niveis: ['ADM', 'COLAB'] },
                 { rotulo: 'Forma de Pagamento',   href: '../pagamentos/formaPagamento.html',     icone: 'bi-credit-card',    niveis: ['ADM', 'COLAB'] },
                 { rotulo: 'Fornecedor',           href: '../fornecedores/fornecedor.html',       icone: 'bi-truck',          niveis: ['ADM', 'COLAB'] },
-                { rotulo: 'Eventos', href: '../eventos/evento.html', icone: 'bi-calendar-plus', niveis: ['ADM', 'COLAB'] },
-        //     ]
-        // }
+                { rotulo: 'Controlar Eventos',    href: '../eventos/evento.html',                icone: 'bi-calendar-plus',  niveis: ['ADM', 'COLAB'] }
+            ]
+        }
     ];
 
     var _itensConfig = [

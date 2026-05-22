@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Faculdade\\\\Documents\\\\Agape2\\\\AGAPE\\\\BackEnd\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Faculdade\\\\Documents\\\\Agape2\\\\AGAPE\\\\FrontEnd\" -Recurse -Directory)"
+    ]
+  }
+}

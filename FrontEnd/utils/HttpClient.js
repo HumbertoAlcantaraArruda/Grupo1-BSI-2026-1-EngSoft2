@@ -190,7 +190,31 @@ window.AGAPE.Utils.HttpClient = (function () {
         }
     };
 
-    // Envia corpo como JSON (usado no upload de logos)
+    // Envia corpo como JSON
+    HttpClient.prototype.putJson = async function (endpoint, corpo) {
+        try {
+            var resposta = await fetch(BASE_URL + endpoint, {
+                method: 'PUT',
+                headers: this._montarHeaders({ 'Content-Type': 'application/json; charset=UTF-8' }),
+                body: JSON.stringify(corpo)
+            });
+
+            if (resposta.status === 401 && this._tratar401()) {
+                return { status: 'error', erro: this._mensagemAmigavel(401) };
+            }
+            if (!resposta.ok) {
+                return { status: 'error', erro: await this._erroDoBackend(resposta) };
+            }
+
+            var dados = await this._parsearResposta(resposta);
+            return { status: 'ok', dados: this._extrairDados(dados) };
+
+        } catch (erro) {
+            return { status: 'error', erro: this._erroConexao() };
+        }
+    };
+
+    // Envia corpo como JSON (usado no upload de logos e eventos)
     HttpClient.prototype.postJson = async function (endpoint, corpo) {
         try {
             var resposta = await fetch(BASE_URL + endpoint, {
