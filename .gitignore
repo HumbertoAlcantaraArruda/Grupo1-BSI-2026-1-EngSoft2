@@ -1,20 +1,118 @@
-# IntelliJ
+# ============================================
+# IDE / EDITOR
+# ============================================
 .idea/
-*.iml
 .vscode/
+*.iml
+*.iws
+*.ipr
+*.sublime-project
+*.sublime-workspace
 
-# Default ignored files
+# ============================================
+# BUILD / COMPILAÇÃO
+# ============================================
+/out/
+/target/
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ============================================
+# DEPENDÊNCIAS
+# ============================================
+node_modules/
+bower_components/
+package-lock.json
+yarn.lock
+
+# ============================================
+# ARQUIVOS DE CONFIGURAÇÃO SENSÍVEIS
+# ============================================
+*.properties
+.env
+.env.local
+.env.*.local
+/BackEnd/config.properties
+/BackEnd/**/*.properties
+
+# ============================================
+# LOGS
+# ============================================
+*.log
+logs/
+log/
+*.log.*
+
+# ============================================
+# CACHE / TEMPORÁRIOS
+# ============================================
+.cache/
+.gradle/
+.m2/
+*.tmp
+*.temp
+*.bak
+*~
+*.swo
+
+# ============================================
+# BANCO DE DADOS
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+.h2/
+
+# ============================================
+# SISTEMA OPERACIONAL
+# ============================================
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# HTTP CLIENT / REQUESTS
+# ============================================
 /shelf/
-/.idea/workspace.xml
-
-# Editor-based HTTP Client requests
 /httpRequests/
-
-# Ignored default folder with query files
 /queries/
 
-# Datasource local storage ignored files
+# ============================================
+# DATASOURCE / BD LOCAL
+# ============================================
 /dataSources/
 /dataSources.local.xml
 
-BackEnd/config.properties
+# ============================================
+# CLAUDE / IA TOOLS
+# ============================================
+.claude/
+.claude/**
+
+# ============================================
+# EDITOR / LINTER / FORMATTER
+# ============================================
+.prettierignore
+.prettierrc
+.eslintignore
+.eslintrc
+
+# ============================================
+# ARQUIVOS PESSOAIS / NOTAS
+# ============================================
+*.todo
+*.md~
+notes.txt
+personal/
