@@ -2,6 +2,7 @@ package agape;
 
 import com.sun.net.httpserver.HttpServer;
 
+
 import agape.control.CCategoriaEvento;
 import agape.control.CControlarEventos;
 import agape.control.CDetalheEvento;
@@ -18,6 +19,7 @@ import agape.control.CUsuario;
 import agape.control.CProduto;
 import agape.control.CVenda;
 import agape.security.AuthFilter;
+import agape.control.CCaixa;
 
 import java.net.InetSocketAddress;
 
@@ -31,7 +33,7 @@ public class Main {
 
         // Públicas (acessadas sem token)
         server.createContext("/login",       CUsuario.getInstancia());
-
+        //server.createContext("/caixa",             new AuthFilter(CCaixa.getInstancia(), "ADM", "COLAB"));
 
         // Rotas operacionais — ADM e COLAB
         server.createContext("/trocarSenha", CUsuario.getInstancia());
