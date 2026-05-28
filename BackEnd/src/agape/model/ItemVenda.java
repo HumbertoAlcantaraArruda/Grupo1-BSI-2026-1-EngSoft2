@@ -1,5 +1,9 @@
 package agape.model;
 
+import agape.dao.ItemVendaDAO;
+import java.sql.Connection;
+import java.util.List;
+
 /**
  * ItemVenda — representa um item (produto) de uma venda.
  *
@@ -7,6 +11,8 @@ package agape.model;
  * valorUnitario × quantidade, sem depender de nenhuma outra classe.
  */
 public class ItemVenda {
+    private final ItemVendaDAO dao = new ItemVendaDAO();
+
     private int   idVenda;
     private int   idProd;
     private String nomeProduto;   // campo de exibição (vem de JOIN com Produto)
@@ -35,6 +41,10 @@ public class ItemVenda {
     /** Information Expert — ItemVenda calcula seu próprio total. */
     private void recalcularTotal() {
         this.valorTotal = (float) Math.round(this.valorUnitario * this.quantidade * 100) / 100f;
+    }
+
+    public List<ItemVenda> listarItensPorVenda(Connection conn, int idVenda) throws Exception {
+        return dao.listarItensPorVenda(conn, idVenda);
     }
 
     public String toJson() {

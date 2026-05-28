@@ -128,6 +128,14 @@ public class Evento {
         this.dataEvento = novaData;
     }
 
+    public List<Evento> listarDisponiveis(Connection conn, int idUsuario) throws Exception {
+        return dao.listarEventosDisponiveis(conn, idUsuario);
+    }
+
+    public void incrementarVagas(Connection conn, int idEvento) throws Exception {
+        dao.incrementarVagas(conn, idEvento);
+    }
+
     // ── Validações (SOLID SRP + GRASP Information Expert) ─────────────────
     // A entidade conhece suas próprias regras de negócio e as concentra aqui,
     // liberando o Controller de lógica de domínio.

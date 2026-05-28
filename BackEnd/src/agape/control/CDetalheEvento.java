@@ -13,9 +13,8 @@ import agape.util.TradutorErro;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import agape.dao.EventoDAO;
-import agape.dao.InscricaoDAO;
 import agape.model.Evento;
+import agape.model.Inscricao;
 import agape.model.Usuario;
 
 /**
@@ -35,9 +34,6 @@ public class CDetalheEvento implements HttpHandler {
         if (instancia == null) instancia = new CDetalheEvento();
         return instancia;
     }
-
-    private final EventoDAO    eventoDAO    = new EventoDAO();
-    private final InscricaoDAO inscricaoDAO = new InscricaoDAO();
 
     // ── Roteamento ─────────────────────────────────────────────────────────
 
@@ -71,13 +67,14 @@ public class CDetalheEvento implements HttpHandler {
         int idEvento = parseSafeInt(param(query, "idEvento"));
         if (idEvento <= 0) return erro("idEvento é obrigatório.");
 
-        Evento ev = eventoDAO.buscarPorId(conn, idEvento);
+        Evento ev = new Evento().buscarPorId(conn, idEvento);
         if (ev == null) return erro("Evento não encontrado.");
 
         Usuario resp = new Usuario().buscarPorId(conn, ev.getIdUsuarioResponsavel());
 
-        List<String[]> inscritos   = inscricaoDAO.listarInscritosPorEvento(conn, idEvento);
-        List<String[]> listaEspera = inscricaoDAO.listarListaEsperaPorEvento(conn, idEvento);
+        Inscricao inscricaoModel = new Inscricao();
+        List<String[]> inscritos   = inscricaoModel.listarInscritosPorEvento(conn, idEvento);
+        List<String[]> listaEspera = inscricaoModel.listarListaEsperaPorEvento(conn, idEvento);
 
         StringBuilder sb = new StringBuilder();
         sb.append("{\"status\":\"ok\",\"code\":200,\"messages\":[],\"result\":{");
@@ -133,11 +130,14 @@ public class CDetalheEvento implements HttpHandler {
 
         conn.setAutoCommit(false);
         try {
+            Inscricao inscricaoModel = new Inscricao();
+            Evento eventoModel = new Evento();
+
             // Verifica fila ANTES de cancelar para decidir sobre vagasDisp
-            boolean nenhumNaEspera = inscricaoDAO.countListaEspera(conn, idEvento) == 0;
+            boolean nenhumNaEspera = inscricaoModel.countListaEspera(conn, idEvento) == 0;
 
             // Cancela (promove da lista de espera se houver alguém)
-            int resultado = inscricaoDAO.cancelar(conn, idInscricao, "Removido pelo administrador");
+            int resultado = inscricaoModel.cancelar(conn, idInscricao, "Removido pelo administrador");
             if (resultado == -1) {
                 conn.setAutoCommit(true);
                 return erro("Inscrição não encontrada.");
@@ -145,7 +145,7 @@ public class CDetalheEvento implements HttpHandler {
 
             // Restaura vaga apenas se era inscrição ativa e ninguém ocupou o lugar
             if (statusOriginal == 1 && nenhumNaEspera) {
-                eventoDAO.incrementarVagas(conn, idEvento);
+                eventoModel.incrementarVagas(conn, idEvento);
             }
 
             conn.commit();

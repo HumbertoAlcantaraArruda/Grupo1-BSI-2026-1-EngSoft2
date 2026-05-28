@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import agape.dao.*;
 import java.util.List;
 import agape.facade.VendaFacade;
 import agape.model.*;
@@ -89,8 +88,7 @@ public class CVenda implements HttpHandler {
     public ResponseObject listarItens(Connection conn, int idVenda) {
         ResponseObject response = new ResponseObject();
         try {
-            List<agape.model.ItemVenda> itens =
-                new ItemVendaDAO().listarItensPorVenda(conn, idVenda);
+            List<ItemVenda> itens = new ItemVenda().listarItensPorVenda(conn, idVenda);
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
             response.setResult(itens);

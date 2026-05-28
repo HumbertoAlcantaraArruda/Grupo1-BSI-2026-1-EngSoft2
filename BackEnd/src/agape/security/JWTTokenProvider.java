@@ -1,8 +1,8 @@
 package agape.security;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Base64;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -14,7 +14,8 @@ import io.jsonwebtoken.security.Keys;
 public class JWTTokenProvider {
 
     private static final SecretKey CHAVE = Keys.hmacShaKeyFor(
-            "MINHACHAVESECRETA_AGAPE_2026_BSI_EGSII_GRUPO1_CHANGE_ME".getBytes(StandardCharsets.UTF_8));
+            Base64.getDecoder().decode(
+            "VU7WbLVaKYKBYbPBNwGOVFBIXqQJp6KjI8K8JeyNuGIV7LMmwcmtBAU/LjT+SuRsxNFViCKIhNDW4PuIT18P2A=="));
 
     private static final long EXPIRACAO_MINUTOS = 480L; // 8 horas
 

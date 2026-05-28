@@ -9,9 +9,8 @@ import java.sql.SQLException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import agape.dao.EventoDAO;
-import agape.dao.InscricaoDAO;
 import agape.facade.InscricaoFacade;
+import agape.model.Evento;
 import agape.model.Inscricao;
 import agape.model.Usuario;
 import agape.util.ResponseObject;
@@ -36,9 +35,7 @@ public class CEventosDisponiveis implements HttpHandler {
         return instancia;
     }
 
-    private final EventoDAO    eventoDAO    = new EventoDAO();
-    private final InscricaoDAO inscricaoDAO = new InscricaoDAO();
-    private final InscricaoFacade facade    = InscricaoFacade.getInstance();
+    private final InscricaoFacade facade = InscricaoFacade.getInstance();
 
     // ── Roteamento ─────────────────────────────────────────────────────────
 
@@ -80,7 +77,7 @@ public class CEventosDisponiveis implements HttpHandler {
         try {
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            response.setResult(eventoDAO.listarEventosDisponiveis(conn, idUsuario));
+            response.setResult(new Evento().listarDisponiveis(conn, idUsuario));
         } catch (Exception e) {
             erroInterno(response, e);
         }
@@ -130,8 +127,11 @@ public class CEventosDisponiveis implements HttpHandler {
 
             conn.setAutoCommit(false);
 
+            Inscricao inscricaoModel = new Inscricao();
+            Evento eventoModel = new Evento();
+
             // 1. Busca a inscrição ativa/espera do usuário neste evento
-            int idInscricao = inscricaoDAO.buscarIdInscricaoAtiva(conn, idEvento, idUsuario);
+            int idInscricao = inscricaoModel.buscarIdInscricaoAtiva(conn, idEvento, idUsuario);
             if (idInscricao == -1) {
                 conn.setAutoCommit(true);
                 return falha(response, ResponseObject.CODE_NOT_FOUND,
@@ -139,20 +139,20 @@ public class CEventosDisponiveis implements HttpHandler {
             }
 
             // 2. Guarda status ANTES de cancelar (1=ativa, 2=lista espera)
-            int statusOriginal = inscricaoDAO.buscarStatusInscricao(conn, idInscricao);
+            int statusOriginal = inscricaoModel.buscarStatus(conn, idInscricao);
 
             // 3. Verifica lista de espera ANTES de cancelar:
             //    se não há ninguém, a vaga liberada não será preenchida automaticamente
-            boolean nenhumNaEspera = inscricaoDAO.countListaEspera(conn, idEvento) == 0;
+            boolean nenhumNaEspera = inscricaoModel.countListaEspera(conn, idEvento) == 0;
 
             // 4. Cancela (promove automaticamente o 1º da fila se houver)
-            inscricaoDAO.cancelar(conn, idInscricao, "Cancelado pelo paroquiano");
+            inscricaoModel.cancelar(conn, idInscricao, "Cancelado pelo paroquiano");
 
             // 5. Restaura vagasDisp apenas quando:
             //    - a inscrição cancelada era ATIVA (ocupava uma vaga real)
             //    - E ninguém da lista de espera vai preencher a vaga liberada
             if (statusOriginal == 1 && nenhumNaEspera) {
-                eventoDAO.incrementarVagas(conn, idEvento);
+                eventoModel.incrementarVagas(conn, idEvento);
             }
 
             conn.commit();

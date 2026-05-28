@@ -91,6 +91,30 @@ public class Inscricao {
         dao.inserir(conn, this);
     }
 
+    public int buscarIdInscricaoAtiva(Connection conn, int idEvento, int idUsuario) throws Exception {
+        return dao.buscarIdInscricaoAtiva(conn, idEvento, idUsuario);
+    }
+
+    public int buscarStatus(Connection conn, int idInscricao) throws Exception {
+        return dao.buscarStatusInscricao(conn, idInscricao);
+    }
+
+    public int countListaEspera(Connection conn, int idEvento) throws Exception {
+        return dao.countListaEspera(conn, idEvento);
+    }
+
+    public int cancelar(Connection conn, int idInscricao, String obs) throws Exception {
+        return dao.cancelar(conn, idInscricao, obs);
+    }
+
+    public List<String[]> listarInscritosPorEvento(Connection conn, int idEvento) throws Exception {
+        return dao.listarInscritosPorEvento(conn, idEvento);
+    }
+
+    public List<String[]> listarListaEsperaPorEvento(Connection conn, int idEvento) throws Exception {
+        return dao.listarListaEsperaPorEvento(conn, idEvento);
+    }
+
     // ── Serialização ──────────────────────────────────────────────────────
 
     public String toJson() {
