@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Caixa</title>
+
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../assets/css/agape.css">
+
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper"></div>
+
+    <!-- Conteúdo principal -->
+    <div id="content-wrapper">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Caixa</span>
+        </header>
+
+        <!-- Área de conteúdo -->
+        <div class="area-conteudo">
+
+            <!-- Título -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="titulo-pagina">
+                    <i class="bi bi-cash-stack me-2"></i>Caixa
+                </h1>
+            </div>
+
+            <!-- Painel de status do caixa -->
+            <div id="painel-caixa">
+
+                <!-- Estado: carregando -->
+                <div id="estado-carregando" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-3 text-muted">Consultando caixa...</p>
+                </div>
+
+                <!-- Estado: caixa FECHADO -->
+                <div id="estado-fechado" style="display:none;">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-lock text-secondary" style="font-size:3rem;"></i>
+                            <h4 class="mt-3 mb-1">Nenhum caixa aberto</h4>
+                            <p class="text-muted mb-4">Abra o caixa para iniciar as operações financeiras do dia.</p>
+                            <button class="btn btn-primary px-4" id="btn-abrir-caixa">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Abrir Caixa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado: caixa ABERTO -->
+                <div id="estado-aberto" style="display:none;">
+
+                    <!-- Cards de resumo -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <p class="text-muted small mb-1">
+                                        <i class="bi bi-calendar3 me-1"></i>Abertura
+                                    </p>
+                                    <p class="fw-semibold mb-0" id="info-abertura">—</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <p class="text-muted small mb-1">
+                                        <i class="bi bi-wallet2 me-1"></i>Valor Inicial
+                                    </p>
+                                    <p class="fw-semibold mb-0" id="info-valor-inicial">—</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <p class="text-muted small mb-1">
+                                        <i class="bi bi-cash me-1"></i>Saldo Atual
+                                    </p>
+                                    <p class="fw-bold fs-5 mb-0 text-success" id="info-saldo-atual">—</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de ação -->
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <button class="btn btn-outline-primary" id="btn-reforco">
+                            <i class="bi bi-plus-circle me-1"></i>Reforço
+                        </button>
+                        <button class="btn btn-outline-warning" id="btn-sangria">
+                            <i class="bi bi-dash-circle me-1"></i>Sangria
+                        </button>
+                        <button class="btn btn-danger ms-auto" id="btn-fechar-caixa">
+                            <i class="bi bi-lock me-1"></i>Fechar Caixa
+                        </button>
+                    </div>
+
+                </div>
+                <!-- /estado-aberto -->
+
+            </div>
+            <!-- /painel-caixa -->
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Abrir Caixa (RF_F4)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-abrir" tabindex="-1"
+     aria-labelledby="modal-abrir-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-abrir-titulo">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Abrir Caixa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="form-abrir" novalidate>
+                    <div class="mb-3">
+                        <label for="valor-inicial" class="form-label campo-obrigatorio">
+                            Valor inicial em caixa (R$)
+                        </label>
+                        <input type="text" class="form-control" id="valor-inicial"
+                               placeholder="0,00" inputmode="decimal" required>
+                        <div class="invalid-feedback" id="valor-inicial-feedback">
+                            Informe um valor inicial válido (≥ 0).
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-abrir">
+                    <i class="bi bi-check-circle me-1"></i>Abrir
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Reforço / Sangria (RF_F5)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-movimentacao" tabindex="-1"
+     aria-labelledby="modal-mov-titulo" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-mov-titulo">Movimentação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="form-movimentacao" novalidate>
+                    <!-- Tipo oculto: preenchido ao abrir o modal -->
+                    <input type="hidden" id="mov-tipo">
+
+                    <!-- Indicador visual do tipo -->
+                    <div id="mov-badge" class="mb-3"></div>
+
+                    <div class="mb-3">
+                        <label for="mov-valor" class="form-label campo-obrigatorio">
+                            Valor (R$)
+                        </label>
+                        <input type="text" class="form-control" id="mov-valor"
+                               placeholder="0,00" inputmode="decimal" required>
+                        <div class="invalid-feedback" id="mov-valor-feedback">
+                            Informe um valor maior que zero.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="mov-motivo" class="form-label campo-obrigatorio">
+                            Motivo
+                        </label>
+                        <input type="text" class="form-control" id="mov-motivo"
+                               placeholder="Descreva o motivo da movimentação"
+                               required minlength="3" maxlength="200">
+                        <div class="invalid-feedback">
+                            Informe o motivo (mínimo 3 caracteres).
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-movimentacao">
+                    <i class="bi bi-check-circle me-1"></i>Registrar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Confirmar Fechamento (RF_F6)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-fechar" tabindex="-1"
+     aria-labelledby="modal-fechar-titulo" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-fechar-titulo">
+                    <i class="bi bi-lock me-1"></i>Fechar Caixa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p>Deseja encerrar o caixa? O resumo das operações será exibido após a confirmação.</p>
+                <div class="alert alert-warning py-2 px-3 mb-0" style="font-size:.85rem;">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Após o fechamento, nenhuma operação poderá ser lançada até uma nova abertura.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-fechar">
+                    <i class="bi bi-lock me-1"></i>Confirmar Fechamento
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: Resumo do Fechamento (RF_F6 — pós-fechamento)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-resumo" tabindex="-1"
+     aria-labelledby="modal-resumo-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-resumo-titulo">
+                    <i class="bi bi-receipt me-1"></i>Resumo do Fechamento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body" id="resumo-conteudo">
+                <!-- Preenchido dinamicamente pelo caixa.js -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-check-circle me-1"></i>Concluir
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Scripts -->
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../utils/Auth.js"></script>
+<script src="../utils/HttpClient.js"></script>
+<script src="../utils/Mascaras.js"></script>
+<script src="../utils/Validador.js"></script>
+<script src="../utils/Sidebar.js"></script>
+
+<script src="../services/CaixaService.js"></script>
+<script src="../controllers/CaixaController.js"></script>
+
+<script src="./caixa.js"></script>
+
+</body>
+</html>
