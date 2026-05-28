@@ -19,7 +19,6 @@ import agape.control.CUsuario;
 import agape.control.CProduto;
 import agape.control.CVenda;
 import agape.security.AuthFilter;
-import agape.control.CCaixa;
 
 import java.net.InetSocketAddress;
 
