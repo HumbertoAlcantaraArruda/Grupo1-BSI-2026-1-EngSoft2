@@ -69,4 +69,21 @@ public class ParoquianoDAO {
             stmt.executeUpdate();
         }
     }
+
+    /**
+     * Incremento ATÔMICO do saldo de crédito (saldoCredito = saldoCredito + ?).
+     *
+     * Usado na devolução (RF_F8). Diferente de atualizarSaldoCredito (que grava
+     * um valor absoluto após ler em memória), aqui o cálculo acontece no próprio
+     * UPDATE do banco — eliminando o ciclo ler→somar→gravar e, portanto, a
+     * condição de corrida (Race Condition) em devoluções/vendas concorrentes.
+     */
+    public void incrementarSaldoCredito(Connection conn, int idUsuario, float valor) throws Exception {
+        String sql = "UPDATE Paroquiano SET saldoCredito = saldoCredito + ? WHERE idUsuario = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setFloat(1, valor);
+            stmt.setInt(2, idUsuario);
+            stmt.executeUpdate();
+        }
+    }
 }

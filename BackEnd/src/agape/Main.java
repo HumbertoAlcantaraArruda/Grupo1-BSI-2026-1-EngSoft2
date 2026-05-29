@@ -46,6 +46,9 @@ public class Main {
         server.createContext("/paroquiano", new AuthFilter(CVenda.getInstancia(), "ADM", "COLAB"));
         server.createContext("/venda",      new AuthFilter(CVenda.getInstancia(), "ADM", "COLAB"));
 
+        // RF_F8 — Realizar Devolução de Produtos (GOF Facade + transação atômica)
+        server.createContext("/devolucao",  new AuthFilter(CDevolucao.getInstancia(), "ADM", "COLAB"));
+
         // Gestão de usuários — ADM e COLAB (COLAB só consegue criar/alterar PAROQ; regra dentro do controller)
         server.createContext("/cadastrar", new AuthFilter(CUsuario.getInstancia(), "ADM", "COLAB"));
         server.createContext("/usuarios",  new AuthFilter(CUsuario.getInstancia(), "ADM", "COLAB"));

@@ -23,6 +23,12 @@ window.AGAPE.Utils.Sidebar = (function ($) {
             niveis: ['ADM', 'COLAB']
         },
         {
+            rotulo: 'Realizar Devolução',
+            href:   '../devolucao/devolucao.html',
+            icone:  'bi-arrow-return-left',
+            niveis: ['ADM', 'COLAB']
+        },
+        {
             rotulo: 'Caixa',
             href:   '../caixa/caixa.html',
             icone:  'bi-cash-stack',
@@ -263,7 +269,8 @@ window.AGAPE.Utils.Sidebar = (function ($) {
             var $link = $(e.target).closest('.nav-link[data-href]');
             if (!$link.length) return;
 
-            var guardiao = window.AGAPE_VENDA_GUARDIAO;
+            // Guardião genérico de navegação: aceita Venda OU Devolução em andamento.
+            var guardiao = window.AGAPE_VENDA_GUARDIAO || window.AGAPE_DEVOLUCAO_GUARDIAO;
             if (typeof guardiao !== 'function' || !guardiao()) return;
 
             e.preventDefault();
@@ -285,17 +292,17 @@ window.AGAPE.Utils.Sidebar = (function ($) {
             }).html(
                 '<div style="background:#fff;border-radius:.75rem;max-width:460px;width:90%;' +
                 'box-shadow:0 8px 32px rgba(0,0,0,.2);padding:2rem;text-align:center;">' +
-                '<i class="bi bi-cart-x-fill" style="font-size:2.75rem;color:#dc3545;"></i>' +
-                '<h5 style="margin:.75rem 0 .5rem;font-weight:700;">Venda em andamento</h5>' +
+                '<i class="bi bi-exclamation-octagon-fill" style="font-size:2.75rem;color:#dc3545;"></i>' +
+                '<h5 style="margin:.75rem 0 .5rem;font-weight:700;">Operação em andamento</h5>' +
                 '<p style="color:#6c757d;font-size:.9rem;margin-bottom:1.5rem;">' +
-                'Deseja cancelar a venda e sair?<br>' +
-                '<strong>Dados não salvos serão perdidos.</strong>' +
+                'Deseja sair e descartar os dados não salvos?<br>' +
+                '<strong>As alterações em andamento serão perdidas.</strong>' +
                 '</p>' +
                 '<div style="display:flex;gap:.75rem;justify-content:center;">' +
                 '<button id="btn-guardiao-cancelar" class="btn btn-outline-secondary">' +
-                '<i class="bi bi-arrow-left me-1"></i>Voltar à venda</button>' +
+                '<i class="bi bi-arrow-left me-1"></i>Voltar</button>' +
                 '<button id="btn-guardiao-confirmar" class="btn btn-danger">' +
-                '<i class="bi bi-box-arrow-right me-1"></i>Cancelar e sair</button>' +
+                '<i class="bi bi-box-arrow-right me-1"></i>Sair mesmo assim</button>' +
                 '</div></div>'
             ).appendTo('body');
         }
@@ -303,7 +310,9 @@ window.AGAPE.Utils.Sidebar = (function ($) {
         var $overlay = $('#' + id).css('display', 'flex');
 
         $('#btn-guardiao-confirmar').off('click').on('click', function () {
-            window.AGAPE_VENDA_GUARDIAO = null;
+            // Libera ambos os guardiões antes de navegar
+            window.AGAPE_VENDA_GUARDIAO     = null;
+            window.AGAPE_DEVOLUCAO_GUARDIAO = null;
             window.location.href = destino;
         });
         $('#btn-guardiao-cancelar').off('click').on('click', function () {

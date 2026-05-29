@@ -58,4 +58,15 @@ public class Devolucao {
     public void setReincorporaEst(int reincorporaEst) {
         this.reincorporaEst = reincorporaEst;
     }
+
+    public String toJson() {
+        return "{" +
+            "\"idDevolucao\":"    + idDevolucao + "," +
+            "\"idVenda\":"        + idVenda     + "," +
+            "\"idUsuario\":"      + idUsuario   + "," +
+            "\"dataHora\":"       + (dataHora != null ? "\"" + dataHora + "\"" : "null") + "," +
+            "\"valorTotal\":"     + valorTotal  + "," +
+            "\"reincorporaEst\":" + reincorporaEst +
+        "}";
+    }
 }
