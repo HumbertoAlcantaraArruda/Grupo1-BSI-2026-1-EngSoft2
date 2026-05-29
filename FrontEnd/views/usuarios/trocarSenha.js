@@ -4,6 +4,17 @@
 
     var CHAVE_EMAIL = 'agape_primeiro_acesso_email';
 
+    // Redireciona conforme o perfil: PAROQ vai direto para Eventos Disponíveis;
+    // demais perfis (ADM/COLAB) seguem para a tela operacional padrão.
+    function _redirecionarPorNivel() {
+        var usuario = window.AGAPE.Utils.Auth.getInstance().getUsuario();
+        if (usuario && usuario.nivel === 'PAROQ') {
+            window.location.replace('../paroquiano/eventosDisponiveis.html');
+        } else {
+            window.location.replace('../produtos/produtos.html');
+        }
+    }
+
     var emailPendente = sessionStorage.getItem(CHAVE_EMAIL);
     if (!emailPendente) {
         window.location.replace('../index.html');
@@ -12,7 +23,7 @@
 
     if (window.AGAPE.Utils.Auth.getInstance().estaLogado()) {
         sessionStorage.removeItem(CHAVE_EMAIL);
-        window.location.replace('../produtos/produtos.html');
+        _redirecionarPorNivel();
         return;
     }
 
@@ -99,7 +110,7 @@
         $btnTrocar.prop('disabled', false).html('<i class="bi bi-check-circle"></i> Definir nova senha e entrar');
 
         if (resultado.status === 'ok') {
-            window.location.replace('../produtos/produtos.html');
+            _redirecionarPorNivel();
         } else {
             _mostrarAlerta(resultado.erro || 'Erro ao alterar a senha. Tente novamente.');
         }
