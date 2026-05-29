@@ -19,6 +19,7 @@ public class ItemVenda {
     private int   quantidade;
     private float valorUnitario;
     private float valorTotal;     // calculado: valorUnitario × quantidade
+    private int   qtdJaDevolvida; // campo de exibição (devoluções anteriores deste item)
 
     public int   getIdVenda()        { return idVenda; }
     public void  setIdVenda(int v)   { this.idVenda = v; }
@@ -38,6 +39,9 @@ public class ItemVenda {
     public float getValorTotal()             { return valorTotal; }
     public void  setValorTotal(float v)      { this.valorTotal = v; }
 
+    public int   getQtdJaDevolvida()         { return qtdJaDevolvida; }
+    public void  setQtdJaDevolvida(int v)    { this.qtdJaDevolvida = v; }
+
     /** Information Expert — ItemVenda calcula seu próprio total. */
     private void recalcularTotal() {
         this.valorTotal = (float) Math.round(this.valorUnitario * this.quantidade * 100) / 100f;
@@ -53,7 +57,8 @@ public class ItemVenda {
             "\"nomeProduto\":"   + str(nomeProduto)              + "," +
             "\"quantidade\":"    + quantidade                    + "," +
             "\"valorUnitario\":" + valorUnitario                 + "," +
-            "\"valorTotal\":"    + valorTotal                    +
+            "\"valorTotal\":"    + valorTotal                    + "," +
+            "\"qtdJaDevolvida\":" + qtdJaDevolvida                +
         "}";
     }
 

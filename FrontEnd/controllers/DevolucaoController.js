@@ -38,6 +38,16 @@ window.AGAPE.Controllers.DevolucaoController = (function () {
         return await this._service.listarVendas(filtros || {});
     };
 
+    // ── Listagem de devoluções (tabela principal) ─────────────────────────────
+
+    DevolucaoController.prototype.listarDevolucoes = async function (filtros) {
+        return await this._service.listarDevolucoes(filtros || {});
+    };
+
+    DevolucaoController.prototype.buscarDetalhe = async function (idDevolucao) {
+        return await this._service.buscarDetalhe(idDevolucao);
+    };
+
     // ── Fluxo 1-2: Buscar venda + itens ───────────────────────────────────────
 
     DevolucaoController.prototype.buscarVenda = async function (idVenda) {
@@ -53,14 +63,19 @@ window.AGAPE.Controllers.DevolucaoController = (function () {
         this._estado = _estadoInicial();
         this._estado.venda = venda;
 
-        // Information Expert — o Controller monta a lista de itens devolvíveis
+        // Information Expert — o Controller monta a lista de itens devolvíveis.
+        // qtdDevolvivel = vendido − já devolvido em devoluções anteriores (Fluxo 4.1).
         this._estado.itens = itens.map(function (it) {
+            var qtdVendida     = parseInt(it.quantidade, 10) || 0;
+            var qtdJaDevolvida = parseInt(it.qtdJaDevolvida, 10) || 0;
             return {
-                idProd:      it.idProd,
-                nome:        it.nomeProduto || ('Produto ' + it.idProd),
-                valorUni:    parseFloat(it.valorUnitario) || 0,
-                qtdVendida:  parseInt(it.quantidade, 10) || 0,
-                qtdDevolver: 0
+                idProd:         it.idProd,
+                nome:           it.nomeProduto || ('Produto ' + it.idProd),
+                valorUni:       parseFloat(it.valorUnitario) || 0,
+                qtdVendida:     qtdVendida,
+                qtdJaDevolvida: qtdJaDevolvida,
+                qtdDevolvivel:  Math.max(0, qtdVendida - qtdJaDevolvida),
+                qtdDevolver:    0
             };
         });
 
@@ -70,26 +85,52 @@ window.AGAPE.Controllers.DevolucaoController = (function () {
     // ── Fluxo 4: Seleção / quantidade ─────────────────────────────────────────
 
     /**
-     * Define a quantidade a devolver de um item, validando 0 <= qtd <= qtdVendida
-     * (Fluxo 4.1). Information Expert — o Controller conhece os limites.
+     * Define a quantidade a devolver de um item, validando que seja um inteiro
+     * entre 0 e o máximo devolvível (vendido − já devolvido — Fluxo 4.1).
+     * Information Expert — o Controller conhece os limites.
+     *
+     * Retorna { ok:false, erro, ajustado } quando corrige o valor digitado, para
+     * a View reescrever o input e avisar o usuário.
      */
     DevolucaoController.prototype.definirQuantidade = function (idProd, qtd) {
-        qtd = parseInt(qtd, 10);
-        if (isNaN(qtd) || qtd < 0) qtd = 0;
-
         var item = this._itemPorProd(idProd);
         if (!item) return { ok: false, erro: 'Item não encontrado.' };
 
-        if (qtd > item.qtdVendida) {
-            item.qtdDevolver = item.qtdVendida;
+        var max = item.qtdDevolvivel;
+
+        // Campo vazio → trata como 0 (sem alerta; usuário está apenas editando).
+        var raw = (qtd === null || qtd === undefined) ? '' : String(qtd).trim();
+        if (raw === '') {
+            item.qtdDevolver = 0;
+            return { ok: true };
+        }
+
+        // Rejeita valores negativos, decimais ou não numéricos.
+        var n = Number(raw);
+        if (!Number.isInteger(n) || n < 0) {
+            item.qtdDevolver = 0;
             return {
                 ok: false,
-                erro: 'Máximo devolvível de "' + item.nome + '": ' + item.qtdVendida + '.',
-                ajustado: item.qtdVendida
+                erro: 'Quantidade inválida para "' + item.nome + '". ' +
+                      'Informe um número inteiro entre 0 e ' + max + '.',
+                ajustado: 0
             };
         }
 
-        item.qtdDevolver = qtd;
+        // Rejeita quantidade acima do que ainda pode ser devolvido.
+        if (n > max) {
+            item.qtdDevolver = max;
+            var detalhe = item.qtdJaDevolvida > 0
+                ? ' (vendido: ' + item.qtdVendida + ', já devolvido: ' + item.qtdJaDevolvida + ')'
+                : '';
+            return {
+                ok: false,
+                erro: 'Máximo devolvível de "' + item.nome + '": ' + max + detalhe + '.',
+                ajustado: max
+            };
+        }
+
+        item.qtdDevolver = n;
         return { ok: true };
     };
 

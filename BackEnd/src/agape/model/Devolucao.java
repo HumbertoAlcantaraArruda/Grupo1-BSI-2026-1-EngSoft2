@@ -9,6 +9,7 @@ public class Devolucao {
     private LocalDateTime dataHora;
     private float valorTotal;
     private int reincorporaEst;
+    private String nomeParoquiano;   // campo de exibição (vem de JOIN com Usuario)
 
     // GETTERS E SETTERS
     public int getIdDevolucao() {
@@ -59,11 +60,20 @@ public class Devolucao {
         this.reincorporaEst = reincorporaEst;
     }
 
+    public String getNomeParoquiano() {
+        return nomeParoquiano;
+    }
+
+    public void setNomeParoquiano(String nomeParoquiano) {
+        this.nomeParoquiano = nomeParoquiano;
+    }
+
     public String toJson() {
         return "{" +
             "\"idDevolucao\":"    + idDevolucao + "," +
             "\"idVenda\":"        + idVenda     + "," +
             "\"idUsuario\":"      + idUsuario   + "," +
+            "\"nomeParoquiano\":" + (nomeParoquiano != null ? "\"" + nomeParoquiano.replace("\\", "\\\\").replace("\"", "\\\"") + "\"" : "null") + "," +
             "\"dataHora\":"       + (dataHora != null ? "\"" + dataHora + "\"" : "null") + "," +
             "\"valorTotal\":"     + valorTotal  + "," +
             "\"reincorporaEst\":" + reincorporaEst +

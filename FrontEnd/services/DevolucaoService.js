@@ -16,6 +16,16 @@ window.AGAPE.Services.DevolucaoService = (function () {
         return await this._http.get('/venda', filtros || {});
     };
 
+    /** Lista as devoluções já registradas (com filtros opcionais) para a tabela. */
+    DevolucaoService.prototype.listarDevolucoes = async function (filtros) {
+        return await this._http.get('/devolucao', filtros || {});
+    };
+
+    /** Busca o detalhe (cabeçalho + itens) de uma devolução para visualização. */
+    DevolucaoService.prototype.buscarDetalhe = async function (idDevolucao) {
+        return await this._http.get('/devolucao', { idDevolucao: idDevolucao });
+    };
+
     /** Busca uma venda + seus itens para montar a seleção de devolução. */
     DevolucaoService.prototype.buscarVenda = async function (idVenda) {
         return await this._http.get('/devolucao', { idVenda: idVenda });

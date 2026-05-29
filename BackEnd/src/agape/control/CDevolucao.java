@@ -74,8 +74,82 @@ public class CDevolucao implements HttpHandler {
     }
 
     private ResponseObject handleGet(Connection conn, String query) {
-        // GET /devolucao?idVenda=X — busca a venda e seus itens para seleção
-        return buscarVenda(conn, parseSafeInt(param(query, "idVenda")));
+        // GET /devolucao?idDevolucao=X — detalhe de uma devolução (cabeçalho + itens)
+        String idDevStr = param(query, "idDevolucao");
+        if (!idDevStr.isEmpty()) return buscarDetalhe(conn, parseSafeInt(idDevStr));
+
+        // GET /devolucao?idVenda=X — busca a venda e seus itens para seleção (modal)
+        String idVendaStr = param(query, "idVenda");
+        if (!idVendaStr.isEmpty()) return buscarVenda(conn, parseSafeInt(idVendaStr));
+
+        // GET /devolucao — lista as devoluções (com filtros opcionais)
+        return listar(conn,
+                param(query, "dataInicio"), param(query, "dataFim"),
+                param(query, "nomeParoquiano"));
+    }
+
+    // ── Caso de uso: Listar devoluções ────────────────────────────────────────
+
+    /** Lista devoluções já registradas, com filtros opcionais. Somente leitura. */
+    public ResponseObject listar(Connection conn, String dataInicio, String dataFim,
+                                 String nomeParoquiano) {
+        ResponseObject response = new ResponseObject();
+        try {
+            List<Devolucao> lista = new agape.dao.DevolucaoDAO().listar(conn,
+                    dataInicio.isEmpty()     ? null : dataInicio,
+                    dataFim.isEmpty()        ? null : dataFim,
+                    nomeParoquiano.isEmpty() ? null : nomeParoquiano,
+                    null);
+
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < lista.size(); i++) {
+                if (i > 0) sb.append(",");
+                sb.append(lista.get(i).toJson());
+            }
+            sb.append("]");
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.setResult(new JsonResult(sb.toString()));
+        } catch (Exception e) {
+            erroInterno(response);
+        }
+        return response;
+    }
+
+    // ── Caso de uso: Detalhe de uma devolução ─────────────────────────────────
+
+    /** Retorna { devolucao, itens } de uma devolução registrada (para visualização). */
+    public ResponseObject buscarDetalhe(Connection conn, int idDevolucao) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (idDevolucao <= 0)
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "Informe a devolução.");
+
+            agape.dao.DevolucaoDAO dao = new agape.dao.DevolucaoDAO();
+            Devolucao dev = dao.buscarPorId(conn, idDevolucao);
+            if (dev == null)
+                return falha(response, ResponseObject.CODE_NOT_FOUND,
+                        "Devolução #" + idDevolucao + " não encontrada.");
+
+            List<ItemVenda> itens = dao.listarItens(conn, idDevolucao);
+
+            StringBuilder sb = new StringBuilder("{");
+            sb.append("\"devolucao\":").append(dev.toJson()).append(",");
+            sb.append("\"itens\":[");
+            for (int i = 0; i < itens.size(); i++) {
+                if (i > 0) sb.append(",");
+                sb.append(itens.get(i).toJson());
+            }
+            sb.append("]}");
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.setResult(new JsonResult(sb.toString()));
+        } catch (Exception e) {
+            erroInterno(response);
+        }
+        return response;
     }
 
     // ── Caso de uso: Buscar venda + itens (Fluxo 1-2) ─────────────────────────
@@ -96,6 +170,13 @@ public class CDevolucao implements HttpHandler {
                         "Venda #" + idVenda + " não encontrada (Fluxo 2.1).");
 
             final List<ItemVenda> itens = new ItemVenda().listarItensPorVenda(conn, idVenda);
+
+            // Enriquece cada item com o total já devolvido em devoluções anteriores,
+            // para que a View calcule o máximo realmente devolvível (vendido − devolvido).
+            agape.dao.DevolucaoDAO devDao = new agape.dao.DevolucaoDAO();
+            for (ItemVenda it : itens) {
+                it.setQtdJaDevolvida(devDao.quantidadeJaDevolvida(conn, idVenda, it.getIdProd()));
+            }
 
             StringBuilder sb = new StringBuilder("{");
             sb.append("\"venda\":").append(venda.toJson()).append(",");

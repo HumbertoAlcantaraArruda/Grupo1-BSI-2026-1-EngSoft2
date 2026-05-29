@@ -7,10 +7,26 @@
 
     <link rel="stylesheet" href="../../assets/libs/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../../assets/libs/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../assets/libs/datatables/datatables.min.css">
     <link rel="stylesheet" href="../../assets/css/agape.css">
     <style>
         body { display: none; }
 
+        /* ── Layout do modal (espelha o PDV de venda) ── */
+        .dev-painel-esq   { border-right: 1px solid #dee2e6; }
+        .dev-tabela-itens { max-height: 320px; overflow-y: auto; }
+
+        .dev-resumo-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: .25rem 0;
+        }
+        .dev-total-final {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--cor-estrutural, #024040);
+        }
         .dev-secao-titulo {
             font-size: .7rem;
             font-weight: 700;
@@ -19,18 +35,14 @@
             color: #6c757d;
             margin-bottom: .5rem;
         }
-        .dev-total-final {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--cor-estrutural, #024040);
-        }
+        .dev-qtd-input { max-width: 90px; }
 
         /* ── Busca de venda estilo Select2 ── */
         .dev-busca-wrapper { position: relative; }
         .dev-dropdown {
             position: absolute;
             top: 100%; left: 0; right: 0;
-            z-index: 1050;
+            z-index: 1055;
             background: #fff;
             border: 1px solid #ced4da;
             border-top: none;
@@ -51,9 +63,6 @@
         .dev-dropdown-item:hover { background: #f2f8ff; }
         .dev-dropdown-item .venda-id   { font-weight: 600; }
         .dev-dropdown-item .venda-info { color: #6c757d; font-size: .78rem; }
-
-        .dev-tabela-itens { max-height: 360px; overflow-y: auto; }
-        .dev-qtd-input { max-width: 90px; }
     </style>
 </head>
 <body>
@@ -73,114 +82,66 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="titulo-pagina">
-                    <i class="bi bi-arrow-return-left me-2"></i>Realizar Devolução
+                    <i class="bi bi-arrow-return-left me-2"></i>Devoluções
                 </h1>
+                <button class="btn btn-primary" id="btn-nova-devolucao">
+                    <i class="bi bi-plus-circle me-1"></i>Nova Devolução
+                </button>
             </div>
 
-            <!-- ── Passo 1-2: Buscar venda ── -->
-            <div class="card card-filtros">
+            <!-- Filtros -->
+            <div class="card-filtros card">
                 <div class="card-body">
                     <p class="card-titulo-filtros">
-                        <i class="bi bi-search me-1"></i>Localizar Venda
+                        <i class="bi bi-funnel me-1"></i>Filtros
                     </p>
                     <div class="row g-2 align-items-end">
-                        <div class="col-md-7">
-                            <label class="form-label form-label-sm mb-1">Buscar venda (nº, paroquiano...)</label>
-                            <!-- Componente estilo Select2 (busca + dropdown dinâmico) -->
-                            <div class="dev-busca-wrapper">
-                                <input type="text" class="form-control form-control-sm" id="dev-busca-venda"
-                                       placeholder="Digite o nº da venda ou nome do paroquiano..." autocomplete="off">
-                                <div id="dev-dropdown-venda" class="dev-dropdown">
-                                    <div class="dev-dropdown-item text-muted"><em>Digite para buscar...</em></div>
-                                </div>
-                            </div>
+                        <div class="col-md-3">
+                            <label for="filtro-data-ini" class="form-label form-label-sm">Data inicial</label>
+                            <input type="date" class="form-control form-control-sm" id="filtro-data-ini">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label form-label-sm mb-1">Ou nº da venda</label>
-                            <input type="number" class="form-control form-control-sm" id="dev-id-venda" min="1"
-                                   placeholder="Ex.: 33">
+                            <label for="filtro-data-fim" class="form-label form-label-sm">Data final</label>
+                            <input type="date" class="form-control form-control-sm" id="filtro-data-fim">
                         </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-primary btn-sm w-100" id="dev-btn-buscar">
-                                <i class="bi bi-search me-1"></i>Buscar
+                        <div class="col-md-4">
+                            <label for="filtro-paroquiano" class="form-label form-label-sm">Paroquiano</label>
+                            <input type="text" class="form-control form-control-sm" id="filtro-paroquiano" placeholder="Nome...">
+                        </div>
+                        <div class="col-md-2 d-flex gap-1">
+                            <button class="btn btn-primary btn-sm" id="btn-filtrar" title="Filtrar">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-limpar" title="Limpar">
+                                <i class="bi bi-x-lg"></i>
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ── Passo 3-7: Seleção de itens (oculto até localizar a venda) ── -->
-            <div class="tabela-wrapper" id="dev-painel" style="display:none;">
-
-                <!-- Cabeçalho da venda -->
-                <div class="row g-3 p-3 border-bottom">
-                    <div class="col-sm-3">
-                        <div class="text-muted small mb-1">Venda</div>
-                        <div class="fw-semibold" id="dev-info-venda">—</div>
-                    </div>
-                    <div class="col-sm-4">
-                        <div class="text-muted small mb-1">Paroquiano</div>
-                        <div class="fw-semibold" id="dev-info-paroquiano">—</div>
-                    </div>
-                    <div class="col-sm-3">
-                        <div class="text-muted small mb-1">Data da venda</div>
-                        <div class="fw-semibold" id="dev-info-data">—</div>
-                    </div>
-                    <div class="col-sm-2">
-                        <div class="text-muted small mb-1">Total da venda</div>
-                        <div class="fw-semibold" id="dev-info-total">—</div>
-                    </div>
-                </div>
-
-                <!-- Tabela de itens devolvíveis -->
-                <div class="p-3">
-                    <p class="dev-secao-titulo">
-                        <i class="bi bi-box-seam me-1"></i>Selecione os produtos a devolver
-                    </p>
-                    <div class="dev-tabela-itens">
-                        <table class="table table-hover mb-0">
-                            <thead class="text-center sticky-top bg-white">
-                                <tr>
-                                    <th class="text-start">Produto</th>
-                                    <th>Qtd. Vendida</th>
-                                    <th>Vlr. Unitário</th>
-                                    <th>Qtd. a Devolver</th>
-                                    <th>Total do Item</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dev-tbody-itens" class="text-center"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Destino + resumo -->
-                <div class="row g-3 p-3 border-top align-items-center">
-                    <div class="col-md-6">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="dev-reincorpora" checked>
-                            <label class="form-check-label" for="dev-reincorpora">
-                                <i class="bi bi-box-arrow-in-down me-1"></i>
-                                Reincorporar produtos ao estoque
-                            </label>
-                        </div>
-                        <small class="text-muted">
-                            Se desmarcado, os produtos não retornam ao estoque (ex.: avariados).
-                        </small>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <div class="text-muted small">Valor total da devolução (crédito ao paroquiano)</div>
-                        <div class="dev-total-final" id="dev-total-devolucao">R$ 0,00</div>
-                    </div>
-                </div>
-
-                <!-- Ações -->
-                <div class="d-flex justify-content-end gap-2 p-3 border-top">
-                    <button class="btn btn-outline-secondary" id="dev-btn-cancelar">
-                        <i class="bi bi-x-circle me-1"></i>Cancelar
-                    </button>
-                    <button class="btn btn-success" id="dev-btn-finalizar" disabled>
-                        <i class="bi bi-check2-circle me-1"></i>Confirmar Devolução
-                    </button>
+            <!-- Tabela de devoluções -->
+            <div class="tabela-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="text-center">
+                            <tr>
+                                <th scope="col">Data / Hora</th>
+                                <th scope="col">Venda</th>
+                                <th scope="col" class="text-start">Paroquiano</th>
+                                <th scope="col">Valor Devolvido</th>
+                                <th scope="col">Estoque</th>
+                                <th scope="col">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-corpo" class="text-center">
+                            <tr>
+                                <td colspan="6" class="tabela-vazia">
+                                    <i class="bi bi-hourglass-split me-1"></i>Carregando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -188,21 +149,190 @@
     </div><!-- /content-wrapper -->
 </div><!-- /wrapper -->
 
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL — Realizar Devolução (RF_F8)
+════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modal-dev" tabindex="-1"
+     aria-labelledby="dev-titulo" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="dev-titulo">
+                    <i class="bi bi-arrow-return-left me-2"></i>Nova Devolução
+                </h5>
+                <button type="button" class="btn-close" id="dev-btn-fechar"
+                        aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body p-0">
+                <div class="row g-0 h-100">
+
+                    <!-- ── Painel esquerdo: Buscar venda + itens ── -->
+                    <div class="col-lg-7 dev-painel-esq p-3">
+
+                        <!-- Passo 1-2: localizar venda -->
+                        <p class="dev-secao-titulo">
+                            <i class="bi bi-search me-1"></i>Localizar Venda
+                        </p>
+                        <div class="row g-2 mb-3 align-items-end">
+                            <div class="col-7">
+                                <label class="form-label form-label-sm mb-1">Buscar venda (nº, paroquiano...)</label>
+                                <div class="dev-busca-wrapper">
+                                    <input type="text" class="form-control form-control-sm" id="dev-busca-venda"
+                                           placeholder="Digite o nº da venda ou nome do paroquiano..." autocomplete="off">
+                                    <div id="dev-dropdown-venda" class="dev-dropdown">
+                                        <div class="dev-dropdown-item text-muted"><em>Digite para buscar...</em></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label form-label-sm mb-1">Ou nº da venda</label>
+                                <input type="number" class="form-control form-control-sm" id="dev-id-venda" min="1"
+                                       placeholder="Ex.: 33">
+                            </div>
+                            <div class="col-2">
+                                <button class="btn btn-primary btn-sm w-100" id="dev-btn-buscar">
+                                    <i class="bi bi-search me-1"></i>Buscar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cabeçalho da venda localizada -->
+                        <div id="dev-cabecalho" class="row g-2 mb-2 p-2 rounded" style="background:#f8f9fa; display:none;">
+                            <div class="col-sm-3">
+                                <div class="text-muted small mb-1">Venda</div>
+                                <div class="fw-semibold" id="dev-info-venda">—</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="text-muted small mb-1">Paroquiano</div>
+                                <div class="fw-semibold" id="dev-info-paroquiano">—</div>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="text-muted small mb-1">Data da venda</div>
+                                <div class="fw-semibold" id="dev-info-data">—</div>
+                            </div>
+                            <div class="col-sm-2">
+                                <div class="text-muted small mb-1">Total</div>
+                                <div class="fw-semibold" id="dev-info-total">—</div>
+                            </div>
+                        </div>
+
+                        <!-- Tabela de itens devolvíveis -->
+                        <p class="dev-secao-titulo">
+                            <i class="bi bi-box-seam me-1"></i>Selecione os produtos a devolver
+                        </p>
+                        <div class="dev-tabela-itens">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="text-center sticky-top bg-white">
+                                    <tr>
+                                        <th class="text-start">Produto</th>
+                                        <th>Qtd. Vendida</th>
+                                        <th>Devolvível</th>
+                                        <th>Vlr. Unitário</th>
+                                        <th>Qtd. a Devolver</th>
+                                        <th>Total do Item</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dev-tbody-itens" class="text-center">
+                                    <tr id="dev-linha-vazia-itens">
+                                        <td colspan="6" class="tabela-vazia text-muted small">
+                                            Localize uma venda para listar os produtos.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div><!-- /painel esq -->
+
+                    <!-- ── Painel direito: Resumo + destino ── -->
+                    <div class="col-lg-5 p-3 d-flex flex-column gap-3">
+
+                        <div>
+                            <p class="dev-secao-titulo">
+                                <i class="bi bi-receipt me-1"></i>Resumo da Devolução
+                            </p>
+                            <div class="dev-resumo-linha">
+                                <span class="text-muted small">Itens selecionados</span>
+                                <strong id="dev-r-qtd">0</strong>
+                            </div>
+                            <hr class="my-2">
+                            <div class="dev-resumo-linha">
+                                <span class="fw-semibold">Crédito ao paroquiano</span>
+                                <span class="dev-total-final" id="dev-total-devolucao">R$ 0,00</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="dev-secao-titulo">
+                                <i class="bi bi-box-arrow-in-down me-1"></i>Destino do Estoque
+                            </p>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="dev-reincorpora" checked>
+                                <label class="form-check-label" for="dev-reincorpora">
+                                    Reincorporar produtos ao estoque
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Se desmarcado, os produtos não retornam ao estoque (ex.: avariados).
+                            </small>
+                        </div>
+
+                    </div><!-- /painel dir -->
+                </div><!-- /row -->
+            </div><!-- /modal-body -->
+
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="dev-btn-cancelar">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="dev-btn-finalizar" disabled>
+                    <i class="bi bi-check2-circle me-1"></i>Confirmar Devolução
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal: Detalhes da Devolução -->
+<div class="modal fade" id="modal-dev-detalhe" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="det-titulo">Detalhes da Devolução</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="det-corpo"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Scripts -->
 <script src="../../assets/libs/jquery/jquery-4.0.0.min.js"></script>
 <script src="../../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../../assets/libs/datatables/datatables.min.js"></script>
 <script src="../../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-<script src="../../utils/Auth.js?v=1"></script>
-<script src="../../utils/HttpClient.js?v=1"></script>
-<script src="../../utils/Mascaras.js?v=1"></script>
-<script src="../../utils/Validador.js?v=1"></script>
+<script src="../../utils/Auth.js?v=2"></script>
+<script src="../../utils/HttpClient.js?v=2"></script>
+<script src="../../utils/Mascaras.js?v=2"></script>
+<script src="../../utils/Validador.js?v=2"></script>
 <script src="../../utils/Sidebar.js?v=6"></script>
 
-<script src="../../services/DevolucaoService.js?v=1"></script>
-<script src="../../controllers/DevolucaoController.js?v=1"></script>
+<script src="../../services/DevolucaoService.js?v=3"></script>
+<script src="../../controllers/DevolucaoController.js?v=3"></script>
 
-<script src="./devolucao.js?v=1"></script>
+<script src="./devolucao.js?v=3"></script>
 
 </body>
 </html>

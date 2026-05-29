@@ -2,8 +2,11 @@ package agape.dao;
 
 import agape.model.Devolucao;
 import agape.model.ItemDevolucao;
+import agape.model.ItemVenda;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DevolucaoDAO — Data Access Object da Devolução (RF_F8).
@@ -49,6 +52,94 @@ public class DevolucaoDAO {
             stmt.setFloat(4, item.getValorUnitario());
             stmt.executeUpdate();
         }
+    }
+
+    /**
+     * Lista devoluções com JOIN para o nome do paroquiano que recebeu o crédito.
+     * Filtros opcionais (null = sem filtro): intervalo de datas, nome do paroquiano e nº da venda.
+     */
+    public List<Devolucao> listar(Connection conn, String dataInicio, String dataFim,
+                                  String nomeParoquiano, Integer idVenda) throws Exception {
+        StringBuilder sql = new StringBuilder(
+            "SELECT d.*, u.nome AS nomeParoquiano " +
+            "FROM Devolucao d " +
+            "LEFT JOIN Usuario u ON d.Paroquiano_idUsuario = u.idUsuario " +
+            "WHERE 1=1"
+        );
+        if (dataInicio     != null) sql.append(" AND DATE(d.dataHora) >= ?");
+        if (dataFim        != null) sql.append(" AND DATE(d.dataHora) <= ?");
+        if (nomeParoquiano != null) sql.append(" AND u.nome LIKE ?");
+        if (idVenda        != null) sql.append(" AND d.idVenda = ?");
+        sql.append(" ORDER BY d.dataHora DESC");
+
+        List<Devolucao> lista = new ArrayList<>();
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int i = 1;
+            if (dataInicio     != null) stmt.setString(i++, dataInicio);
+            if (dataFim        != null) stmt.setString(i++, dataFim);
+            if (nomeParoquiano != null) stmt.setString(i++, "%" + nomeParoquiano + "%");
+            if (idVenda        != null) stmt.setInt(i++, idVenda);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) lista.add(mapear(rs));
+            }
+        }
+        return lista;
+    }
+
+    /** Retorna a devolução pelo id (com nome do paroquiano), ou null se não existir. */
+    public Devolucao buscarPorId(Connection conn, int idDevolucao) throws Exception {
+        String sql =
+            "SELECT d.*, u.nome AS nomeParoquiano " +
+            "FROM Devolucao d " +
+            "LEFT JOIN Usuario u ON d.Paroquiano_idUsuario = u.idUsuario " +
+            "WHERE d.idDevolucao = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idDevolucao);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
+        }
+        return null;
+    }
+
+    /** Itens de uma devolução com o nome do produto (JOIN Produto). Reusa ItemVenda como DTO. */
+    public List<ItemVenda> listarItens(Connection conn, int idDevolucao) throws Exception {
+        String sql =
+            "SELECT idv.idProd, p.nome AS nomeProduto, idv.quantidade, idv.valorUnitario, " +
+            "       (idv.quantidade * idv.valorUnitario) AS valorTotal " +
+            "FROM itemDevolucao idv " +
+            "JOIN Produto p ON idv.idProd = p.idProd " +
+            "WHERE idv.idDev = ? " +
+            "ORDER BY p.nome";
+        List<ItemVenda> lista = new ArrayList<>();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idDevolucao);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ItemVenda item = new ItemVenda();
+                    item.setIdProd(rs.getInt("idProd"));
+                    item.setNomeProduto(rs.getString("nomeProduto"));
+                    item.setQuantidade(rs.getInt("quantidade"));
+                    item.setValorUnitario(rs.getFloat("valorUnitario"));
+                    item.setValorTotal(rs.getFloat("valorTotal"));
+                    lista.add(item);
+                }
+            }
+        }
+        return lista;
+    }
+
+    private Devolucao mapear(ResultSet rs) throws SQLException {
+        Devolucao d = new Devolucao();
+        d.setIdDevolucao(rs.getInt("idDevolucao"));
+        d.setIdVenda(rs.getInt("idVenda"));
+        d.setIdUsuario(rs.getInt("Paroquiano_idUsuario"));
+        Timestamp ts = rs.getTimestamp("dataHora");
+        if (ts != null) d.setDataHora(ts.toLocalDateTime());
+        d.setValorTotal(rs.getFloat("valorTotal"));
+        d.setReincorporaEst(rs.getInt("reincorporaEst"));
+        try { d.setNomeParoquiano(rs.getString("nomeParoquiano")); } catch (SQLException ignored) {}
+        return d;
     }
 
     /**
