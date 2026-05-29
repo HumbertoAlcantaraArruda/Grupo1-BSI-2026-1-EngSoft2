@@ -46,14 +46,6 @@ window.AGAPE.Services.VendaService = (function () {
         return await this._http.delete('/venda', { idVenda: idVenda });
     };
 
-    /**
-     * Carrega os dados completos de uma venda para edição (SOMENTE LEITURA).
-     * Não altera o banco — o estorno só ocorre ao finalizar a edição.
-     */
-    VendaService.prototype.carregarEdicao = async function (idVenda) {
-        return await this._http.get('/venda', { carregarEdicao: idVenda });
-    };
-
     return {
         getInstance: function () {
             if (!instancia) instancia = new VendaService();

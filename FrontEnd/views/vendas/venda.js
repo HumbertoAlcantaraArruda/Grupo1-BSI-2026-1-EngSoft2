@@ -179,9 +179,6 @@
                            '<button class="btn btn-sm btn-outline-primary btn-visualizar" ' +
                            'title="Visualizar venda">' +
                            '<i class="bi bi-eye"></i></button>' +
-                           '<button class="btn btn-sm btn-outline-warning btn-editar" ' +
-                           'title="Editar venda (Estorno)">' +
-                           '<i class="bi bi-pencil"></i></button>' +
                            '<button class="btn btn-sm btn-outline-danger btn-excluir-venda" ' +
                            'title="Excluir venda">' +
                            '<i class="bi bi-trash"></i></button>' +
@@ -214,59 +211,6 @@
         var d = _dt.row($(this).closest('tr')).data();
         await _abrirModalVenda(d);
     });
-
-    // Edição via Estratégia de Estorno NÃO-DESTRUTIVA:
-    // apenas CARREGA os dados originais no PDV. O estorno + nova venda ocorrem
-    // atomicamente só ao finalizar. Se o usuário fechar o modal, nada é perdido.
-    $tabelaCorpo.on('click', '.btn-editar', async function () {
-        var d = _dt.row($(this).closest('tr')).data();
-        // Verifica caixa aberto antes de iniciar a edição (a finalização mexe no caixa)
-        var checkCaixa = await ctrl.checkCaixaAberto();
-        if (!checkCaixa.caixaAberto) { modalCaixaFechadoObj.show(); return; }
-
-        var res = await ctrl.editarVenda(d.idVenda);
-        if (!res.ok) {
-            validador.mostrarAlerta(res.erro || 'Erro ao carregar a venda.', 'erro');
-            return;
-        }
-
-        // Pré-preenche a UI do PDV com os dados originais
-        _preencherPdvParaEdicao(res, d.idVenda);
-
-        modalPdvObj.show();
-        validador.mostrarAlerta(
-            'Editando venda #' + d.idVenda + '. Altere o que desejar e finalize.', 'info'
-        );
-    });
-
-    // Preenche todos os campos visuais do PDV com os dados carregados para edição
-    function _preencherPdvParaEdicao(res, idVenda) {
-        var par = res.paroquiano;
-
-        // Título do PDV em modo edição
-        $('#pdv-titulo').html('<i class="bi bi-pencil-square me-2"></i>Editar Venda #' + idVenda);
-        $pdvBtnFinalizar.html('<i class="bi bi-check2-circle me-1"></i>Salvar Alterações');
-
-        // Bloco do paroquiano
-        if (par) {
-            var cpfFmt = String(par.cpf || '').replace(/\D/g, '')
-                .replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-            $pdvCpf.val(cpfFmt).removeClass('is-invalid').addClass('is-valid').prop('disabled', true);
-            $pdvParNome.text(par.nome);
-            $pdvParSaldo.text('R$ ' + _moeda(par.saldoCredito));
-            $pdvBlocoPar.show();
-            $('#pdv-cpf-cadastrar').hide();
-        }
-
-        // Crédito aplicado
-        $pdvInputCred.val((res.venda.credUtilizado || 0).toFixed(2));
-
-        // Tabelas
-        _renderizarItensPdv();
-        _renderizarPagamentosPdv();
-        _atualizarResumoPdv();
-        _atualizarGuardiao();
-    }
 
     // Exclusão: abre modal de confirmação
     $tabelaCorpo.on('click', '.btn-excluir-venda', function () {
@@ -463,11 +407,7 @@
         ctrl.resetar();
         _produtoSelecionado = null;
 
-        // Restaura o PDV ao modo "Nova Venda" (caso viesse de uma edição)
-        $('#pdv-titulo').html('<i class="bi bi-cart3 me-2"></i>Nova Venda — PDV');
-        $pdvBtnFinalizar.html('<i class="bi bi-check2-circle me-1"></i>Finalizar Venda');
-
-        $pdvCpf.val('').prop('disabled', false).removeClass('is-invalid is-valid');
+        $pdvCpf.val('').removeClass('is-invalid is-valid');
         $pdvBlocoPar.hide();
         $('#pdv-cpf-cadastrar').hide();
 

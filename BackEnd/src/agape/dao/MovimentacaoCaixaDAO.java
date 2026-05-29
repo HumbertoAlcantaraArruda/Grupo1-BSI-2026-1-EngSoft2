@@ -3,8 +3,6 @@ package agape.dao;
 import agape.model.MovimentacaoCaixa;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MovimentacaoCaixaDAO {
 
@@ -48,33 +46,5 @@ public class MovimentacaoCaixaDAO {
             stmt.setString(1, "Venda #" + idVenda + " |%");
             stmt.executeUpdate();
         }
-    }
-
-    /**
-     * Lista as movimentações de uma venda (uma por forma de pagamento).
-     * Usado para reconstruir os pagamentos ao carregar a venda para edição.
-     * O motivo segue o padrão: "Venda #X | Forma: Y | 3x" ou "| À vista".
-     */
-    public List<MovimentacaoCaixa> listarPorVenda(Connection conn, int idVenda) throws Exception {
-        String sql =
-            "SELECT * FROM MovimentacaoCaixa WHERE motivo LIKE ? ORDER BY idMov";
-        List<MovimentacaoCaixa> lista = new ArrayList<>();
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, "Venda #" + idVenda + " |%");
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    MovimentacaoCaixa m = new MovimentacaoCaixa();
-                    m.setIdMov(rs.getInt("idMov"));
-                    m.setIdCaixa(rs.getInt("idCaixa"));
-                    m.setIdUsuario(rs.getInt("Usuario_idUsuario"));
-                    m.setValor(rs.getFloat("valor"));
-                    m.setMotivo(rs.getString("motivo"));
-                    Timestamp dt = rs.getTimestamp("dataHora");
-                    if (dt != null) m.setDataHora(dt.toLocalDateTime());
-                    lista.add(m);
-                }
-            }
-        }
-        return lista;
     }
 }
