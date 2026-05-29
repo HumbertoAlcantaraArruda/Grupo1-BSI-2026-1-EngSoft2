@@ -139,10 +139,22 @@
             $('#sel-evento').append('<option value="">Selecione o evento...</option>');
             resultado.dados.forEach(function (ev) {
                 _eventoCache[ev.idEvento] = ev;
-                var vagas   = ev.vagasDisp != null ? ev.vagasDisp : '?';
-                var sufixo  = ev.vagasDisp === 0 ? ' [Lista de espera]' : ' [' + vagas + ' vaga(s)]';
+
+                // Fora do prazo de inscrição → opção desabilitada (espelha a regra do backend)
+                var foraPrazo = _prazoEncerrado(ev) || _prazoNaoAberto(ev);
+                var sufixo;
+                if (_prazoEncerrado(ev)) {
+                    sufixo = ' [Inscrições encerradas]';
+                } else if (_prazoNaoAberto(ev)) {
+                    sufixo = ' [Inscrições ainda não abertas]';
+                } else {
+                    var vagas = ev.vagasDisp != null ? ev.vagasDisp : '?';
+                    sufixo = ev.vagasDisp === 0 ? ' [Lista de espera]' : ' [' + vagas + ' vaga(s)]';
+                }
+
                 $('#sel-evento').append(
-                    '<option value="' + ev.idEvento + '">' + _esc(ev.nome) + sufixo + '</option>'
+                    '<option value="' + ev.idEvento + '"' + (foraPrazo ? ' disabled' : '') + '>' +
+                    _esc(ev.nome) + sufixo + '</option>'
                 );
             });
             $('#sel-evento').trigger('change');
@@ -162,6 +174,20 @@
 
             var ev = _eventoCache[idEv];
             if (!ev) return;
+
+            // Guarda de prazo — bloqueia confirmação fora do período de inscrição
+            if (_prazoEncerrado(ev) || _prazoNaoAberto(ev)) {
+                _idEvento = null;
+                _desativarStep(3);
+                $('#card-evento-detalhes').addClass('d-none');
+                $('#btn-confirmar').prop('disabled', true);
+                validador.mostrarAlerta(
+                    _prazoEncerrado(ev)
+                        ? 'O prazo de inscrição para este evento já foi encerrado.'
+                        : 'As inscrições para este evento ainda não foram abertas.',
+                    'erro');
+                return;
+            }
 
             // Imagem do evento (fallback para imagem padrão se não existir)
             var imgSrc = ev.imagemEvento
@@ -287,6 +313,24 @@
         var pad = function (n) { return String(n).padStart(2, '0'); };
         return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() +
                ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function _parseData(iso) {
+        if (!iso) return null;
+        var d = new Date(iso.replace('T', ' ').replace(/-/g, '/'));
+        return isNaN(d) ? null : d;
+    }
+
+    // Prazo de inscrição encerrado (NOW > dataFim) — espelha Evento.validarDisponibilidade()
+    function _prazoEncerrado(ev) {
+        var fim = _parseData(ev && ev.dataFim);
+        return fim != null && new Date() > fim;
+    }
+
+    // Prazo de inscrição ainda não aberto (NOW < dataInicio)
+    function _prazoNaoAberto(ev) {
+        var inicio = _parseData(ev && ev.dataInicio);
+        return inicio != null && new Date() < inicio;
     }
 
     $(inicializar);

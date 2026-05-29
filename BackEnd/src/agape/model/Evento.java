@@ -150,6 +150,17 @@ public class Evento {
         List<String> erros = new ArrayList<>();
         if (idEventoStatus == null || idEventoStatus != 1)
             erros.add("Evento não está ativo para inscrições.");
+
+        LocalDateTime agora = LocalDateTime.now();
+
+        // Prazo de inscrição ainda não aberto.
+        if (dataInicio != null && agora.isBefore(dataInicio))
+            erros.add("As inscrições para este evento ainda não foram abertas.");
+
+        // Prazo de inscrição já encerrado.
+        if (dataFim != null && agora.isAfter(dataFim))
+            erros.add("O prazo de inscrição para este evento já foi encerrado.");
+
         return erros;
     }
 
