@@ -11,8 +11,8 @@ import java.nio.charset.StandardCharsets;
 
 import agape.model.Compra;
 import agape.model.ItemCompra;
+import agape.model.Produto;
 import agape.util.ResponseObject;
-import agape.util.TradutorErro;
 
 public class CCompra implements HttpHandler {
 
@@ -35,7 +35,7 @@ public class CCompra implements HttpHandler {
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
         exchange.getResponseBody().write(bytes);
@@ -90,11 +90,33 @@ public class CCompra implements HttpHandler {
                 int idUsuario = parseSafeInt(extrairParam(exchange, body, "idUsuario"));
                 float valorTotal = parseSafeFloat(extrairParam(exchange, body, "valorTotal"));
 
-                String[] idsProdutosStr = extrairParam(exchange, body, "idProdutos").split(",");
-                String[] quantidadesStr = extrairParam(exchange, body, "quantidades").split(",");
-                String[] valoresUnitariosStr = extrairParam(exchange, body, "valoresUnitarios").split(",");
+                String idProdsRaw = extrairParam(exchange, body, "idProdutos");
+                String qtsRaw = extrairParam(exchange, body, "quantidades");
+                String valsRaw = extrairParam(exchange, body, "valoresUnitarios");
+
+                if (idProdsRaw.trim().isEmpty() || qtsRaw.trim().isEmpty() || valsRaw.trim().isEmpty()) {
+                    ResponseObject error = new ResponseObject();
+                    error.setStatus(ResponseObject.STATUS_FAIL);
+                    error.setCode(ResponseObject.CODE_BAD_REQUEST);
+                    error.addMessage("Parâmetros de produtos, quantidades ou valores unitários não podem estar vazios.");
+                    enviarResposta(exchange, error);
+                    return;
+                }
+
+                String[] idsProdutosStr = idProdsRaw.split(",");
+                String[] quantidadesStr = qtsRaw.split(",");
+                String[] valoresUnitariosStr = valsRaw.split(",");
 
                 int n = idsProdutosStr.length;
+                if (quantidadesStr.length != n || valoresUnitariosStr.length != n) {
+                    ResponseObject error = new ResponseObject();
+                    error.setStatus(ResponseObject.STATUS_FAIL);
+                    error.setCode(ResponseObject.CODE_BAD_REQUEST);
+                    error.addMessage("Quantidade de itens inconsistente entre produtos, quantidades e valores unitários.");
+                    enviarResposta(exchange, error);
+                    return;
+                }
+
                 int[] idsProdutos = new int[n];
                 int[] quantidades = new int[n];
                 float[] valoresUnitarios = new float[n];
@@ -112,13 +134,68 @@ public class CCompra implements HttpHandler {
             ResponseObject error = new ResponseObject();
             error.setStatus(ResponseObject.STATUS_FAIL);
             error.setCode(ResponseObject.CODE_ERROR);
-            error.addMessage(TradutorErro.traduzir(e));
+            error.addMessage("Erro inesperado: " + e.getMessage());
             enviarResposta(exchange, error);
         }
     }
 
     public ResponseObject efetuarCompraDeProdutos(Connection conn, int idFornecedor, int idUsuario, float valorTotal, int[] idsProdutos, int[] quantidades, float[] valoresUnitarios) {
         ResponseObject response = new ResponseObject();
+        
+        // ── Validações de consistência e negócio ──
+        if (idFornecedor <= 0) {
+            response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_BAD_REQUEST);
+            response.addMessage("Fornecedor inválido.");
+            return response;
+        }
+        if (idUsuario <= 0) {
+            response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_BAD_REQUEST);
+            response.addMessage("Usuário inválido ou não autenticado.");
+            return response;
+        }
+        if (idsProdutos == null || idsProdutos.length == 0 || (idsProdutos.length == 1 && idsProdutos[0] <= 0)) {
+            response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_BAD_REQUEST);
+            response.addMessage("A compra deve conter pelo menos um produto.");
+            return response;
+        }
+
+        // Validar individualmente cada item antes de iniciar a transação
+        float totalCalculado = 0;
+        boolean temProdutoValido = false;
+        for (int i = 0; i < idsProdutos.length; i++) {
+            if (idsProdutos[i] > 0) {
+                temProdutoValido = true;
+                if (quantidades[i] <= 0) {
+                    response.setStatus(ResponseObject.STATUS_FAIL);
+                    response.setCode(ResponseObject.CODE_BAD_REQUEST);
+                    response.addMessage("A quantidade do produto deve ser maior que zero.");
+                    return response;
+                }
+                if (valoresUnitarios[i] <= 0) {
+                    response.setStatus(ResponseObject.STATUS_FAIL);
+                    response.setCode(ResponseObject.CODE_BAD_REQUEST);
+                    response.addMessage("O valor unitário do produto deve ser maior que zero.");
+                    return response;
+                }
+                totalCalculado += quantidades[i] * valoresUnitarios[i];
+            }
+        }
+
+        if (!temProdutoValido) {
+            response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_BAD_REQUEST);
+            response.addMessage("Nenhum produto válido foi informado.");
+            return response;
+        }
+
+        // Proteção contra valores inconsistentes
+        if (Math.abs(totalCalculado - valorTotal) > 0.05f) {
+            valorTotal = totalCalculado; // Sincroniza com o valor real calculado dos itens
+        }
+
         try {
             conn.setAutoCommit(false);
 
@@ -138,6 +215,13 @@ public class CCompra implements HttpHandler {
                     item.setQuantidade(quantidades[i]);
                     item.setValorUnitario(valoresUnitarios[i]);
                     item.inserir(conn);
+
+                    // RF_F9 - Atualizar Estoque (Oculta)
+                    Produto prod = new Produto().buscarPorId(conn, idsProdutos[i]);
+                    if (prod != null) {
+                        prod.setQtdeAtual(prod.getQtdeAtual() + quantidades[i]);
+                        prod.atualizar(conn);
+                    }
                 }
             }
 
@@ -149,11 +233,10 @@ public class CCompra implements HttpHandler {
             try { if (conn != null) conn.rollback(); } catch (SQLException se) {}
             response.setStatus(ResponseObject.STATUS_FAIL);
             response.setCode(ResponseObject.CODE_ERROR);
-            response.addMessage(TradutorErro.traduzir(e));
+            response.addMessage("Erro ao processar compra: " + e.getMessage());
         } finally {
             try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException se) {}
         }
         return response;
     }
 }
-

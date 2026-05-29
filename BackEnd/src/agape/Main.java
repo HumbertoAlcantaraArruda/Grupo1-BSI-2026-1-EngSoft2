@@ -18,11 +18,11 @@ public class Main {
 
         // Públicas (acessadas sem token)
         server.createContext("/login",       CUsuario.getInstancia());
+        server.createContext("/trocarSenha", CUsuario.getInstancia());
 
         server.createContext("/caixa",             new AuthFilter(CCaixa.getInstancia(), "ADM", "COLAB"));
-
+        //server.createContext("/comprar",           new AuthFilter(CCompra.getInstancia(),           "ADM", "COLAB"));
         // Rotas operacionais — ADM e COLAB
-        server.createContext("/trocarSenha", CUsuario.getInstancia());
         server.createContext("/parametrizacao",    new AuthFilter(CParametrizacao.getInstancia(),   "ADM", "COLAB"));
         server.createContext("/formaPagamento",    new AuthFilter(CFormaPagamento.getInstancia(),   "ADM", "COLAB"));
         server.createContext("/categoriaProduto",  new AuthFilter(CCategoriaProduto.getInstancia(), "ADM", "COLAB"));

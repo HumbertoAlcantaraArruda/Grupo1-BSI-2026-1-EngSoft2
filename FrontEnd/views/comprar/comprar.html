@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGAPE — Efetuar Compra</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="../assets/libs/bootstrap/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="../assets/libs/icons/bootstrap-icons.min.css">
+    <!-- Design System AGAPE -->
+    <link rel="stylesheet" href="../assets/css/agape.css">
+    <style>
+        body { display: none; }
+        .checkout-resumo {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+        .item-tabela-vazio {
+            color: #adb5bd;
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 2.5rem 1rem !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar — preenchida por Sidebar.js -->
+    <div id="sidebar-wrapper"></div>
+
+    <!-- Conteúdo principal -->
+    <div id="content-wrapper">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <span class="topbar-titulo">AGAPE</span>
+            <span class="topbar-subtitulo ms-2">/ Efetuar Compra</span>
+        </header>
+
+        <!-- Área de conteúdo -->
+        <div class="area-conteudo">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="titulo-pagina">
+                    <i class="bi bi-cart-plus me-2"></i>Efetuar Compra de Produtos
+                </h1>
+            </div>
+
+            <div class="row g-4">
+                
+                <!-- Coluna da Esquerda: Lançamento -->
+                <div class="col-lg-5">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-truck me-2 text-primary"></i>1. Selecionar Fornecedor
+                            </h5>
+                            <form id="form-fornecedor" novalidate>
+                                <div class="mb-3">
+                                    <label for="select-fornecedor" class="form-label campo-obrigatorio">Fornecedor</label>
+                                    <select class="form-select" id="select-fornecedor" required>
+                                        <option value="">Selecione um fornecedor...</option>
+                                    </select>
+                                    <div class="invalid-feedback">Por favor, selecione um fornecedor.</div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-plus-circle me-2 text-primary"></i>2. Adicionar Item
+                            </h5>
+                            <form id="form-item" novalidate>
+                                <div class="mb-3">
+                                    <label for="select-produto" class="form-label campo-obrigatorio">Produto</label>
+                                    <select class="form-select" id="select-produto" required>
+                                        <option value="">Selecione um produto...</option>
+                                    </select>
+                                    <div class="invalid-feedback">Por favor, selecione um produto.</div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <label for="item-quantidade" class="form-label campo-obrigatorio">Quantidade</label>
+                                        <input type="number" class="form-control" id="item-quantidade" min="1" value="1" required>
+                                        <div class="invalid-feedback">Quantidade mínima é 1.</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="item-valor" class="form-label campo-obrigatorio">Valor Unitário (R$)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control" id="item-valor" placeholder="0,00" required>
+                                            <div class="invalid-feedback">Valor inválido.</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="btn btn-outline-primary w-100" id="btn-adicionar-item">
+                                    <i class="bi bi-plus-lg me-1"></i>Adicionar à Compra
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna da Direita: Carrinho e Fechamento -->
+                <div class="col-lg-7">
+                    <div class="card h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column h-100">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-list-check me-2 text-primary"></i>Itens da Compra
+                            </h5>
+                            
+                            <!-- Tabela de Itens -->
+                            <div class="table-responsive flex-grow-1 mb-4" style="min-height: 200px;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="text-center table-light">
+                                        <tr>
+                                            <th class="text-start">Produto</th>
+                                            <th style="width: 100px;">Qtd</th>
+                                            <th style="width: 130px;">Unitário</th>
+                                            <th style="width: 130px;">Total</th>
+                                            <th style="width: 60px;">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-itens-corpo">
+                                        <tr>
+                                            <td colspan="5" class="item-tabela-vazio">
+                                                <i class="bi bi-cart3 fs-2 d-block mb-2 text-muted"></i>
+                                                Nenhum produto adicionado ainda.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Resumo e Fechamento -->
+                            <div class="checkout-resumo mt-auto">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted fw-semibold">Total de Itens:</span>
+                                    <span class="fs-5 fw-bold text-dark" id="resumo-total-itens">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <span class="text-muted fw-semibold">Valor Total da Compra:</span>
+                                    <span class="fs-3 fw-extrabold text-primary">R$ <span id="resumo-total-valor">0,00</span></span>
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col-sm-6">
+                                        <button class="btn btn-outline-secondary w-100" id="btn-cancelar-compra" type="button">
+                                            <i class="bi bi-x-circle me-1"></i>Limpar Tudo
+                                        </button>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <button class="btn btn-success w-100" id="btn-finalizar-compra" disabled type="button">
+                                            <i class="bi bi-check-circle me-1"></i>Finalizar Compra
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div><!-- /area-conteudo -->
+    </div><!-- /content-wrapper -->
+</div><!-- /wrapper -->
+
+<!-- ================================================================ -->
+<!-- Modal: Confirmar Limpar Tudo                                     -->
+<!-- ================================================================ -->
+<div class="modal fade" id="modal-confirmar-limpar" tabindex="-1"
+     aria-labelledby="modal-limpar-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-limpar-titulo">Confirmar Limpeza</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Deseja realmente limpar todos os itens e recomeçar a compra?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm"
+                        id="btn-confirmar-limpar-ok">
+                    <i class="bi bi-trash me-1"></i>Limpar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- Modal: Confirmar Remover Item                                    -->
+<!-- ================================================================ -->
+<div class="modal fade" id="modal-confirmar-remover-item" tabindex="-1"
+     aria-labelledby="modal-remover-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-remover-titulo">Confirmar Remoção</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Deseja realmente remover o produto do carrinho?</p>
+                <p class="fw-semibold mb-0" id="remover-item-nome"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm"
+                        id="btn-confirmar-remover-item-ok">
+                    <i class="bi bi-trash me-1"></i>Remover
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- Modal: Item Duplicado / Atualizado                               -->
+<!-- ================================================================ -->
+<div class="modal fade" id="modal-item-atualizado" tabindex="-1"
+     aria-labelledby="modal-atualizado-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modal-atualizado-titulo">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Item no Carrinho
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Fechar" style="filter: none;"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">O produto já estava no carrinho:</p>
+                <p class="fw-bold mb-2" id="alerta-produto-nome"></p>
+                <p class="mb-0 text-muted small">
+                    A quantidade foi atualizada para <span class="fw-bold text-dark" id="alerta-produto-qtd">0</span> unidades no total.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/libs/jquery/jquery.min.js"></script>
+<script src="../assets/libs/jquery-mask/jquery.mask.min.js"></script>
+<script src="../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script src="../utils/Auth.js"></script>
+<script src="../utils/HttpClient.js"></script>
+<script src="../utils/Mascaras.js"></script>
+<script src="../utils/Validador.js"></script>
+<script src="../utils/Sidebar.js"></script>
+
+<script src="../services/FornecedorService.js"></script>
+<script src="../services/ProdutoService.js"></script>
+<script src="../services/CompraService.js"></script>
+
+<script src="../controllers/CompraController.js"></script>
+
+<script src="./comprar.js"></script>
+
+</body>
+</html>
