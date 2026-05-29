@@ -21,8 +21,8 @@ window.AGAPE.Services.CaixaService = (function () {
         return await this._http.post('/caixa/abrir', { valorInicial: valorInicial });
     };
 
-    /** RF_F5 — Registra um Reforço ou Sangria no caixa aberto.
-     *  @param {string} tipo   'REFORCO' | 'SANGRIA'
+    /** RF_F5 — Registra um Suprimento ou Sangria no caixa aberto.
+     *  @param {string} tipo   'SUPRIMENTO' | 'SANGRIA'
      *  @param {number} valor  Valor positivo
      *  @param {string} motivo Descrição da movimentação
      */

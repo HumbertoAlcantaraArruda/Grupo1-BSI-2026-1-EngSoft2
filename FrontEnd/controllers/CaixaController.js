@@ -46,14 +46,14 @@ window.AGAPE.Controllers.CaixaController = (function () {
         return resultado;
     };
 
-    // ── RF_F5 – Atualizar Caixa (Reforço / Sangria) ──────────────────────────
+    // ── RF_F5 – Atualizar Caixa (Suprimento / Sangria) ───────────────────────
 
     CaixaController.prototype.atualizar = async function (tipo, valorStr, motivo) {
         tipo   = (tipo || '').trim().toUpperCase();
         motivo = (motivo || '').trim();
 
-        if (tipo !== 'REFORCO' && tipo !== 'SANGRIA') {
-            return { status: 'error', erro: 'Selecione o tipo: Reforço ou Sangria.' };
+        if (tipo !== 'SUPRIMENTO' && tipo !== 'SANGRIA') {
+            return { status: 'error', erro: 'Selecione o tipo: Suprimento ou Sangria.' };
         }
 
         var valor = _parseValor(valorStr);

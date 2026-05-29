@@ -23,9 +23,21 @@ window.AGAPE.Utils.Sidebar = (function ($) {
             niveis: ['ADM', 'COLAB']
         },
         {
+            rotulo: 'Caixa',
+            href:   '../caixa/caixa.html',
+            icone:  'bi-cash-stack',
+            niveis: ['ADM', 'COLAB']
+        },
+        {
             rotulo: 'Realizar Inscrição',
             href:   '../inscricoes/inscricao.html',
             icone:  'bi-person-check',
+            niveis: ['ADM', 'COLAB']
+        },
+        {
+            rotulo: 'Comprar',
+            href:   '../comprar/comprar.html',
+            icone:  'bi-bag-fill',
             niveis: ['ADM', 'COLAB']
         },
         // Grupo "Cadastros" com expansão inteligente por chevron (RF_F1 UX)
