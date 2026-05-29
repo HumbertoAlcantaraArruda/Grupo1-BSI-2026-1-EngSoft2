@@ -56,7 +56,7 @@ public class CVenda implements HttpHandler {
             String requesterEmail  = (String) exchange.getAttribute("usuarioEmail");
 
             ResponseObject response = switch (method.toUpperCase()) {
-                case "GET"    -> handleGet(conn, path, query);
+                case "GET"    -> handleGet(conn, path, query, requesterEmail);
                 case "POST"   -> handlePost(conn, path, body, requesterEmail);
                 case "DELETE" -> handleDelete(conn, path, query);
                 default       -> naoEncontrado();
@@ -73,11 +73,11 @@ public class CVenda implements HttpHandler {
         }
     }
 
-    private ResponseObject handleGet(Connection conn, String path, String query) {
+    private ResponseObject handleGet(Connection conn, String path, String query, String requesterEmail) {
         if (path.equals("/paroquiano")) return buscarParoquiano(conn, param(query, "cpf"));
         if (path.equals("/venda")) {
-            // checkCaixa=1 — verifica se há caixa aberto antes de iniciar o PDV
-            if ("1".equals(param(query, "checkCaixa"))) return verificarCaixaAberto(conn);
+            // checkCaixa=1 — verifica se o usuário logado tem caixa aberto antes do PDV
+            if ("1".equals(param(query, "checkCaixa"))) return verificarCaixaAberto(conn, requesterEmail);
             String idVendaStr = param(query, "idVenda");
             if (!idVendaStr.isEmpty()) return listarItens(conn, parseSafeInt(idVendaStr));
             return listar(conn,
@@ -203,11 +203,12 @@ public class CVenda implements HttpHandler {
             }
 
             // ── Validação de Caixa (regra de segurança server-side) ───────────
+            // Cada operador responde pelo próprio caixa: valida o caixa DO COLABORADOR.
             // Garante a regra mesmo que o bloqueio do frontend seja burlado/cacheado.
-            if (new CaixaDAO().buscarAberto(conn) == null) {
+            if (new CaixaDAO().buscarAbertoPorUsuario(conn, colab.getIdUsuario()) == null) {
                 conn.rollback();
                 return falha(response, ResponseObject.CODE_BAD_REQUEST,
-                        "Nenhum caixa aberto. Abra o caixa antes de registrar vendas.");
+                        "Você não possui um caixa aberto. Abra o seu caixa antes de registrar vendas.");
             }
 
             // ── Parsing dos parâmetros da venda ───────────────────────────────
@@ -322,17 +323,24 @@ public class CVenda implements HttpHandler {
     // ── Validação de Caixa ────────────────────────────────────────────────────
 
     /**
-     * verificarCaixaAberto — RN de segurança: bloqueia o PDV se não há caixa aberto.
-     * Retorna { caixaAberto: true/false } para o frontend decidir o fluxo.
+     * verificarCaixaAberto — RN de segurança: bloqueia o PDV se o USUÁRIO LOGADO
+     * não tiver um caixa aberto sob sua responsabilidade.
+     *
+     * Cada ADM/COLAB abre e responde pelo próprio caixa, portanto a verificação
+     * é feita por usuário (buscarAbertoPorUsuario), não por "qualquer caixa aberto".
+     * Retorna o caixa do operador (ou null) para o frontend decidir o fluxo.
      */
-    public ResponseObject verificarCaixaAberto(Connection conn) {
+    public ResponseObject verificarCaixaAberto(Connection conn, String requesterEmail) {
         ResponseObject response = new ResponseObject();
         try {
-            Caixa caixa = new CaixaDAO().buscarAberto(conn);
+            Usuario colab = new Usuario().buscarPorEmail(conn, requesterEmail);
+            if (colab == null)
+                return falha(response, ResponseObject.CODE_NOT_FOUND, "Colaborador não encontrado.");
+
+            Caixa caixa = new CaixaDAO().buscarAbertoPorUsuario(conn, colab.getIdUsuario());
             response.setStatus(ResponseObject.STATUS_OK);
             response.setCode(ResponseObject.CODE_OK);
-            // Retorna o próprio caixa (se aberto) ou null para o frontend interpretar
-            response.setResult(caixa);
+            response.setResult(caixa);   // caixa do operador (ou null se não houver)
         } catch (Exception e) {
             erroInterno(response);
         }

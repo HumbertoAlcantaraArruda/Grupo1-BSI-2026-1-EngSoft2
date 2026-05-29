@@ -88,7 +88,19 @@
                 _mostrarEstado('aberto');
             } else {
                 _mostrarEstado('fechado');
+                // Veio da tela de Vendas (?abrir=1): abre direto o modal de abertura
+                _abrirAutomaticamenteSeSolicitado();
             }
+        }
+
+        // Se a URL trouxer ?abrir=1 (redirecionamento da tela de Vendas com caixa
+        // fechado), dispara o modal de abertura automaticamente — uma única vez.
+        function _abrirAutomaticamenteSeSolicitado() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('abrir') !== '1') return;
+            // Limpa o parâmetro da URL para não reabrir em recarregamentos
+            history.replaceState(null, '', window.location.pathname);
+            setTimeout(function () { $btnAbrirCaixa.trigger('click'); }, 300);
         }
 
         function _mostrarEstado(estado) {

@@ -109,8 +109,9 @@ public class VendaFacade {
         }
 
         // ── 4. Caixa + MovimentacaoCaixa (RF_F5) ─────────────────────────────
-        // Information Expert — CaixaDAO é expert em buscar o caixa aberto
-        Caixa caixa = caixaDAO.buscarAberto(conn);
+        // Cada operador responde pelo próprio caixa: o dinheiro da venda entra
+        // no caixa ABERTO DO COLABORADOR que está realizando a venda.
+        Caixa caixa = caixaDAO.buscarAbertoPorUsuario(conn, colaborador.getIdUsuario());
         if (caixa != null) {
             // Apenas pagamentos à vista (numParcelas=1) entram no saldo imediatamente
             float totalAVista = 0;
@@ -196,7 +197,8 @@ public class VendaFacade {
         // ── 2-3. Reverter saldo do caixa + excluir movimentações ─────────────
         // Somente pagamentos "à vista" foram somados ao valorFinal do caixa;
         // os parcelados não entram no saldo imediato — só em ContasReceber.
-        Caixa caixa = caixaDAO.buscarAberto(conn);
+        // A reversão incide no caixa aberto DO COLABORADOR que registrou a venda.
+        Caixa caixa = caixaDAO.buscarAbertoPorUsuario(conn, venda.getIdColaborador());
         float totalAVista = movDAO.somarAVistaPorVenda(conn, idVenda);
         if (caixa != null && totalAVista > 0) {
             caixaDAO.adicionarAoValorFinal(conn, caixa.getIdCaixa(), -totalAVista);
