@@ -218,6 +218,12 @@
                                 <input type="text" class="form-control form-control-sm" id="pdv-cpf"
                                        placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
                                 <div class="invalid-feedback" id="pdv-cpf-feedback">Paroquiano não encontrado.</div>
+                                <!-- Botão de cadastro exibido somente quando CPF não é encontrado -->
+                                <div id="pdv-cpf-cadastrar" style="display:none;" class="mt-1">
+                                    <button type="button" class="btn btn-sm btn-outline-primary w-100" id="pdv-btn-cadastrar-par">
+                                        <i class="bi bi-person-plus me-1"></i>Cadastrar Paroquiano
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-7" id="pdv-bloco-par" style="display:none;">
                                 <div class="alert alert-success py-1 px-2 mb-0 small">
@@ -443,22 +449,83 @@
     </div>
 </div>
 
+<!-- Modal: Caixa Fechado — bloqueia PDV quando não há caixa aberto -->
+<div class="modal fade" id="modal-caixa-fechado" tabindex="-1"
+     aria-labelledby="caixa-fechado-titulo" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title" id="caixa-fechado-titulo">
+                    <i class="bi bi-cash-stack text-warning me-2"></i>Caixa não aberto
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-lock-fill" style="font-size:2.5rem;color:#f59e0b;"></i>
+                <p class="mt-3 mb-1 fw-semibold">Nenhum caixa aberto encontrado.</p>
+                <p class="text-muted small">Abra o caixa antes de iniciar uma venda.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Fechar
+                </button>
+                <a href="../caixa/caixa.html" class="btn btn-warning">
+                    <i class="bi bi-cash-stack me-1"></i>Ir para o Caixa
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmação de Exclusão de Venda -->
+<div class="modal fade" id="modal-confirmar-exclusao" tabindex="-1"
+     aria-labelledby="excl-titulo" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title" id="excl-titulo">
+                    <i class="bi bi-trash text-danger me-2"></i>Excluir Venda
+                </h5>
+            </div>
+            <div class="modal-body text-center py-3">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size:2.5rem;color:#dc3545;"></i>
+                <p class="mt-3 mb-1 fw-semibold" id="excl-mensagem">
+                    Deseja excluir esta venda?
+                </p>
+                <p class="text-muted small">
+                    O estoque e o caixa serão revertidos automaticamente.<br>
+                    <strong>Esta ação não pode ser desfeita.</strong>
+                </p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="excl-btn-confirmar">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Scripts -->
 <script src="../../assets/libs/jquery/jquery-4.0.0.min.js"></script>
 <script src="../../assets/libs/jquery-mask/jquery.mask.min.js"></script>
 <script src="../../assets/libs/datatables/datatables.min.js"></script>
 <script src="../../assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-<script src="../../utils/Auth.js?v=3"></script>
-<script src="../../utils/HttpClient.js?v=3"></script>
-<script src="../../utils/Mascaras.js?v=3"></script>
-<script src="../../utils/Validador.js?v=3"></script>
-<script src="../../utils/Sidebar.js?v=3"></script>
+<script src="../../utils/Auth.js?v=4"></script>
+<script src="../../utils/HttpClient.js?v=4"></script>
+<script src="../../utils/Mascaras.js?v=4"></script>
+<script src="../../utils/Validador.js?v=4"></script>
+<script src="../../utils/Sidebar.js?v=4"></script>
 
-<script src="../../services/VendaService.js?v=3"></script>
-<script src="../../controllers/VendaController.js?v=3"></script>
+<script src="../../services/VendaService.js?v=4"></script>
+<script src="../../controllers/VendaController.js?v=4"></script>
 
-<script src="./venda.js?v=3"></script>
+<script src="./venda.js?v=4"></script>
 
 </body>
 </html>

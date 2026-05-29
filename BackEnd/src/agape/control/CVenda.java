@@ -11,6 +11,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.util.List;
+import agape.dao.CaixaDAO;
 import agape.facade.VendaFacade;
 import agape.model.*;
 import agape.util.ResponseObject;
@@ -55,9 +56,10 @@ public class CVenda implements HttpHandler {
             String requesterEmail  = (String) exchange.getAttribute("usuarioEmail");
 
             ResponseObject response = switch (method.toUpperCase()) {
-                case "GET"  -> handleGet(conn, path, query);
-                case "POST" -> handlePost(conn, path, body, requesterEmail);
-                default     -> naoEncontrado();
+                case "GET"    -> handleGet(conn, path, query);
+                case "POST"   -> handlePost(conn, path, body, requesterEmail);
+                case "DELETE" -> handleDelete(conn, path, query);
+                default       -> naoEncontrado();
             };
 
             enviarResposta(exchange, response);
@@ -74,6 +76,12 @@ public class CVenda implements HttpHandler {
     private ResponseObject handleGet(Connection conn, String path, String query) {
         if (path.equals("/paroquiano")) return buscarParoquiano(conn, param(query, "cpf"));
         if (path.equals("/venda")) {
+            // checkCaixa=1 — verifica se há caixa aberto antes de iniciar o PDV
+            if ("1".equals(param(query, "checkCaixa"))) return verificarCaixaAberto(conn);
+            // carregarEdicao=X — devolve os dados completos da venda para o PDV
+            // SEM nenhuma alteração no banco (estorno só ocorre ao finalizar).
+            String editarStr = param(query, "carregarEdicao");
+            if (!editarStr.isEmpty()) return carregarVendaParaEdicao(conn, parseSafeInt(editarStr));
             String idVendaStr = param(query, "idVenda");
             if (!idVendaStr.isEmpty()) return listarItens(conn, parseSafeInt(idVendaStr));
             return listar(conn,
@@ -81,6 +89,20 @@ public class CVenda implements HttpHandler {
                     param(query, "nomeColaborador"), param(query, "nomeParoquiano"),
                     param(query, "idFormaPag"), param(query, "usouCredito"));
         }
+        return naoEncontrado();
+    }
+
+    /**
+     * DELETE /venda?idVenda=X — Exclusão transacional com rollback de estoque e caixa.
+     *
+     * Por que transacional?
+     *   A exclusão isolada da linha Venda deixaria o estoque inflado e o
+     *   saldo do caixa incorreto. A estratégia de estorno garante que todas
+     *   as consequências da venda sejam desfeitas atomicamente — ou tudo
+     *   reverte, ou nada muda.
+     */
+    private ResponseObject handleDelete(Connection conn, String path, String query) {
+        if (path.equals("/venda")) return deletarVenda(conn, parseSafeInt(param(query, "idVenda")));
         return naoEncontrado();
     }
 
@@ -184,6 +206,14 @@ public class CVenda implements HttpHandler {
                 return falha(response, ResponseObject.CODE_NOT_FOUND, "Colaborador não encontrado.");
             }
 
+            // ── Validação de Caixa (regra de segurança server-side) ───────────
+            // Garante a regra mesmo que o bloqueio do frontend seja burlado/cacheado.
+            if (new CaixaDAO().buscarAberto(conn) == null) {
+                conn.rollback();
+                return falha(response, ResponseObject.CODE_BAD_REQUEST,
+                        "Nenhum caixa aberto. Abra o caixa antes de registrar vendas.");
+            }
+
             // ── Parsing dos parâmetros da venda ───────────────────────────────
             int   idParoquiano  = parseSafeInt(param(body, "idUsuario"));
             System.out.println("[CVenda] idUsuario (paroquiano) recebido: " + idParoquiano);
@@ -203,7 +233,23 @@ public class CVenda implements HttpHandler {
                 return falha(response, ResponseObject.CODE_BAD_REQUEST, "Nenhum produto informado.");
             }
 
+            // ── Estorno na Edição (Estratégia de Estorno) ─────────────────────
+            // Se a venda veio de uma edição, revertemos a venda ORIGINAL primeiro,
+            // na MESMA transação, ANTES de revalidar estoque e finalizar a nova
+            // versão. Como tudo está na mesma Connection sem commit, a validação
+            // de estoque abaixo já enxerga o estoque restaurado. Se qualquer passo
+            // falhar, o rollback desfaz inclusive o estorno — nada se perde.
+            int estornarId = parseSafeInt(param(body, "estornarVendaId"));
+            if (estornarId > 0) {
+                Venda original = new agape.dao.VendaDAO().buscarPorId(conn, estornarId);
+                if (original != null) {
+                    VendaFacade.getInstance().estornarVenda(conn, estornarId);
+                    new agape.dao.VendaDAO().deletar(conn, estornarId);
+                }
+            }
+
             // ── Paroquiano ────────────────────────────────────────────────────
+            // Carregado APÓS o estorno para refletir o saldo de crédito já restaurado.
             Paroquiano par = new Paroquiano().buscarPorId(conn, idParoquiano);
             if (par == null) {
                 conn.rollback();
@@ -293,6 +339,168 @@ public class CVenda implements HttpHandler {
         return response;
     }
 
+    // ── Validação de Caixa ────────────────────────────────────────────────────
+
+    /**
+     * verificarCaixaAberto — RN de segurança: bloqueia o PDV se não há caixa aberto.
+     * Retorna { caixaAberto: true/false } para o frontend decidir o fluxo.
+     */
+    public ResponseObject verificarCaixaAberto(Connection conn) {
+        ResponseObject response = new ResponseObject();
+        try {
+            Caixa caixa = new CaixaDAO().buscarAberto(conn);
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            // Retorna o próprio caixa (se aberto) ou null para o frontend interpretar
+            response.setResult(caixa);
+        } catch (Exception e) {
+            erroInterno(response);
+        }
+        return response;
+    }
+
+    // ── Exclusão transacional ─────────────────────────────────────────────────
+
+    public ResponseObject deletarVenda(Connection conn, int idVenda) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (idVenda <= 0)
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "idVenda inválido.");
+
+            conn.setAutoCommit(false);
+
+            VendaFacade facade = VendaFacade.getInstance();
+            facade.estornarVenda(conn, idVenda);
+            new agape.dao.VendaDAO().deletar(conn, idVenda);
+
+            conn.commit();
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.addMessage("Venda #" + idVenda + " excluída com sucesso.");
+
+        } catch (Exception e) {
+            try { if (conn != null) conn.rollback(); } catch (SQLException ignored) {}
+            response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_ERROR);
+            response.addMessage(TradutorErro.traduzir(e));
+        } finally {
+            try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException ignored) {}
+        }
+        return response;
+    }
+
+    // ── Estorno para Edição ───────────────────────────────────────────────────
+
+    /**
+     * carregarVendaParaEdicao — SOMENTE LEITURA.
+     *
+     * Retorna os dados completos da venda (venda + paroquiano + itens + pagamentos)
+     * para o PDV pré-popular o formulário. NÃO altera o banco: o estorno só
+     * acontece quando o usuário confirmar a finalização (POST com estornarVendaId).
+     * Assim, se o usuário desistir e fechar o modal, NADA é perdido.
+     *
+     * O saldo de crédito do paroquiano é devolvido somado ao crédito que esta
+     * venda consumiu, refletindo o saldo que estará disponível após o estorno —
+     * permitindo ao usuário reaplicar/alterar o crédito durante a edição.
+     */
+    public ResponseObject carregarVendaParaEdicao(Connection conn, int idVenda) {
+        ResponseObject response = new ResponseObject();
+        try {
+            if (idVenda <= 0)
+                return falha(response, ResponseObject.CODE_BAD_REQUEST, "idVenda inválido.");
+
+            final Venda venda = new agape.dao.VendaDAO().buscarPorId(conn, idVenda);
+            if (venda == null)
+                return falha(response, ResponseObject.CODE_NOT_FOUND, "Venda não encontrada.");
+
+            final List<ItemVenda> itens = new ItemVenda().listarItensPorVenda(conn, idVenda);
+
+            // Paroquiano com saldo "restaurado" (saldo atual + crédito que esta venda usou)
+            final Paroquiano par = new Paroquiano().buscarPorId(conn, venda.getIdUsuario());
+            if (par != null && venda.getCredUtilizado() > 0) {
+                par.setSaldoCredito(par.getSaldoCredito() + venda.getCredUtilizado());
+            }
+
+            // Reconstrói os pagamentos a partir das movimentações de caixa
+            final List<float[]>  pagNum = new java.util.ArrayList<>();   // [idFormaPag, valor, numParcelas]
+            final List<String>   pagDes = new java.util.ArrayList<>();   // descrição da forma
+            var movs = new agape.dao.MovimentacaoCaixaDAO().listarPorVenda(conn, idVenda);
+            for (MovimentacaoCaixa m : movs) {
+                int   idForma  = extrairIdForma(m.getMotivo());
+                int   parcelas = extrairParcelas(m.getMotivo());
+                String desc    = "Forma " + idForma;
+                if (idForma > 0) {
+                    FormaPagamento fp = new FormaPagamento().buscarPorId(conn, idForma);
+                    if (fp != null) desc = fp.getDescricao();
+                }
+                pagNum.add(new float[]{ idForma, m.getValor(), parcelas });
+                pagDes.add(desc);
+            }
+            // Fallback: nenhuma movimentação (venda feita sem caixa) → usa idFormaPag/valorFinal
+            if (pagNum.isEmpty() && venda.getIdFormaPag() > 0) {
+                String desc = "Forma " + venda.getIdFormaPag();
+                FormaPagamento fp = new FormaPagamento().buscarPorId(conn, venda.getIdFormaPag());
+                if (fp != null) desc = fp.getDescricao();
+                pagNum.add(new float[]{ venda.getIdFormaPag(), venda.getValorFinal(), 1 });
+                pagDes.add(desc);
+            }
+
+            response.setStatus(ResponseObject.STATUS_OK);
+            response.setCode(ResponseObject.CODE_OK);
+            response.setResult(new Object() {
+                public String toJson() {
+                    StringBuilder sb = new StringBuilder("{");
+                    sb.append("\"venda\":").append(venda.toJson()).append(",");
+                    sb.append("\"paroquiano\":").append(par != null ? par.toJson() : "null").append(",");
+                    sb.append("\"itens\":[");
+                    for (int i = 0; i < itens.size(); i++) {
+                        if (i > 0) sb.append(",");
+                        sb.append(itens.get(i).toJson());
+                    }
+                    sb.append("],\"pagamentos\":[");
+                    for (int i = 0; i < pagNum.size(); i++) {
+                        if (i > 0) sb.append(",");
+                        float[] p = pagNum.get(i);
+                        sb.append("{\"idFormaPag\":").append((int) p[0])
+                          .append(",\"descricao\":\"").append(pagDes.get(i).replace("\"", "\\\""))
+                          .append("\",\"valor\":").append(p[1])
+                          .append(",\"numeroParcelas\":").append((int) p[2]).append("}");
+                    }
+                    sb.append("]}");
+                    return sb.toString();
+                }
+            });
+
+        } catch (Exception e) {
+            response.setStatus(ResponseObject.STATUS_FAIL);
+            response.setCode(ResponseObject.CODE_ERROR);
+            response.addMessage(TradutorErro.traduzir(e));
+        }
+        return response;
+    }
+
+    /** Extrai o idFormaPag do motivo "Venda #X | Forma: Y | ...". */
+    private int extrairIdForma(String motivo) {
+        if (motivo == null) return 0;
+        int i = motivo.indexOf("Forma: ");
+        if (i < 0) return 0;
+        String resto = motivo.substring(i + "Forma: ".length());
+        int fim = resto.indexOf(" |");
+        if (fim >= 0) resto = resto.substring(0, fim);
+        return parseSafeInt(resto.trim());
+    }
+
+    /** Extrai o número de parcelas do sufixo "| 3x" (À vista → 1). */
+    private int extrairParcelas(String motivo) {
+        if (motivo == null) return 1;
+        int i = motivo.lastIndexOf("| ");
+        if (i < 0) return 1;
+        String suf = motivo.substring(i + 2).trim();   // "3x" ou "À vista"
+        if (suf.endsWith("x")) return Math.max(1, parseSafeInt(suf.substring(0, suf.length() - 1)));
+        return 1;
+    }
+
     // ── Utilitários ───────────────────────────────────────────────────────────
 
     private void enviarResposta(HttpExchange exchange, ResponseObject response) throws IOException {
@@ -300,7 +508,7 @@ public class CVenda implements HttpHandler {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type",                 "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin",  "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
         exchange.sendResponseHeaders(response.getCode(), bytes.length);
         exchange.getResponseBody().write(bytes);

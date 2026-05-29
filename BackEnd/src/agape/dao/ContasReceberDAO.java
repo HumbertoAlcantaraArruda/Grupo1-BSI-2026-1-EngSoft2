@@ -16,6 +16,19 @@ public class ContasReceberDAO {
      * Insere uma nova conta a receber e retorna o ID gerado.
      * Chamado por VendaFacade apenas para pagamentos parcelados (RN02).
      */
+    /**
+     * Estorno — remove todas as contas a receber de uma venda.
+     * Deve ser chamado APÓS deletarPorVenda() em ParcelaRecebimentoDAO
+     * para respeitar a FK ContasReceber → ParcelaRecebimento.
+     */
+    public void deletarPorVenda(Connection conn, int idVenda) throws Exception {
+        String sql = "DELETE FROM ContasReceber WHERE Venda_idVenda = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idVenda);
+            stmt.executeUpdate();
+        }
+    }
+
     public int inserir(Connection conn, ContasReceber cr) throws Exception {
         String sql =
             "INSERT INTO ContasReceber (Venda_idVenda, Caixa_idCaixa, Colaborador_idUsuario, valor, dataVencimento) " +

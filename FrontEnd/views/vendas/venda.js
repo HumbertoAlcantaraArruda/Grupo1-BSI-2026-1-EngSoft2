@@ -66,11 +66,14 @@
     var $pdvBtnCancelar  = $('#pdv-btn-cancelar');
     var $pdvBtnFechar    = $('#pdv-btn-fechar');
 
-    var modalPdvObj     = new bootstrap.Modal($('#modal-pdv')[0]);
-    var modalCompObj    = new bootstrap.Modal($('#modal-comprovante')[0]);
-    var modalDetalheObj = new bootstrap.Modal($('#modal-venda-detalhe')[0]);
-    var $compCorpo      = $('#comp-corpo');
-    var _dt             = null;
+    var modalPdvObj         = new bootstrap.Modal($('#modal-pdv')[0]);
+    var modalCompObj        = new bootstrap.Modal($('#modal-comprovante')[0]);
+    var modalDetalheObj     = new bootstrap.Modal($('#modal-venda-detalhe')[0]);
+    var modalCaixaFechadoObj= new bootstrap.Modal($('#modal-caixa-fechado')[0]);
+    var modalExclusaoObj    = new bootstrap.Modal($('#modal-confirmar-exclusao')[0]);
+    var $compCorpo          = $('#comp-corpo');
+    var _dt                 = null;
+    var _idVendaExcluindo   = null;
 
     var _produtoSelecionado = null;
     var _buscaTimer         = null;
@@ -172,9 +175,17 @@
                 }},
                 { data: 'valorFinal', render: function (d) { return '<strong>R$ ' + _moeda(d) + '</strong>'; } },
                 { data: null, orderable: false, render: function (d, t, row) {
-                    return '<button class="btn btn-sm btn-outline-primary btn-visualizar" ' +
+                    return '<div class="d-flex gap-1 justify-content-center">' +
+                           '<button class="btn btn-sm btn-outline-primary btn-visualizar" ' +
                            'title="Visualizar venda">' +
-                           '<i class="bi bi-eye me-1"></i>Visualizar</button>';
+                           '<i class="bi bi-eye"></i></button>' +
+                           '<button class="btn btn-sm btn-outline-warning btn-editar" ' +
+                           'title="Editar venda (Estorno)">' +
+                           '<i class="bi bi-pencil"></i></button>' +
+                           '<button class="btn btn-sm btn-outline-danger btn-excluir-venda" ' +
+                           'title="Excluir venda">' +
+                           '<i class="bi bi-trash"></i></button>' +
+                           '</div>';
                 }}
             ],
             language: {
@@ -202,6 +213,88 @@
     $tabelaCorpo.on('click', '.btn-visualizar', async function () {
         var d = _dt.row($(this).closest('tr')).data();
         await _abrirModalVenda(d);
+    });
+
+    // Edição via Estratégia de Estorno NÃO-DESTRUTIVA:
+    // apenas CARREGA os dados originais no PDV. O estorno + nova venda ocorrem
+    // atomicamente só ao finalizar. Se o usuário fechar o modal, nada é perdido.
+    $tabelaCorpo.on('click', '.btn-editar', async function () {
+        var d = _dt.row($(this).closest('tr')).data();
+        // Verifica caixa aberto antes de iniciar a edição (a finalização mexe no caixa)
+        var checkCaixa = await ctrl.checkCaixaAberto();
+        if (!checkCaixa.caixaAberto) { modalCaixaFechadoObj.show(); return; }
+
+        var res = await ctrl.editarVenda(d.idVenda);
+        if (!res.ok) {
+            validador.mostrarAlerta(res.erro || 'Erro ao carregar a venda.', 'erro');
+            return;
+        }
+
+        // Pré-preenche a UI do PDV com os dados originais
+        _preencherPdvParaEdicao(res, d.idVenda);
+
+        modalPdvObj.show();
+        validador.mostrarAlerta(
+            'Editando venda #' + d.idVenda + '. Altere o que desejar e finalize.', 'info'
+        );
+    });
+
+    // Preenche todos os campos visuais do PDV com os dados carregados para edição
+    function _preencherPdvParaEdicao(res, idVenda) {
+        var par = res.paroquiano;
+
+        // Título do PDV em modo edição
+        $('#pdv-titulo').html('<i class="bi bi-pencil-square me-2"></i>Editar Venda #' + idVenda);
+        $pdvBtnFinalizar.html('<i class="bi bi-check2-circle me-1"></i>Salvar Alterações');
+
+        // Bloco do paroquiano
+        if (par) {
+            var cpfFmt = String(par.cpf || '').replace(/\D/g, '')
+                .replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            $pdvCpf.val(cpfFmt).removeClass('is-invalid').addClass('is-valid').prop('disabled', true);
+            $pdvParNome.text(par.nome);
+            $pdvParSaldo.text('R$ ' + _moeda(par.saldoCredito));
+            $pdvBlocoPar.show();
+            $('#pdv-cpf-cadastrar').hide();
+        }
+
+        // Crédito aplicado
+        $pdvInputCred.val((res.venda.credUtilizado || 0).toFixed(2));
+
+        // Tabelas
+        _renderizarItensPdv();
+        _renderizarPagamentosPdv();
+        _atualizarResumoPdv();
+        _atualizarGuardiao();
+    }
+
+    // Exclusão: abre modal de confirmação
+    $tabelaCorpo.on('click', '.btn-excluir-venda', function () {
+        var d = _dt.row($(this).closest('tr')).data();
+        _idVendaExcluindo = d.idVenda;
+        $('#excl-mensagem').text(
+            'Deseja excluir a venda #' + d.idVenda + ' de ' +
+            _esc(d.nomeParoquiano) + '?'
+        );
+        modalExclusaoObj.show();
+    });
+
+    // Confirmação de exclusão
+    $('#excl-btn-confirmar').on('click', async function () {
+        if (!_idVendaExcluindo) return;
+        $(this).prop('disabled', true).text('Excluindo...');
+        modalExclusaoObj.hide();
+
+        var res = await ctrl.deletarVenda(_idVendaExcluindo);
+        _idVendaExcluindo = null;
+        $(this).prop('disabled', false).html('<i class="bi bi-trash me-1"></i>Excluir');
+
+        if (res.status === 'ok') {
+            validador.mostrarAlerta('Venda excluída com sucesso!', 'sucesso');
+            await _carregarLista();
+        } else {
+            validador.mostrarAlerta(res.erro || 'Erro ao excluir a venda.', 'erro');
+        }
     });
 
     function _parsePagamentos(descFormaPag) {
@@ -326,11 +419,23 @@
         }
     }
 
-    $btnFiltrar.on('click', _carregarLista);
+    $btnFiltrar.on('click', function () {
+        var ini = $filtroDataIni.val();
+        var fim = $filtroDataFim.val();
+        if (ini && fim && ini > fim) {
+            validador.mostrarAlerta('A data inicial não pode ser posterior à data final.', 'aviso');
+            $filtroDataIni.addClass('is-invalid');
+            $filtroDataFim.addClass('is-invalid');
+            return;
+        }
+        $filtroDataIni.removeClass('is-invalid');
+        $filtroDataFim.removeClass('is-invalid');
+        _carregarLista();
+    });
 
     $btnLimpar.on('click', async function () {
-        $filtroDataIni.val('');
-        $filtroDataFim.val('');
+        $filtroDataIni.val('').removeClass('is-invalid');
+        $filtroDataFim.val('').removeClass('is-invalid');
         $filtroColaborador.val('');
         $filtroParoquiano.val('');
         $filtroFormaPag.val('');
@@ -342,7 +447,13 @@
     // PDV — ABERTURA E RESET
     // ══════════════════════════════════════════════════════════════════════════
 
-    $btnNovaVenda.on('click', function () {
+    $btnNovaVenda.on('click', async function () {
+        // Validação de Caixa — bloqueia o PDV se não houver caixa aberto
+        var checkCaixa = await ctrl.checkCaixaAberto();
+        if (!checkCaixa.caixaAberto) {
+            modalCaixaFechadoObj.show();
+            return;
+        }
         _resetarPdv();
         modalPdvObj.show();
         setTimeout(function () { $pdvCpf.trigger('focus'); }, 400);
@@ -352,8 +463,13 @@
         ctrl.resetar();
         _produtoSelecionado = null;
 
-        $pdvCpf.val('').removeClass('is-invalid is-valid');
+        // Restaura o PDV ao modo "Nova Venda" (caso viesse de uma edição)
+        $('#pdv-titulo').html('<i class="bi bi-cart3 me-2"></i>Nova Venda — PDV');
+        $pdvBtnFinalizar.html('<i class="bi bi-check2-circle me-1"></i>Finalizar Venda');
+
+        $pdvCpf.val('').prop('disabled', false).removeClass('is-invalid is-valid');
         $pdvBlocoPar.hide();
+        $('#pdv-cpf-cadastrar').hide();
 
         $pdvBuscaProd.val('');
         $pdvDropdownProd.removeClass('aberto').html(
@@ -410,16 +526,49 @@
             $pdvParNome.text(p.nome);
             $pdvParSaldo.text('R$ ' + _moeda(p.saldoCredito));
             $pdvBlocoPar.show();
+            $('#pdv-cpf-cadastrar').hide();
             ctrl.getEstado().paroquiano = p;
             _atualizarResumoPdv();
         } else {
             validador.destacarCampo($pdvCpf[0], false, resultado.erro || 'Paroquiano não encontrado.');
             $pdvBlocoPar.hide();
+            // Exibe botão de cadastro somente quando o paroquiano não foi encontrado (404)
+            var ehNaoEncontrado = resultado.code === 404 ||
+                (resultado.erro && resultado.erro.toLowerCase().indexOf('não encontrado') !== -1);
+            $('#pdv-cpf-cadastrar').toggle(!!ehNaoEncontrado);
             ctrl.resetar();
             _atualizarResumoPdv();
             _atualizarGuardiao();
         }
     });
+
+    // Ao clicar em "Cadastrar Paroquiano": salva o CPF pendente e redireciona
+    // para a tela de Usuários. Ao voltar, a tela de venda recarrega normalmente.
+    $('#pdv-btn-cadastrar-par').on('click', function () {
+        var cpf = mascaras.apenasDigitos($pdvCpf.val());
+        if (cpf) sessionStorage.setItem('agape_pdv_cpf_pendente', cpf);
+        // O guardião não disparará porque o estado já foi resetado acima
+        window.location.href = '../usuarios/usuarios.html';
+    });
+
+    // Ao carregar a tela, verifica se há CPF pendente (usuário retornou do cadastro)
+    (function _verificarCpfPendente() {
+        var cpfPendente = sessionStorage.getItem('agape_pdv_cpf_pendente');
+        if (!cpfPendente) return;
+        sessionStorage.removeItem('agape_pdv_cpf_pendente');
+        // Formata e pré-preenche o CPF para nova busca
+        var cpfFormatado = cpfPendente.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        $pdvCpf.val(cpfFormatado);
+        // Aguarda formas de pag. e abre o PDV automaticamente após verificar caixa
+        setTimeout(async function () {
+            var checkCaixa = await ctrl.checkCaixaAberto();
+            if (!checkCaixa.caixaAberto) { modalCaixaFechadoObj.show(); return; }
+            _resetarPdv();
+            $pdvCpf.val(cpfFormatado);
+            modalPdvObj.show();
+            setTimeout(function () { $pdvCpf.trigger('blur'); }, 400);
+        }, 600);
+    }());
 
     // ══════════════════════════════════════════════════════════════════════════
     // PDV — BUSCA DE PRODUTO (dropdown com debounce)
@@ -679,6 +828,9 @@
 
         if (resultado.status === 'ok') {
             _exibirComprovante(resultado.dados);
+            // Guardião: reseta o estado ANTES de atualizar o guardião,
+            // para que temItens() retorne false e o usuário navegue livremente.
+            ctrl.resetar();
             _atualizarGuardiao();
             modalPdvObj.hide();
             await _carregarLista();

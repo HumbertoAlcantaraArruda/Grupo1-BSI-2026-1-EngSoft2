@@ -141,4 +141,14 @@ public class ProdutoDAO {
             stmt.executeUpdate();
         }
     }
+
+    /** Estorno — devolve unidades ao estoque após reversão de venda. */
+    public void restaurarEstoque(Connection conn, int idProd, int qtd) throws SQLException {
+        String sql = "UPDATE Produto SET qtdAtual = qtdAtual + ? WHERE idProd = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, qtd);
+            stmt.setInt(2, idProd);
+            stmt.executeUpdate();
+        }
+    }
 }

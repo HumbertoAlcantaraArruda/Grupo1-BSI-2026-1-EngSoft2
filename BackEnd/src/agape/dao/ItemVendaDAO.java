@@ -51,4 +51,13 @@ public class ItemVendaDAO {
             stmt.executeUpdate();
         }
     }
+
+    /** Estorno — remove todos os itens de uma venda (chamado antes de deletar a Venda). */
+    public void deletarPorVenda(Connection conn, int idVenda) throws Exception {
+        String sql = "DELETE FROM itemVenda WHERE idVenda = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idVenda);
+            stmt.executeUpdate();
+        }
+    }
 }

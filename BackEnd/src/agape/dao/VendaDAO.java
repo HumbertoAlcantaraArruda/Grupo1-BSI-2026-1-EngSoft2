@@ -8,6 +8,33 @@ import java.util.List;
 
 public class VendaDAO {
 
+    public Venda buscarPorId(Connection conn, int idVenda) throws Exception {
+        String sql =
+            "SELECT v.*, u_par.nome AS nomeParoquiano, u_col.nome AS nomeColaborador, " +
+            "COALESCE(fp.descricao,'') AS descFormaPag " +
+            "FROM Venda v " +
+            "JOIN Usuario u_par ON v.idUsuario     = u_par.idUsuario " +
+            "JOIN Usuario u_col ON v.idColaborador = u_col.idUsuario " +
+            "LEFT JOIN FormaPagamento fp ON v.idFormaPag = fp.idFormaPag " +
+            "WHERE v.idVenda = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idVenda);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
+        }
+        return null;
+    }
+
+    /** Exclui o registro da venda (deve ser chamado após estorno completo dos itens/caixa). */
+    public void deletar(Connection conn, int idVenda) throws Exception {
+        String sql = "DELETE FROM Venda WHERE idVenda = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idVenda);
+            stmt.executeUpdate();
+        }
+    }
+
     public int inserir(Connection conn, Venda v) throws Exception {
         String sql =
             "INSERT INTO Venda (idColaborador, idUsuario, idFormaPag, dataHora, totBruto, credUtilizado, valorFinal) " +

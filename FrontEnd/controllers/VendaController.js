@@ -19,9 +19,12 @@ window.AGAPE.Controllers.VendaController = (function () {
 
     function VendaController() {
         // DIP (SOLID) — Controller depende de abstração (Service), não de HTTP diretamente
-        this._service    = window.AGAPE.Services.VendaService.getInstance();
-        this._estado     = _estadoInicial();
-        this._listaCache = [];
+        this._service        = window.AGAPE.Services.VendaService.getInstance();
+        this._estado         = _estadoInicial();
+        this._listaCache     = [];
+        // id da venda em edição (null = venda nova). Quando definido, a finalização
+        // envia estornarVendaId para o backend reverter a venda original atomicamente.
+        this._editandoIdVenda = null;
     }
 
     // ── Estado inicial ────────────────────────────────────────────────────────
@@ -42,6 +45,21 @@ window.AGAPE.Controllers.VendaController = (function () {
             totalPago:     0
         };
     }
+
+    // ── Validação de Caixa ────────────────────────────────────────────────────
+
+    /**
+     * checkCaixaAberto — verifica se há caixa aberto antes de abrir o PDV.
+     * Retorna { status, caixaAberto: bool }.
+     */
+    VendaController.prototype.checkCaixaAberto = async function () {
+        var resultado = await this._service.checkCaixaAberto();
+        return {
+            status:       resultado.status,
+            caixaAberto:  resultado.status === 'ok' && resultado.dados !== null,
+            erro:         resultado.erro || null
+        };
+    };
 
     // ── Listagem ──────────────────────────────────────────────────────────────
 
@@ -278,7 +296,91 @@ window.AGAPE.Controllers.VendaController = (function () {
             numeroParcelas:   e.pagamentos.map(function (p) { return p.numeroParcelas; }).join(',')
         };
 
+        // Edição: informa ao backend qual venda estornar atomicamente antes de finalizar
+        if (this._editandoIdVenda) {
+            dados.estornarVendaId = this._editandoIdVenda;
+        }
+
         return await this._service.efetuarVenda(dados);
+    };
+
+    // ── Exclusão e Edição (Estratégia de Estorno) ────────────────────────────
+
+    /** Exclusão transacional — chama o backend que reverte estoque/caixa e apaga a venda. */
+    VendaController.prototype.deletarVenda = async function (idVenda) {
+        return await this._service.deletarVenda(idVenda);
+    };
+
+    /**
+     * editarVenda — Estratégia de Estorno NÃO-DESTRUTIVA.
+     *
+     * Diferente de uma exclusão imediata, aqui APENAS carregamos os dados da
+     * venda original (sem alterar o banco) e pré-populamos o PDV. O estorno real
+     * (reverter estoque/caixa/crédito + apagar a venda original) só ocorre quando
+     * o usuário confirmar a finalização — momento em que efetuarVenda() envia o
+     * estornarVendaId. Assim, se o usuário desistir, a venda original permanece
+     * intacta: nada é perdido.
+     *
+     * Retorna { ok, venda, paroquiano, itens, pagamentos } para a view preencher.
+     */
+    VendaController.prototype.editarVenda = async function (idVenda) {
+        var resultado = await this._service.carregarEdicao(idVenda);
+        if (resultado.status !== 'ok' || !resultado.dados) {
+            return { ok: false, erro: resultado.erro || 'Erro ao carregar a venda.' };
+        }
+
+        var dados      = resultado.dados;
+        var venda      = dados.venda;
+        var paroquiano = dados.paroquiano;
+        var itens      = Array.isArray(dados.itens) ? dados.itens : [];
+        var pagamentos = Array.isArray(dados.pagamentos) ? dados.pagamentos : [];
+
+        // Reseta o estado e pré-popula com os dados ORIGINAIS da venda
+        this.resetar();
+        var e = this._estado;
+
+        e.paroquiano = paroquiano;
+
+        itens.forEach(function (item) {
+            e.itens.push({
+                idProd:    item.idProd,
+                nome:      item.nomeProduto || '—',
+                valorUni:  item.valorUnitario,
+                qtd:       item.quantidade,
+                totalItem: item.valorTotal
+            });
+        });
+
+        // Crédito utilizado na venda original (saldo do paroquiano já vem "restaurado")
+        e.credUtilizado = +(venda.credUtilizado || 0).toFixed(2);
+
+        // Recalcula totBruto/totalFinal a partir dos itens e do crédito
+        this._recalcularTotais();
+
+        // Pré-popula os pagamentos originais
+        pagamentos.forEach(function (p) {
+            e.pagamentos.push({
+                idFormaPag:     p.idFormaPag,
+                descricao:      p.descricao,
+                valor:          +(p.valor || 0).toFixed(2),
+                numeroParcelas: p.numeroParcelas || 1
+            });
+            e.totalPago = +(e.totalPago + (p.valor || 0)).toFixed(2);
+        });
+
+        // Marca que estamos editando — a finalização enviará estornarVendaId
+        this._editandoIdVenda = idVenda;
+
+        return { ok: true, venda: venda, paroquiano: paroquiano, itens: itens, pagamentos: pagamentos };
+    };
+
+    /** True se o PDV está em modo de edição (estorno pendente na finalização). */
+    VendaController.prototype.estaEditando = function () {
+        return this._editandoIdVenda !== null;
+    };
+
+    VendaController.prototype.getEditandoId = function () {
+        return this._editandoIdVenda;
     };
 
     // ── Acesso ao estado ──────────────────────────────────────────────────────
@@ -295,6 +397,7 @@ window.AGAPE.Controllers.VendaController = (function () {
         var formasPag = this._estado.formasPag;
         this._estado = _estadoInicial();
         this._estado.formasPag = formasPag;
+        this._editandoIdVenda = null;
     };
 
     // ── Utilitário interno ────────────────────────────────────────────────────

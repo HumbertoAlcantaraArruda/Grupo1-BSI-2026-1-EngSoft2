@@ -36,6 +36,24 @@ window.AGAPE.Services.VendaService = (function () {
         return await this._http.post('/venda', dados);
     };
 
+    /** Verifica se há caixa aberto antes de abrir o PDV. */
+    VendaService.prototype.checkCaixaAberto = async function () {
+        return await this._http.get('/venda', { checkCaixa: '1' });
+    };
+
+    /** Exclusão transacional: estorna estoque/caixa e apaga a venda. */
+    VendaService.prototype.deletarVenda = async function (idVenda) {
+        return await this._http.delete('/venda', { idVenda: idVenda });
+    };
+
+    /**
+     * Carrega os dados completos de uma venda para edição (SOMENTE LEITURA).
+     * Não altera o banco — o estorno só ocorre ao finalizar a edição.
+     */
+    VendaService.prototype.carregarEdicao = async function (idVenda) {
+        return await this._http.get('/venda', { carregarEdicao: idVenda });
+    };
+
     return {
         getInstance: function () {
             if (!instancia) instancia = new VendaService();
