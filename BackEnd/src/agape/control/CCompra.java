@@ -90,6 +90,9 @@ public class CCompra implements HttpHandler {
                 int idUsuario = parseSafeInt(extrairParam(exchange, body, "idUsuario"));
                 float valorTotal = parseSafeFloat(extrairParam(exchange, body, "valorTotal"));
 
+                String numNotaFiscal = extrairParam(exchange, body, "numNotaFiscal");
+                String obs = extrairParam(exchange, body, "obs");
+
                 String idProdsRaw = extrairParam(exchange, body, "idProdutos");
                 String qtsRaw = extrairParam(exchange, body, "quantidades");
                 String valsRaw = extrairParam(exchange, body, "valoresUnitarios");
@@ -127,7 +130,7 @@ public class CCompra implements HttpHandler {
                     valoresUnitarios[i] = parseSafeFloat(valoresUnitariosStr[i]);
                 }
 
-                ResponseObject response = efetuarCompraDeProdutos(conn, idFornecedor, idUsuario, valorTotal, idsProdutos, quantidades, valoresUnitarios);
+                ResponseObject response = efetuarCompraDeProdutos(conn, idFornecedor, idUsuario, valorTotal, idsProdutos, quantidades, valoresUnitarios, numNotaFiscal, obs);
                 enviarResposta(exchange, response);
             }
         } catch (Exception e) {
@@ -139,7 +142,7 @@ public class CCompra implements HttpHandler {
         }
     }
 
-    public ResponseObject efetuarCompraDeProdutos(Connection conn, int idFornecedor, int idUsuario, float valorTotal, int[] idsProdutos, int[] quantidades, float[] valoresUnitarios) {
+    public ResponseObject efetuarCompraDeProdutos(Connection conn, int idFornecedor, int idUsuario, float valorTotal, int[] idsProdutos, int[] quantidades, float[] valoresUnitarios, String numNotaFiscal, String obs) {
         ResponseObject response = new ResponseObject();
         
         // ── Validações de consistência e negócio ──
@@ -204,6 +207,8 @@ public class CCompra implements HttpHandler {
             compra.setValorTotal(valorTotal);
             compra.setIdFornecedor(idFornecedor);
             compra.setIdUsuario(idUsuario);
+            compra.setNumNotaFiscal(numNotaFiscal);
+            compra.setObs(obs);
 
             int idCompra = compra.inserir(conn);
 

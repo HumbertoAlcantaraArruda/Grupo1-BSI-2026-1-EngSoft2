@@ -13,6 +13,8 @@ public class Compra {
     private float valorTotal;
     private int idFornecedor;
     private int idUsuario;
+    private String numNotaFiscal;   // varchar(44), opcional
+    private String obs;             // varchar(400), opcional
 
     public int getIdCompra() {
         return idCompra;
@@ -52,6 +54,22 @@ public class Compra {
 
     public void setIdUsuario(int idUsuario) {
         this.idUsuario = idUsuario;
+    }
+
+    public String getNumNotaFiscal() {
+        return numNotaFiscal;
+    }
+
+    public void setNumNotaFiscal(String numNotaFiscal) {
+        this.numNotaFiscal = numNotaFiscal;
+    }
+
+    public String getObs() {
+        return obs;
+    }
+
+    public void setObs(String obs) {
+        this.obs = obs;
     }
 
     // ── Persistência (DAO encapsulado) ─────────────────────────────────────

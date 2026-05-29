@@ -11,7 +11,10 @@
 
     // Elementos do DOM
     var selectFornecedor = document.getElementById('select-fornecedor');
+    var inputNotaFiscal  = document.getElementById('input-nota-fiscal');
+    var inputObs         = document.getElementById('input-obs');
     var selectProduto    = document.getElementById('select-produto');
+    var itemEstoqueAtual = document.getElementById('item-estoque-atual');
     var itemQuantidade   = document.getElementById('item-quantidade');
     var itemValor        = document.getElementById('item-valor');
     var btnAdicionarItem = document.getElementById('btn-adicionar-item');
@@ -89,7 +92,7 @@
         }
 
         var opcoes = resultado.dados.map(function (p) {
-            return '<option value="' + p.idProd + '" data-nome="' + _escapar(p.nome) + '" data-valor="' + p.valorUni + '">' + _escapar(p.nome) + ' (Atual: ' + p.qtdeAtual + ')</option>';
+            return '<option value="' + p.idProd + '" data-nome="' + _escapar(p.nome) + '" data-valor="' + p.valorUni + '" data-estoque="' + p.qtdeAtual + '">' + _escapar(p.nome) + '</option>';
         }).join('');
 
         selectProduto.innerHTML = '<option value="">Selecione um produto...</option>' + opcoes;
@@ -103,8 +106,12 @@
             mascaras.remover('#item-valor');
             itemValor.value = mascaras.numeroParaMonetario(parseFloat(valorPadrao));
             mascaras.aplicar('#item-valor', 'monetario');
+
+            // Exibe o estoque atual do produto selecionado logo abaixo da busca
+            itemEstoqueAtual.value = opcaoSel.dataset.estoque != null ? opcaoSel.dataset.estoque : '—';
         } else {
             itemValor.value = '';
+            itemEstoqueAtual.value = '—';
         }
     });
 
@@ -152,6 +159,7 @@
 
         // Reseta inputs de produto
         selectProduto.selectedIndex = 0;
+        itemEstoqueAtual.value = '—';
         itemQuantidade.value = 1;
         itemValor.value = '';
         validador.resetar(formItem);
@@ -255,7 +263,10 @@
         
         // Reseta selects e inputs
         selectFornecedor.selectedIndex = 0;
+        inputNotaFiscal.value = '';
+        inputObs.value = '';
         selectProduto.selectedIndex = 0;
+        itemEstoqueAtual.value = '—';
         itemQuantidade.value = 1;
         
         // Reseta campo com máscara com segurança
@@ -297,6 +308,8 @@
             idFornecedor:     parseInt(selectFornecedor.value),
             idUsuario:        idUsuario,
             valorTotal:       totalValor,
+            numNotaFiscal:    inputNotaFiscal.value.trim(),
+            obs:              inputObs.value.trim(),
             idProdutos:       idProdutosArr,
             quantidades:      quantidadesArr,
             valoresUnitarios: valoresUnitariosArr
